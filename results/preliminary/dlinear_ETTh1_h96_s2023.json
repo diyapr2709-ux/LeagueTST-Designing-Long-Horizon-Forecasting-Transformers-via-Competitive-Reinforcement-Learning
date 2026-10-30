@@ -1,0 +1,99 @@
+{
+  "checkpoint": "checkpoints/dlinear_ETTh1_h96_s2023.pt",
+  "dataset": "ETTh1",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-30T04:28:23+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 4,
+    "best_val_mse": 0.6383317189890179,
+    "epochs_run": 7,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.005,
+        "seconds": 0.3677445409994107,
+        "train_loss": 0.4011076372116804,
+        "val_mse": 0.7165785324435163
+      },
+      {
+        "epoch": 2,
+        "lr": 0.005,
+        "seconds": 0.34513100000913255,
+        "train_loss": 0.37886405643075705,
+        "val_mse": 0.7483087940871068
+      },
+      {
+        "epoch": 3,
+        "lr": 0.0025,
+        "seconds": 0.34393029200145975,
+        "train_loss": 0.3536524719092995,
+        "val_mse": 0.6620469017481782
+      },
+      {
+        "epoch": 4,
+        "lr": 0.00125,
+        "seconds": 0.3507512499927543,
+        "train_loss": 0.34396622295025736,
+        "val_mse": 0.6383317189890179
+      },
+      {
+        "epoch": 5,
+        "lr": 0.000625,
+        "seconds": 0.36495275000925176,
+        "train_loss": 0.3370504865888506,
+        "val_mse": 0.6730229592016721
+      },
+      {
+        "epoch": 6,
+        "lr": 0.0003125,
+        "seconds": 0.3512716669938527,
+        "train_loss": 0.3340172812459059,
+        "val_mse": 0.6607046261883172
+      },
+      {
+        "epoch": 7,
+        "lr": 0.00015625,
+        "seconds": 0.37405266700079665,
+        "train_loss": 0.3321173544973135,
+        "val_mse": 0.6569043749889054
+      }
+    ],
+    "train_seconds": 2.4992812919954304
+  },
+  "horizon": 96,
+  "input_len": 336,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 64704,
+  "seed": 2023,
+  "tag": "",
+  "test": {
+    "mae": 0.42309642690337423,
+    "mae_drop_last": 0.42307617911430384,
+    "mse": 0.39626854066615436,
+    "mse_drop_last": 0.396207024855993,
+    "n_samples": 2785,
+    "n_samples_drop_last": 2784
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.005,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.54523246724014,
+    "mae_drop_last": 0.5452960042449564,
+    "mse": 0.6383317189890179,
+    "mse_drop_last": 0.6384432095219336,
+    "n_samples": 2785,
+    "n_samples_drop_last": 2784
+  }
+}

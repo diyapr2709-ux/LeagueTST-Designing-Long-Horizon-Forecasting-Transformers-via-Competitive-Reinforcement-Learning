@@ -1,0 +1,106 @@
+{
+  "checkpoint": "checkpoints/dlinear_ILI_h48_s2022.pt",
+  "dataset": "ILI",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-30T16:30:56+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 5,
+    "best_val_mse": 0.2453500611441476,
+    "epochs_run": 8,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.01,
+        "seconds": 0.04773012502118945,
+        "train_loss": 0.6991441212594509,
+        "val_mse": 0.3717538154692877
+      },
+      {
+        "epoch": 2,
+        "lr": 0.01,
+        "seconds": 0.049052625021431595,
+        "train_loss": 0.5506305638700724,
+        "val_mse": 0.28204251788911366
+      },
+      {
+        "epoch": 3,
+        "lr": 0.005,
+        "seconds": 0.05941545800305903,
+        "train_loss": 0.5055537726730108,
+        "val_mse": 0.2713034947713216
+      },
+      {
+        "epoch": 4,
+        "lr": 0.0025,
+        "seconds": 0.06008137500612065,
+        "train_loss": 0.49312895722687244,
+        "val_mse": 0.26008578209649946
+      },
+      {
+        "epoch": 5,
+        "lr": 0.00125,
+        "seconds": 0.05496941599994898,
+        "train_loss": 0.4780370965600014,
+        "val_mse": 0.2453500611441476
+      },
+      {
+        "epoch": 6,
+        "lr": 0.000625,
+        "seconds": 0.06132350000552833,
+        "train_loss": 0.4722186904400587,
+        "val_mse": 0.25202234177362354
+      },
+      {
+        "epoch": 7,
+        "lr": 0.0003125,
+        "seconds": 0.05650570898433216,
+        "train_loss": 0.4687962383031845,
+        "val_mse": 0.2485547092982701
+      },
+      {
+        "epoch": 8,
+        "lr": 0.00015625,
+        "seconds": 0.05218229099409655,
+        "train_loss": 0.4727928042411804,
+        "val_mse": 0.248623119308835
+      }
+    ],
+    "train_seconds": 0.4456470419827383
+  },
+  "horizon": 48,
+  "input_len": 104,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 10080,
+  "seed": 2022,
+  "tag": "",
+  "test": {
+    "mae": 1.07218337727775,
+    "mae_drop_last": 1.0238968534838586,
+    "mse": 2.2702711752949396,
+    "mse_drop_last": 2.125646999549298,
+    "n_samples": 146,
+    "n_samples_drop_last": 128
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.01,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.33435192471458797,
+    "mae_drop_last": 0.30278059201581137,
+    "mse": 0.2453500611441476,
+    "mse_drop_last": 0.18807427514167058,
+    "n_samples": 50,
+    "n_samples_drop_last": 32
+  }
+}

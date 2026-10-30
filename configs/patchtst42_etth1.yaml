@@ -1,0 +1,21 @@
+# PatchTST/42 on ETTh1, as in the official scripts/PatchTST/etth1.sh.
+# 336 input steps, patch 16, stride 8 gives 42 patches.
+model: patchtst
+dataset: ETTh1
+input_len: 336
+model_config:
+  patch_len: 16
+  stride: 8
+  n_layers: 3
+  n_heads: 4
+  d_model: 16
+  ff_ratio: 8
+  dropout: 0.3
+  instance_norm: true
+  channel_mode: independent
+training:
+  epochs: 100
+  batch_size: 128
+  learning_rate: 0.0001
+  patience: 100
+  lr_schedule: type3

@@ -1,0 +1,12 @@
+# DLinear on ETTh1, as in LTSF-Linear scripts/EXP-LongForecasting/Linear/etth1.sh.
+model: dlinear
+dataset: ETTh1
+input_len: 336
+model_config:
+  kernel_size: 25
+training:
+  epochs: 10
+  batch_size: 32
+  learning_rate: 0.005
+  patience: 3
+  lr_schedule: type1

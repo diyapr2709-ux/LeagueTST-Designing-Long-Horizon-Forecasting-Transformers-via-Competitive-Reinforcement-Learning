@@ -1,0 +1,21 @@
+# PatchTST/42 on ILI, as in the official scripts/PatchTST/illness.sh.
+# 104 input steps, patch 24, stride 2 gives 42 patches.
+model: patchtst
+dataset: ILI
+input_len: 104
+model_config:
+  patch_len: 24
+  stride: 2
+  n_layers: 3
+  n_heads: 4
+  d_model: 16
+  ff_ratio: 8
+  dropout: 0.3
+  instance_norm: true
+  channel_mode: independent
+training:
+  epochs: 100
+  batch_size: 16
+  learning_rate: 0.0025
+  patience: 100
+  lr_schedule: type3

@@ -1,0 +1,12 @@
+# DLinear on ILI, as in LTSF-Linear scripts/EXP-LongForecasting/Linear/ili.sh.
+model: dlinear
+dataset: ILI
+input_len: 104
+model_config:
+  kernel_size: 25
+training:
+  epochs: 10
+  batch_size: 32
+  learning_rate: 0.01
+  patience: 3
+  lr_schedule: type1
