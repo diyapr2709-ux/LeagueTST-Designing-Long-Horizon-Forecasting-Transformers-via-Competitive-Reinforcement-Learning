@@ -1,0 +1,106 @@
+{
+  "checkpoint": "checkpoints/dlinear_ETTh1_h192_s2021.pt",
+  "dataset": "ETTh1",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-30T19:49:11+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 5,
+    "best_val_mse": 0.855942879866662,
+    "epochs_run": 8,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.005,
+        "seconds": 1.380331666994607,
+        "train_loss": 0.45591218692983093,
+        "val_mse": 0.9288224325938514
+      },
+      {
+        "epoch": 2,
+        "lr": 0.005,
+        "seconds": 1.3385407499736175,
+        "train_loss": 0.4345351876948662,
+        "val_mse": 0.9328773007469472
+      },
+      {
+        "epoch": 3,
+        "lr": 0.0025,
+        "seconds": 1.2082229589868803,
+        "train_loss": 0.41084102514704224,
+        "val_mse": 0.9631593548140507
+      },
+      {
+        "epoch": 4,
+        "lr": 0.00125,
+        "seconds": 1.298600416019326,
+        "train_loss": 0.39654774863729364,
+        "val_mse": 0.8763202340976659
+      },
+      {
+        "epoch": 5,
+        "lr": 0.000625,
+        "seconds": 1.2144822080153972,
+        "train_loss": 0.39010532465376874,
+        "val_mse": 0.855942879866662
+      },
+      {
+        "epoch": 6,
+        "lr": 0.0003125,
+        "seconds": 1.2320727499900386,
+        "train_loss": 0.38696082142501953,
+        "val_mse": 0.8821554998279169
+      },
+      {
+        "epoch": 7,
+        "lr": 0.00015625,
+        "seconds": 1.2377343330008443,
+        "train_loss": 0.3846013134882855,
+        "val_mse": 0.8735713182968932
+      },
+      {
+        "epoch": 8,
+        "lr": 7.8125e-05,
+        "seconds": 1.196102542016888,
+        "train_loss": 0.38347836798829993,
+        "val_mse": 0.8739218988570406
+      }
+    ],
+    "train_seconds": 10.110618125007022
+  },
+  "horizon": 192,
+  "input_len": 336,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 129408,
+  "seed": 2021,
+  "tag": "",
+  "test": {
+    "mae": 0.4284449688474483,
+    "mae_drop_last": 0.4284372516398797,
+    "mse": 0.41863953939089055,
+    "mse_drop_last": 0.4186028952703995,
+    "n_samples": 2689,
+    "n_samples_drop_last": 2688
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.005,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.6264983697704213,
+    "mae_drop_last": 0.626606430545821,
+    "mse": 0.855942879866662,
+    "mse_drop_last": 0.8561642127842252,
+    "n_samples": 2689,
+    "n_samples_drop_last": 2688
+  }
+}

@@ -40,6 +40,20 @@ def test_learning_rate_schedules():
     assert type3[5] == pytest.approx(0.81)
     with pytest.raises(ValueError):
         TrainingConfig(lr_schedule="cosine")
+    assert learning_rate_at(1.0, 1, "type3", first_epoch_factor=0.04) == pytest.approx(0.04)
+    assert learning_rate_at(1.0, 2, "constant", first_epoch_factor=0.04) == 1.0
+
+
+def test_official_onecycle_side_effects_are_reproduced():
+    from torch.optim import lr_scheduler
+
+    for lr in (1e-4, 2.5e-3):
+        reference = torch.optim.Adam([torch.nn.Parameter(torch.zeros(1))], lr=lr)
+        lr_scheduler.OneCycleLR(optimizer=reference, steps_per_epoch=10, epochs=100, max_lr=lr)
+        group = reference.param_groups[0]
+        config = TrainingConfig(learning_rate=lr, adam_beta1=0.95, first_epoch_lr_factor=0.04)
+        assert group["betas"][0] == config.adam_beta1
+        assert group["lr"] == pytest.approx(learning_rate_at(lr, 1, "type3", config.first_epoch_lr_factor))
 
 
 @pytest.mark.parametrize("model", ["patchtst", "dlinear"])

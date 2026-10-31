@@ -8,6 +8,7 @@ Example, the preliminary check at the shortest horizon with three seeds:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -30,7 +31,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out-dir", default="results/preliminary")
     parser.add_argument("--checkpoint-dir", default="checkpoints", help="empty string disables saving")
     parser.add_argument("--tag", default="")
-    parser.add_argument("--skip-existing", action="store_true", help="keep finished runs")
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="keep finished runs; a stored record made with a different config is an error",
+    )
     return parser.parse_args()
 
 
@@ -61,6 +66,12 @@ def main() -> None:
                 )
                 target = Path(spec.out_dir) / f"{spec.run_name}.json"
                 if args.skip_existing and target.exists():
+                    stale = spec.stale_fields(json.loads(target.read_text(encoding="utf-8")))
+                    if stale:
+                        sys.exit(
+                            f"error: {target} was made with a different {', '.join(stale)}; "
+                            "move it away to rerun, or drop --skip-existing to overwrite it"
+                        )
                     logging.info("skip %s", target)
                     continue
                 run_experiment(spec)

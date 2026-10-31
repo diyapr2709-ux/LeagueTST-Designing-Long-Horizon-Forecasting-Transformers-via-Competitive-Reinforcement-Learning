@@ -1,5 +1,6 @@
 # PatchTST/42 on ILI, as in the official scripts/PatchTST/illness.sh.
 # 104 input steps, patch 24, stride 2 gives 42 patches.
+# The official script passes --lradj 'constant', so the rate never decays.
 model: patchtst
 dataset: ILI
 input_len: 104
@@ -18,4 +19,9 @@ training:
   batch_size: 16
   learning_rate: 0.0025
   patience: 100
-  lr_schedule: type3
+  lr_schedule: constant
+  # Side effects of the official trainer, which builds a OneCycleLR scheduler
+  # before training (exp/exp_main.py): Adam's first beta becomes 0.95 for the
+  # whole run and epoch 1 runs at learning_rate / 25.
+  adam_beta1: 0.95
+  first_epoch_lr_factor: 0.04

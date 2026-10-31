@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import platform
-import time
+import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,11 +22,19 @@ import torch.nn as nn
 from leaguetst.data import BENCHMARKS, build_dataloaders
 from leaguetst.models import DLinear, ForecasterConfig, PatchTST, count_parameters
 from leaguetst.training import Trainer, TrainingConfig
-from leaguetst.utils import pick_device, save_json, set_seed
+from leaguetst.utils import pick_device, save_json, save_state_dict, set_seed
+from leaguetst.utils.checks import require_int
 
 log = logging.getLogger(__name__)
 
 MODEL_NAMES = ("patchtst", "dlinear")
+
+# A tag becomes part of a file name, so it may not contain a path separator
+# or start with a dot; this keeps every record inside its output directory.
+TAG_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+# Fields of a record that must match the spec before a stored run is reused.
+SIGNATURE_FIELDS = ("model", "dataset", "horizon", "input_len", "seed", "tag", "model_config", "training")
 
 
 @dataclass
@@ -53,8 +61,15 @@ class RunSpec:
             raise ValueError(f"dataset must be one of {tuple(BENCHMARKS)}")
         if self.input_len is None:
             self.input_len = BENCHMARKS[self.dataset].input_len
+        self.horizon = require_int("horizon", self.horizon, 1)
+        self.input_len = require_int("input_len", self.input_len, 1)
+        self.seed = require_int("seed", self.seed, 0, 2**32 - 1)
+        if not isinstance(self.tag, str) or (self.tag and not TAG_PATTERN.fullmatch(self.tag)):
+            raise ValueError(f"tag {self.tag!r} must match {TAG_PATTERN.pattern} or be empty")
         if isinstance(self.training, dict):
             self.training = TrainingConfig(**self.training)
+        if not isinstance(self.model_config, dict):
+            raise ValueError("model_config must be a mapping")
 
     @classmethod
     def from_yaml_dict(cls, loaded: dict[str, Any], **overrides: Any) -> "RunSpec":
@@ -73,6 +88,31 @@ class RunSpec:
     def run_name(self) -> str:
         base = f"{self.model}_{self.dataset}_h{self.horizon}_s{self.seed}"
         return f"{base}_{self.tag}" if self.tag else base
+
+    def signature(self) -> dict[str, Any]:
+        """The fields a stored record must share with this spec to stand for it."""
+        values = {name: getattr(self, name) for name in SIGNATURE_FIELDS}
+        values["training"] = asdict(self.training)
+        return values
+
+    def stale_fields(self, record: dict[str, Any]) -> list[str]:
+        """Names of the signature fields on which ``record`` differs from this spec.
+
+        Training settings a record predates are read as their defaults, so a
+        record written before a setting existed still matches when the spec
+        uses that default.
+        """
+        stored = dict(record)
+        stored["training"] = normalized_training(record.get("training"))
+        return [name for name, value in self.signature().items() if stored.get(name) != value]
+
+
+def normalized_training(values: Any) -> dict[str, Any] | None:
+    """A record's training settings with missing fields filled by their defaults."""
+    try:
+        return asdict(TrainingConfig(**values))
+    except (TypeError, ValueError):
+        return None
 
 
 def build_model(
@@ -116,12 +156,13 @@ def run_experiment(spec: RunSpec) -> dict[str, Any]:
     val = trainer.evaluate("val")
     test = trainer.evaluate("test")
 
-    checkpoint_path = ""
+    checkpoint_path, checkpoint_sha256 = "", ""
     if spec.checkpoint_dir:
         path = Path(spec.checkpoint_dir) / f"{spec.run_name}.pt"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(model.state_dict(), path)
+        checkpoint_sha256 = save_state_dict(model.state_dict(), path)
         checkpoint_path = str(path)
+    if fit.diverged:
+        log.warning("%s diverged; its record is flagged and summaries refuse it", spec.run_name)
     log.info(
         "done %s  val mse %.4f  test mse %.4f  mae %.4f  (%d params, %.0fs)",
         spec.run_name, val["mse"], test["mse"], test["mae"], n_params, fit.train_seconds,
@@ -141,6 +182,7 @@ def run_experiment(spec: RunSpec) -> dict[str, Any]:
         "val": val,
         "test": test,
         "checkpoint": checkpoint_path,
+        "checkpoint_sha256": checkpoint_sha256,
         "environment": {
             "device": str(device),
             "torch": torch.__version__,

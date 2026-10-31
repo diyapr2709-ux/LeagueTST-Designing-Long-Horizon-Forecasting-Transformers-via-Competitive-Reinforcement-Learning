@@ -19,3 +19,8 @@ training:
   learning_rate: 0.0001
   patience: 100
   lr_schedule: type3
+  # Side effects of the official trainer, which builds a OneCycleLR scheduler
+  # before training (exp/exp_main.py): Adam's first beta becomes 0.95 for the
+  # whole run and epoch 1 runs at learning_rate / 25.
+  adam_beta1: 0.95
+  first_epoch_lr_factor: 0.04

@@ -10,6 +10,11 @@ code so that errors stay comparable with the published numbers:
   first target of each block directly follows the previous block.
 * Every variable is standardised with the mean and standard deviation of the
   training block only.
+
+Files are checked on load: the columns must be exactly the expected ones,
+rows must be in time order at a constant step, and every value must be
+finite. A shuffled, truncated or edited copy fails loudly instead of
+training on the wrong windows.
 """
 
 from __future__ import annotations
@@ -45,6 +50,8 @@ class BenchmarkSpec:
     split_scheme: str
     input_len: int
     horizons: tuple[int, ...]
+    columns: tuple[str, ...]
+    step: str
 
 
 BENCHMARKS: dict[str, BenchmarkSpec] = {
@@ -54,6 +61,8 @@ BENCHMARKS: dict[str, BenchmarkSpec] = {
         split_scheme="ett",
         input_len=336,
         horizons=(96, 192, 336, 720),
+        columns=("HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"),
+        step="1h",
     ),
     "ILI": BenchmarkSpec(
         name="ILI",
@@ -61,6 +70,11 @@ BENCHMARKS: dict[str, BenchmarkSpec] = {
         split_scheme="ratio",
         input_len=104,
         horizons=(24, 36, 48, 60),
+        columns=(
+            "% WEIGHTED ILI", "%UNWEIGHTED ILI", "AGE 0-4", "AGE 5-24",
+            "ILITOTAL", "NUM. OF PROVIDERS", "OT",
+        ),
+        step="7D",
     ),
 }
 
@@ -124,10 +138,11 @@ def split_borders(n_steps: int, input_len: int, scheme: str) -> dict[str, tuple[
 
 
 def load_benchmark_frame(data_dir: str | Path, name: str) -> pd.DataFrame:
-    """Read a benchmark CSV and return its variables with the target last.
+    """Read and check a benchmark CSV; return its variables with the target last.
 
-    The date column is dropped. Column order follows the file except that the
-    ``OT`` target is moved to the last position, as in the official loader.
+    The date column is dropped after it has been checked. Column order
+    follows the file except that the ``OT`` target is moved to the last
+    position, as in the official loader.
     """
     spec = BENCHMARKS[name]
     path = Path(data_dir) / spec.relative_path
@@ -136,10 +151,23 @@ def load_benchmark_frame(data_dir: str | Path, name: str) -> pd.DataFrame:
             f"{path} is missing; run scripts/download_data.py or see data/README.md"
         )
     frame = pd.read_csv(path)
-    columns = [c for c in frame.columns if c not in (DATE_COLUMN, TARGET_COLUMN)]
-    if TARGET_COLUMN in frame.columns:
-        columns.append(TARGET_COLUMN)
-    return frame[columns].astype(np.float64)
+    expected = [DATE_COLUMN, *spec.columns]
+    if list(frame.columns) != expected:
+        raise ValueError(f"{path}: columns {list(frame.columns)} differ from the expected {expected}")
+    try:
+        dates = pd.to_datetime(frame[DATE_COLUMN])
+    except (ValueError, TypeError) as error:
+        raise ValueError(f"{path}: unreadable date column ({error})") from error
+    if len(dates) > 1 and not (dates.diff().iloc[1:] == pd.Timedelta(spec.step)).all():
+        raise ValueError(f"{path}: rows are not in time order at a constant {spec.step} step")
+    columns = [c for c in spec.columns if c != TARGET_COLUMN] + [TARGET_COLUMN]
+    try:
+        values = frame[columns].astype(np.float64)
+    except ValueError as error:
+        raise ValueError(f"{path}: non-numeric values ({error})") from error
+    if not np.isfinite(values.to_numpy()).all():
+        raise ValueError(f"{path}: missing or infinite values")
+    return values
 
 
 class WindowDataset(Dataset):

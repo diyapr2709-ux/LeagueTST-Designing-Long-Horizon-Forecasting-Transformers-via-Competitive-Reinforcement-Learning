@@ -13,7 +13,13 @@ from typing import Any
 
 import torch.nn as nn
 
+from leaguetst.utils.checks import require_bool, require_int, require_real
+
 CHANNEL_MODES = ("independent", "mixing")
+
+# Upper bounds far above the search grid and the baselines. They exist so that
+# a runaway proposal fails fast instead of allocating an enormous model.
+LIMITS = {"patch_len": 512, "stride": 512, "n_layers": 12, "n_heads": 64, "d_model": 1024, "ff_ratio": 16}
 
 
 @dataclass(frozen=True)
@@ -45,21 +51,19 @@ class ForecasterConfig:
     channel_mode: str = "independent"
 
     def __post_init__(self) -> None:
-        if self.patch_len <= 0 or self.stride <= 0:
-            raise ValueError("patch_len and stride must be positive")
+        # The dataclass is frozen, so normalised values are written back with
+        # object.__setattr__ (a NumPy integer becomes a plain int, for example).
+        for name, limit in LIMITS.items():
+            object.__setattr__(self, name, require_int(name, getattr(self, name), 1, limit))
+        object.__setattr__(self, "dropout", require_real("dropout", self.dropout, 0.0, 1.0, high_open=True))
+        require_bool("instance_norm", self.instance_norm)
         if self.stride > self.patch_len:
             raise ValueError("stride larger than patch_len would skip time steps")
-        if self.n_layers <= 0:
-            raise ValueError("n_layers must be positive")
         if self.d_model % self.n_heads != 0:
             raise ValueError(
                 f"d_model {self.d_model} is not divisible by n_heads {self.n_heads}"
             )
-        if self.ff_ratio <= 0:
-            raise ValueError("ff_ratio must be positive")
-        if not 0.0 <= self.dropout < 1.0:
-            raise ValueError("dropout must lie in [0, 1)")
-        if self.channel_mode not in CHANNEL_MODES:
+        if not isinstance(self.channel_mode, str) or self.channel_mode not in CHANNEL_MODES:
             raise ValueError(f"channel_mode must be one of {CHANNEL_MODES}")
 
     @property

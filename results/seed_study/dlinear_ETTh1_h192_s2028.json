@@ -1,0 +1,101 @@
+{
+  "checkpoint": "checkpoints/seed_study/dlinear_ETTh1_h192_s2028.pt",
+  "checkpoint_sha256": "c6aa96bab4fc893a189b9d18cf230d2ee67c1b29549d14430744b25c7665195f",
+  "dataset": "ETTh1",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-30T21:35:43+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 4,
+    "best_val_mse": 0.86576530685922,
+    "diverged": false,
+    "epochs_run": 7,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.005,
+        "seconds": 3.2390383330057375,
+        "train_loss": 0.4581125226652198,
+        "val_mse": 0.9787761427001759
+      },
+      {
+        "epoch": 2,
+        "lr": 0.005,
+        "seconds": 3.3753810829948634,
+        "train_loss": 0.433438314161753,
+        "val_mse": 0.9841484992930427
+      },
+      {
+        "epoch": 3,
+        "lr": 0.0025,
+        "seconds": 3.344750624994049,
+        "train_loss": 0.4085444061181291,
+        "val_mse": 0.9683076661550426
+      },
+      {
+        "epoch": 4,
+        "lr": 0.00125,
+        "seconds": 3.963517166004749,
+        "train_loss": 0.39653600027909863,
+        "val_mse": 0.86576530685922
+      },
+      {
+        "epoch": 5,
+        "lr": 0.000625,
+        "seconds": 3.333803000015905,
+        "train_loss": 0.39014508978651447,
+        "val_mse": 0.8832142400641091
+      },
+      {
+        "epoch": 6,
+        "lr": 0.0003125,
+        "seconds": 2.605564041994512,
+        "train_loss": 0.3865511843809497,
+        "val_mse": 0.8866033141998781
+      },
+      {
+        "epoch": 7,
+        "lr": 0.00015625,
+        "seconds": 3.57050766699831,
+        "train_loss": 0.38466344343814923,
+        "val_mse": 0.883157496003183
+      }
+    ],
+    "train_seconds": 23.439681583986385
+  },
+  "horizon": 192,
+  "input_len": 336,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 129408,
+  "seed": 2028,
+  "tag": "",
+  "test": {
+    "mae": 0.4301947832221541,
+    "mae_drop_last": 0.4301762274147567,
+    "mse": 0.41993999618842104,
+    "mse_drop_last": 0.41989739000155274,
+    "n_samples": 2689,
+    "n_samples_drop_last": 2688
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.005,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.62841985806176,
+    "mae_drop_last": 0.6285236868796165,
+    "mse": 0.86576530685922,
+    "mse_drop_last": 0.8659784636648199,
+    "n_samples": 2689,
+    "n_samples_drop_last": 2688
+  }
+}

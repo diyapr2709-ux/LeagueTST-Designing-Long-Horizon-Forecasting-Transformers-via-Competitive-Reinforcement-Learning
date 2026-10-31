@@ -1,0 +1,92 @@
+{
+  "dataset": "ETTh1",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-29T18:25:14+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 4,
+    "best_val_mse": 0.6383317145606621,
+    "epochs_run": 7,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.005,
+        "seconds": 1.8027733330090996,
+        "train_loss": 0.4011076372116804,
+        "val_mse": 0.7165785310655065
+      },
+      {
+        "epoch": 2,
+        "lr": 0.005,
+        "seconds": 1.7735439159732778,
+        "train_loss": 0.37886405643075705,
+        "val_mse": 0.748308789270438
+      },
+      {
+        "epoch": 3,
+        "lr": 0.0025,
+        "seconds": 1.5030564589833375,
+        "train_loss": 0.3536524719092995,
+        "val_mse": 0.6620469032826358
+      },
+      {
+        "epoch": 4,
+        "lr": 0.00125,
+        "seconds": 1.2849126250075642,
+        "train_loss": 0.34396622295025736,
+        "val_mse": 0.6383317145606621
+      },
+      {
+        "epoch": 5,
+        "lr": 0.000625,
+        "seconds": 1.6601289160025772,
+        "train_loss": 0.3370504865888506,
+        "val_mse": 0.6730229559806491
+      },
+      {
+        "epoch": 6,
+        "lr": 0.0003125,
+        "seconds": 1.6095343750203028,
+        "train_loss": 0.3340172812459059,
+        "val_mse": 0.6607046303182847
+      },
+      {
+        "epoch": 7,
+        "lr": 0.00015625,
+        "seconds": 2.4429194169933908,
+        "train_loss": 0.3321173544973135,
+        "val_mse": 0.656904371585603
+      }
+    ],
+    "train_seconds": 12.081502666987944
+  },
+  "horizon": 96,
+  "input_len": 336,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 64704,
+  "seed": 2023,
+  "tag": "",
+  "test": {
+    "mae": 0.4230964300764354,
+    "mse": 0.39626854107890913,
+    "n_samples": 2785
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.005,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.5452324709077365,
+    "mse": 0.6383317145606621,
+    "n_samples": 2785
+  }
+}

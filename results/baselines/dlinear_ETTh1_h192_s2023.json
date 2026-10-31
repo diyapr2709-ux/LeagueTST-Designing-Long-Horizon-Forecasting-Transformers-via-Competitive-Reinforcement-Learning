@@ -1,0 +1,78 @@
+{
+  "checkpoint": "checkpoints/dlinear_ETTh1_h192_s2023.pt",
+  "dataset": "ETTh1",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-30T19:49:29+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 1,
+    "best_val_mse": 0.8715277670733104,
+    "epochs_run": 4,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.005,
+        "seconds": 1.3637468749948312,
+        "train_loss": 0.4604088354252073,
+        "val_mse": 0.8715277670733104
+      },
+      {
+        "epoch": 2,
+        "lr": 0.005,
+        "seconds": 1.5798792499990668,
+        "train_loss": 0.436460311587149,
+        "val_mse": 1.0241608196042982
+      },
+      {
+        "epoch": 3,
+        "lr": 0.0025,
+        "seconds": 1.4959300000045914,
+        "train_loss": 0.41001476105965173,
+        "val_mse": 0.8806718820534981
+      },
+      {
+        "epoch": 4,
+        "lr": 0.00125,
+        "seconds": 1.4244625419960357,
+        "train_loss": 0.3962169730144998,
+        "val_mse": 0.8870397622400072
+      }
+    ],
+    "train_seconds": 5.866253082989715
+  },
+  "horizon": 192,
+  "input_len": 336,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 129408,
+  "seed": 2023,
+  "tag": "",
+  "test": {
+    "mae": 0.4964526903551405,
+    "mae_drop_last": 0.496450988309724,
+    "mse": 0.4984379142248902,
+    "mse_drop_last": 0.49840990057776846,
+    "n_samples": 2689,
+    "n_samples_drop_last": 2688
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.005,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.6449722444551562,
+    "mae_drop_last": 0.6450529511164781,
+    "mse": 0.8715277670733104,
+    "mse_drop_last": 0.8717183103856722,
+    "n_samples": 2689,
+    "n_samples_drop_last": 2688
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "checkpoint": "checkpoints/dlinear_ETTh1_h720_s2023.pt",
+  "dataset": "ETTh1",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-30T19:50:57+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 3,
+    "best_val_mse": 1.2203709975950723,
+    "epochs_run": 6,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.005,
+        "seconds": 2.214186958997743,
+        "train_loss": 0.5902703257301186,
+        "val_mse": 1.2414759901629886
+      },
+      {
+        "epoch": 2,
+        "lr": 0.005,
+        "seconds": 2.1030889590037987,
+        "train_loss": 0.5713539689402037,
+        "val_mse": 1.2916598270153126
+      },
+      {
+        "epoch": 3,
+        "lr": 0.0025,
+        "seconds": 2.189436500018928,
+        "train_loss": 0.5395833779487932,
+        "val_mse": 1.2203709975950723
+      },
+      {
+        "epoch": 4,
+        "lr": 0.00125,
+        "seconds": 2.1656559169932734,
+        "train_loss": 0.5255901450094794,
+        "val_mse": 1.2625368897698417
+      },
+      {
+        "epoch": 5,
+        "lr": 0.000625,
+        "seconds": 2.106783750001341,
+        "train_loss": 0.5190491400942018,
+        "val_mse": 1.2513842534305468
+      },
+      {
+        "epoch": 6,
+        "lr": 0.0003125,
+        "seconds": 2.1227196250110865,
+        "train_loss": 0.5150042914388552,
+        "val_mse": 1.2289021874453412
+      }
+    ],
+    "train_seconds": 12.905909708992112
+  },
+  "horizon": 720,
+  "input_len": 336,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 485280,
+  "seed": 2023,
+  "tag": "",
+  "test": {
+    "mae": 0.5349728642661763,
+    "mae_drop_last": 0.5343742173137723,
+    "mse": 0.5359652728947142,
+    "mse_drop_last": 0.5350932618787124,
+    "n_samples": 2161,
+    "n_samples_drop_last": 2144
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.005,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.7626492183660617,
+    "mae_drop_last": 0.7636462820731359,
+    "mse": 1.2203709975950723,
+    "mse_drop_last": 1.2236181685495817,
+    "n_samples": 2161,
+    "n_samples_drop_last": 2144
+  }
+}

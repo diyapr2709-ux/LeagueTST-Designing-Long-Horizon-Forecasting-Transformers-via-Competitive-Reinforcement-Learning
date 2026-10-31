@@ -1,0 +1,94 @@
+{
+  "checkpoint": "checkpoints/seed_study/dlinear_ILI_h48_s2025.pt",
+  "checkpoint_sha256": "aad494e16d276c8d7e918d34edccb01b1dec1d3eb4ba5f8933e0e72e4ab42b25",
+  "dataset": "ILI",
+  "environment": {
+    "device": "cpu",
+    "finished_at": "2026-10-30T21:13:18+00:00",
+    "python": "3.12.13",
+    "torch": "2.15.0"
+  },
+  "fit": {
+    "best_epoch": 3,
+    "best_val_mse": 0.2503614364351545,
+    "diverged": false,
+    "epochs_run": 6,
+    "history": [
+      {
+        "epoch": 1,
+        "lr": 0.01,
+        "seconds": 0.07347145801759325,
+        "train_loss": 0.7171690799295902,
+        "val_mse": 0.34552577245803107
+      },
+      {
+        "epoch": 2,
+        "lr": 0.01,
+        "seconds": 0.05579016701085493,
+        "train_loss": 0.5552705768495798,
+        "val_mse": 0.2809509318215506
+      },
+      {
+        "epoch": 3,
+        "lr": 0.005,
+        "seconds": 0.07637487500323914,
+        "train_loss": 0.5096697825938463,
+        "val_mse": 0.2503614364351545
+      },
+      {
+        "epoch": 4,
+        "lr": 0.0025,
+        "seconds": 0.06039020902244374,
+        "train_loss": 0.4852555524557829,
+        "val_mse": 0.25653736500512986
+      },
+      {
+        "epoch": 5,
+        "lr": 0.00125,
+        "seconds": 0.06632837498909794,
+        "train_loss": 0.4854288939386606,
+        "val_mse": 0.25354047275724867
+      },
+      {
+        "epoch": 6,
+        "lr": 0.000625,
+        "seconds": 0.06325012500747107,
+        "train_loss": 0.4758954280987382,
+        "val_mse": 0.2553731237139021
+      }
+    ],
+    "train_seconds": 0.4002161659882404
+  },
+  "horizon": 48,
+  "input_len": 104,
+  "model": "dlinear",
+  "model_config": {
+    "kernel_size": 25
+  },
+  "n_params": 10080,
+  "seed": 2025,
+  "tag": "",
+  "test": {
+    "mae": 1.090669289182699,
+    "mae_drop_last": 1.0441395335254215,
+    "mse": 2.2837773140784736,
+    "mse_drop_last": 2.1556622201488134,
+    "n_samples": 146,
+    "n_samples_drop_last": 128
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 10,
+    "learning_rate": 0.01,
+    "lr_schedule": "type1",
+    "patience": 3
+  },
+  "val": {
+    "mae": 0.33746263231549944,
+    "mae_drop_last": 0.3056099947009768,
+    "mse": 0.2503614364351545,
+    "mse_drop_last": 0.19100975954816454,
+    "n_samples": 50,
+    "n_samples_drop_last": 32
+  }
+}
