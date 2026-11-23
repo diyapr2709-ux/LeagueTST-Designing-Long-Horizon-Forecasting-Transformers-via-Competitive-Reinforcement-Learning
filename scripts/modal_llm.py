@@ -154,10 +154,16 @@ def prompted(dataset: str = "ILI", seeds: int = 10, budget_eq: int = 100, anonym
 
 @app.local_entrypoint()
 def transfer(source: str = "ETTh1", target: str = "ILI", arms: str = "league:10,none:10,uniform:5", steps: int = 60,
-             budget_eq: int = 100, lr: float = 1e-4, beta: float = 0.04, item: str = "E4", model: str = MODEL):
-    """Train GRPO policies on ``source`` (one per arm and seed), then deploy each frozen on ``target``."""
-    src_rows, tgt_rows = _rows(source), _rows(target)
-    src_noise, tgt_noise = _noise(src_rows), _noise(tgt_rows)
+             budget_eq: int = 100, lr: float = 1e-4, beta: float = 0.04, item: str = "E4", model: str = MODEL,
+             deploy: bool = True):
+    """Train GRPO policies on ``source`` (one per arm and seed), then deploy each frozen on ``target``.
+
+    With ``--no-deploy`` only the training runs; ``deploy_saved`` deploys the saved adapters later.
+    """
+    src_rows = _rows(source)
+    tgt_rows = _rows(target) if deploy else []
+    src_noise = _noise(src_rows)
+    tgt_noise = _noise(tgt_rows) if deploy else 0.0
     train_jobs, search_jobs = [], []
     for arm_spec in arms.split(","):
         arm, count = arm_spec.split(":")
@@ -167,9 +173,28 @@ def transfer(source: str = "ETTh1", target: str = "ILI", arms: str = "league:10,
                                "steps": steps, "episode_budget": budget_eq * 30, "rivals": arm, "lr": lr, "beta": beta,
                                "model": model, "constrained": True, "noise_sd": src_noise, "run_name": run_name,
                                "out_dir": f"{RUNS}/{item}/adapters/{run_name}"})
-            search_jobs.append({"rows": tgt_rows, "dataset": target, "horizon": HORIZON[target], "budget": budget_eq * 30,
-                                "method": f"grpo_{arm}_from_{source}", "seeds": [s], "constrained": True, "model": model,
-                                "noise_sd": tgt_noise, "needs_adapter": run_name})
-    plan = {"item": item, "name": f"{target}_T{HORIZON[target]}", "train_jobs": train_jobs, "search_jobs": search_jobs}
+            if deploy:
+                search_jobs.append({"rows": tgt_rows, "dataset": target, "horizon": HORIZON[target], "budget": budget_eq * 30,
+                                    "method": f"grpo_{arm}_from_{source}", "seeds": [s], "constrained": True, "model": model,
+                                    "noise_sd": tgt_noise, "needs_adapter": run_name})
+    name = f"{target}_T{HORIZON[target]}" if deploy else f"train_{source}"
+    plan = {"item": item, "name": name, "train_jobs": train_jobs, "search_jobs": search_jobs}
     print(f"{len(train_jobs)} training runs on {source}, deployed on {target}")
+    print("results in", driver.remote(plan))
+
+
+@app.local_entrypoint()
+def deploy_saved(source: str = "ILI", target: str = "ETTh1", arms: str = "league:10,none:10,uniform:5", budget_eq: int = 100,
+                 item: str = "E4", model: str = MODEL):
+    """Deploy adapters already trained by ``transfer --no-deploy`` on ``target``."""
+    tgt_rows = _rows(target)
+    noise = _noise(tgt_rows)
+    jobs = []
+    for arm_spec in arms.split(","):
+        arm, count = arm_spec.split(":")
+        for s in range(int(count)):
+            jobs.append({"rows": tgt_rows, "dataset": target, "horizon": HORIZON[target], "budget": budget_eq * 30,
+                         "method": f"grpo_{arm}_from_{source}", "seeds": [s], "constrained": True, "model": model,
+                         "noise_sd": noise, "adapter": f"{RUNS}/{item}/adapters/grpo_{arm}_{source}_seed{100 + s}/adapter"})
+    plan = {"item": item, "name": f"{target}_T{HORIZON[target]}", "search_jobs": jobs}
     print("results in", driver.remote(plan))
