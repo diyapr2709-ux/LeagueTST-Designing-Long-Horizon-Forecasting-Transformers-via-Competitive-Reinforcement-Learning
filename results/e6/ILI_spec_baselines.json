@@ -1,0 +1,56 @@
+{
+  "dataset": "ILI",
+  "epochs": 100,
+  "patience": 100,
+  "note": "E6 arms that do not depend on search: PatchTST/42 at 10 seeds (A8) and the table's best config by 3-seed mean at 5 seeds (A7, A17).",
+  "arms": [
+    {
+      "name": "patchtst42",
+      "model_config": {
+        "patch_len": 24,
+        "stride": 2,
+        "n_layers": 3,
+        "n_heads": 4,
+        "d_model": 16,
+        "ff_ratio": 8,
+        "dropout": 0.3,
+        "instance_norm": true,
+        "channel_mode": "independent"
+      },
+      "seeds": [
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026,
+        2027,
+        2028,
+        2029,
+        2030
+      ]
+    },
+    {
+      "name": "table_best",
+      "config_id": "p24s12l4h4d16f1r3n1i",
+      "model_config": {
+        "channel_mode": "independent",
+        "d_model": 16,
+        "dropout": 0.3,
+        "ff_ratio": 1,
+        "instance_norm": true,
+        "n_heads": 4,
+        "n_layers": 4,
+        "patch_len": 24,
+        "stride": 12
+      },
+      "seeds": [
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ]
+    }
+  ]
+}
