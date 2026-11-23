@@ -91,9 +91,22 @@ class Table:
         """Pooled seed SD of best val MSE: the root mean within-config variance over configs with 2+ seeds.
 
         The median of 3-sample SDs runs about 17% below the true SD, so the
-        pooled value is the unit for regret.
+        pooled value is the unit for regret. When most configs have one seed
+        (ETTh1), the multi-seed configs were selected on that shared seed, so
+        it is left out of the variance to avoid inflating it (A20).
         """
-        variances = [np.var([o.best for o in seeds.values()], ddof=1) for seeds in self.obs.values() if len(seeds) >= 2]
+        multi = [seeds for seeds in self.obs.values() if len(seeds) >= 2]
+        if not multi:
+            return float("nan")
+        exclude = None
+        if len(multi) < len(self.obs) / 2:
+            shared = set.intersection(*(set(seeds) for seeds in self.obs.values()))
+            exclude = min(shared) if shared else None
+        variances = []
+        for seeds in multi:
+            values = [o.best for s, o in seeds.items() if s != exclude]
+            if len(values) >= 2:
+                variances.append(np.var(values, ddof=1))
         return float(np.sqrt(np.mean(variances))) if variances else float("nan")
 
     def heldout_value(self, cid: str, run_seed: int) -> tuple[float, bool]:
@@ -155,7 +168,8 @@ class Oracle:
         if self.noise_sd > 0 and len(seeds) == 1:
             # One-seed tables: add a fixed offset so the search sees seed noise.
             offset = noise_offset(self.seed, cid, self.noise_sd)
-            obs = Observation(tuple(max(v + offset, 1e-9) for v in obs.val_curve), obs.train_curve,
+            obs = Observation(tuple(max(v + offset, 1e-9) for v in obs.val_curve),
+                              tuple(max(v + offset, 1e-9) for v in obs.train_curve),
                               max(obs.best + offset, 1e-9), obs.epochs_run)
         return obs
 
@@ -489,11 +503,12 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
                 rewards.append(None if cid in seen else -math.log(oracle.full(cid)))
             baseline = [r for r in rewards if r is not None]
             if rivals in ("league", "uniform") and seen:
-                pool = list(oracle.full_values)[-RIVAL_POOL:]  # most recently evaluated (A19)
+                # Configs evaluated before this step only, most recent last (A19, A20).
+                pool = [c for c in oracle.full_values if c in seen][-RIVAL_POOL:]
                 if rivals == "league":
                     snap = snapshots[rng.integers(len(snapshots))]
-                    weights = np.array([sampler.probability(snap, c) for c in pool])
-                    weights = weights / weights.sum() if weights.sum() > 0 else None
+                    weights = np.array([sampler.probability(snap, c) for c in pool]) + 1e-12
+                    weights = weights / weights.sum()
                 else:
                     weights = None
                 picks = rng.choice(len(pool), size=min(n_rivals, len(pool)), replace=False, p=weights)
@@ -607,17 +622,27 @@ def load_runs(runs_dir: Path) -> list[dict[str, Any]]:
     return runs
 
 
-def claim_values(table: Table, runs_dir: Path, method: str, baseline: str, budget_eq: int) -> tuple[list[float], list[float]]:
-    """Per-search-seed regrets in seed-SD units of ``method`` and ``baseline`` at one budget."""
+def run_metric(run: dict[str, Any], table: Table, metric: str | int, fallback: float, sigma: float) -> float:
+    """Held-out regret in seed-SD units at a budget (an int, in full-run equivalents) or its AUC ("auc")."""
+    seed = int(run["seed"])
+    if metric == "auc":
+        grid = range(FULL_RUN_EPOCHS, 100 * FULL_RUN_EPOCHS + 1, FULL_RUN_EPOCHS)
+        return float(np.mean([regret_from_trace(run["trace"], table, g, fallback, seed)[0] for g in grid]) / sigma)
+    return regret_from_trace(run["trace"], table, int(metric) * FULL_RUN_EPOCHS, fallback, seed)[0] / sigma
+
+
+def claim_values(table: Table, runs_dir: Path | list[Path], method: str, baseline: str,
+                 metric: str | int) -> tuple[list[float], list[float]]:
+    """Per-search-seed values of ``method`` and ``baseline`` (held-out regret at a budget, or AUC)."""
     sigma = table.seed_sd()
     fallback = no_incumbent_value(table)
-    runs = load_runs(runs_dir)
+    dirs = runs_dir if isinstance(runs_dir, list) else [runs_dir]
+    runs = [r for d in dirs for r in load_runs(d)]
 
     def values(name: str) -> list[float]:
         chosen = sorted((r for r in runs if r["method"] == name), key=lambda r: r["seed"])
         if not chosen:
             raise ValueError(f"no runs for {name}")
-        return [regret_from_trace(r["trace"], table, budget_eq * FULL_RUN_EPOCHS, fallback, int(r["seed"]))[0] / sigma
-                for r in chosen]
+        return [run_metric(r, table, metric, fallback, sigma) for r in chosen]
 
     return values(method), values(baseline)

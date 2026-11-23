@@ -134,7 +134,8 @@ def g4(item: str) -> tuple[bool, str]:
             tables[key] = Table([r for r in read_rows(LEDGER) if r["item"] == key[0] and r["dataset"] == key[1]
                                  and int(r["horizon"]) == key[2]])
         try:
-            a, b = claim_values(tables[key], ROOT / source["runs_dir"], source["method"], source["baseline"], int(source["budget"]))
+            metric = source.get("metric", source.get("budget"))
+            a, b = claim_values(tables[key], ROOT / source["runs_dir"], source["method"], source["baseline"], metric)
         except (KeyError, ValueError, FileNotFoundError) as error:
             problems.append(f"{claim['name']}: cannot recompute ({error})")
             continue
@@ -146,14 +147,18 @@ def g4(item: str) -> tuple[bool, str]:
             continue
         p_values[claim["name"]] = permutation_test(a, b)["p"]
         claim["_diff"] = float(np.mean(a) - np.mean(b))
-    rejected = holm(p_values) if p_values else {}
+    rejected = {}
+    for family in {c.get("family", "default") for c in claims}:
+        members = {c["name"]: p_values[c["name"]] for c in claims if c.get("family", "default") == family and c["name"] in p_values}
+        if members:
+            rejected.update(holm(members))
     for claim in claims:
         if claim.get("claims_win") and claim["name"] in p_values:
             better = claim["_diff"] < 0 if claim.get("lower_is_better", True) else claim["_diff"] > 0
             if not (rejected[claim["name"]] and better):
                 problems.append(f"{claim['name']}: win not supported (diff {claim['_diff']:+.4g}, p {p_values[claim['name']]:.3g})")
     wins = sum(bool(c.get("claims_win")) for c in claims)
-    return (not problems), ("; ".join(problems[:5]) if problems else f"{len(claims)} comparisons recomputed from source; {wins} claimed wins hold after Holm")
+    return (not problems), ("; ".join(problems[:5]) if problems else f"{len(claims)} comparisons recomputed from source; {wins} claimed wins hold after Holm within each family")
 
 
 def g5(item: str) -> tuple[bool, str]:

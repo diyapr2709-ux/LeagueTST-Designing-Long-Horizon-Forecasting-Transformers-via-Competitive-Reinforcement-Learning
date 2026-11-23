@@ -69,6 +69,13 @@ def observation_noise(table: Table) -> float:
     return table.seed_sd() if single > 0.5 else 0.0
 
 
+def make_claim(table: Table, out_dir: Path, name: str, method: str, baseline: str, metric, family: str, source: dict) -> dict:
+    a, b = claim_values(table, out_dir, method, baseline, metric)
+    return {"name": name, "family": family, "a_values": a, "b_values": b, "lower_is_better": True,
+            "p": permutation_test(np.array(a), np.array(b))["p"],
+            "source": {**source, "method": method, "baseline": baseline, "metric": metric}}
+
+
 def run_cpu_methods(table: Table, space: Space, methods: list[str], seeds: int, out_dir: Path, k: int,
                     extra: dict | None = None, filename: str = "cpu_runs.jsonl") -> None:
     max_budget = BUDGETS[-1] * FULL_RUN_EPOCHS
@@ -143,22 +150,40 @@ def summarize(table: Table, space: Space, out_dir: Path, item: str, table_item: 
     (out_dir / "summary.md").write_text("\n".join(lines) + "\n")
 
     claims = []
-    if "random" in by_method:
-        for method, group in by_method.items():
-            if method == "random":
-                continue
-            for b in HEADLINE:
-                a, r_ = claim_values(table, out_dir, method, "random", b)
-                claims.append({"name": f"{dataset} T{horizon} {method} vs random @{b}", "a_values": a, "b_values": r_,
-                               "p": permutation_test(np.array(a), np.array(r_))["p"], "lower_is_better": True,
-                               "source": {"runs_dir": str(out_dir.relative_to(ROOT)), "method": method, "baseline": "random",
-                                          "budget": b, "table_item": table_item, "dataset": dataset, "horizon": horizon}})
+    in_sample = observation_noise(table) > 0 or any(not all(r["heldout"].values()) for r in runs)
+    if in_sample:
+        # ETTh1: regret is in-sample for one-seed configs, so no claim is written here;
+        # ETTh1 comparisons come from the pick reseeds only (A18).
+        lines.append("")
+        lines.append("No claims from this table: incumbents are scored in-sample; see the pick reseeds.")
+    else:
+        source = {"runs_dir": str(out_dir.relative_to(ROOT)), "table_item": table_item, "dataset": dataset, "horizon": horizon}
+        if item == "E3" and "random" in by_method:
+            for method in by_method:
+                if method == "random":
+                    continue
+                for b in HEADLINE:
+                    claims.append(make_claim(table, out_dir, f"{dataset} T{horizon} {method} vs random @{b}", method, "random",
+                                             b, "E3 vs random", source))
+        if item == "E4":
+            for league in [m for m in by_method if m.startswith("grpo_league_from_")]:
+                origin = league.split("_from_")[1]
+                families = {"E4 family 1 transfer": [f"portfolio_from_{origin}", f"tpe_warm_from_{origin}"],
+                            "E4 family 2 league": [f"grpo_none_from_{origin}", f"grpo_uniform_from_{origin}"]}
+                for family, baselines in families.items():
+                    for baseline in baselines:
+                        if baseline in by_method:
+                            claims.append(make_claim(table, out_dir, f"{dataset} T{horizon} {league} vs {baseline} AUC", league,
+                                                     baseline, "auc", family, source))
+    if claims:
         claims_path = ROOT / "docs" / "claims" / f"{item}.json"
         existing = json.loads(claims_path.read_text())["claims"] if claims_path.exists() else []
         merged = [c for c in existing if not c["name"].startswith(f"{dataset} T{horizon} ")] + claims
-        rejected = holm({c["name"]: c["p"] for c in merged})
-        for claim in merged:
-            claim["claims_win"] = bool(rejected[claim["name"]] and np.mean(claim["a_values"]) < np.mean(claim["b_values"]))
+        for family in {c["family"] for c in merged}:
+            members = [c for c in merged if c["family"] == family]
+            rejected = holm({c["name"]: c["p"] for c in members})
+            for claim in members:
+                claim["claims_win"] = bool(rejected[claim["name"]] and np.mean(claim["a_values"]) < np.mean(claim["b_values"]))
         claims_path.parent.mkdir(parents=True, exist_ok=True)
         claims_path.write_text(json.dumps({"claims": merged}, indent=1) + "\n")
     return "\n".join(lines)

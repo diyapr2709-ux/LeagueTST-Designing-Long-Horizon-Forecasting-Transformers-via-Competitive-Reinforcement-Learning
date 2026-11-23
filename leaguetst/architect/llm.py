@@ -56,7 +56,22 @@ def prompt_ids(tok, messages):
     return tok(text, return_tensors="pt")["input_ids"][0].to("cuda")
 
 
-def generate(tok, model, messages, n: int, temperature: float, trie: ConfigTrie | None, max_new_tokens: int = 112):
+def sampling_config(tok, temperature: float, max_new_tokens: int):
+    """Plain ancestral sampling: no top-k, top-p or repetition penalty.
+
+    Built from scratch so the model's own generation_config.json (which for
+    Qwen2.5-Instruct sets repetition_penalty 1.1, top_k 20, top_p 0.8) cannot
+    change the distribution GRPO scores (amendment A20).
+    """
+    from transformers import GenerationConfig
+
+    end_id = tok.convert_tokens_to_ids(END_TOKEN)
+    return GenerationConfig(do_sample=True, temperature=temperature, top_k=0, top_p=1.0, repetition_penalty=1.0,
+                            max_new_tokens=max_new_tokens, eos_token_id=[end_id], pad_token_id=tok.pad_token_id)
+
+
+def generate(tok, model, messages, n: int, temperature: float, trie: ConfigTrie | None, max_new_tokens: int = 112,
+             return_scores: bool = False):
     import torch
 
     ids = prompt_ids(tok, messages)
@@ -66,10 +81,16 @@ def generate(tok, model, messages, n: int, temperature: float, trie: ConfigTrie 
         kwargs["prefix_allowed_tokens_fn"] = lambda batch_id, sent: trie.allowed(sent[length:].tolist())
     with torch.no_grad():
         out = model.generate(input_ids=ids.unsqueeze(0).repeat(n, 1), attention_mask=torch.ones(n, length, device="cuda", dtype=torch.long),
-                             do_sample=True, temperature=temperature, top_p=1.0, max_new_tokens=max_new_tokens,
-                             pad_token_id=tok.pad_token_id, **kwargs)
-    completions = out[:, length:]
-    return ids, completions, tok.batch_decode(completions, skip_special_tokens=True)
+                             generation_config=sampling_config(tok, temperature, max_new_tokens),
+                             output_scores=return_scores, return_dict_in_generate=True, **kwargs)
+    completions = out.sequences[:, length:]
+    texts = tok.batch_decode(completions, skip_special_tokens=True)
+    if not return_scores:
+        return ids, completions, texts
+    # Log-probability of each sampled token under the processed scores the sampler drew from.
+    steps = torch.stack(out.scores, dim=1).float().log_softmax(dim=-1)
+    sampled = steps.gather(-1, completions[:, : steps.shape[1]].unsqueeze(-1)).squeeze(-1)
+    return ids, completions, texts, sampled
 
 
 def sequence_logp(net, tok, ids, completions, trie: ConfigTrie | None, with_grad: bool):
@@ -138,7 +159,8 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
     base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     base.enable_input_require_grads()
     base.config.use_cache = False
-    lora = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, task_type="CAUSAL_LM",
+    # No LoRA dropout: the update must score the same network that sampled (A20).
+    lora = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.0, task_type="CAUSAL_LM",
                       target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"])
     model = get_peft_model(base, lora)
     rivals = job.get("rivals", "none")
@@ -165,7 +187,7 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
         torch.cuda.reset_peak_memory_stats()
         messages = build_messages(dataset, horizon, space, list(history.items()), anonymous)
         model.eval()
-        ids, completions, texts = generate(tok, model, messages, group, 1.0, trie)
+        ids, completions, texts, sampled_logp = generate(tok, model, messages, group, 1.0, trie, return_scores=True)
         log = EpisodeLog()
         spent_before = oracle.spent
         try:
@@ -184,17 +206,20 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
                 set_peft_model_state_dict(model, snapshots[int(rng.integers(len(snapshots)))], adapter_name="rival")
                 model.set_adapter("rival")
                 scores = []
-                for first in range(0, len(pool), 16):
-                    chunk = pool[first:first + 16]
-                    encoded = [tok.encode(canonical_text(space.choices[c], anonymous), add_special_tokens=False)
-                               + [tok.convert_tokens_to_ids(END_TOKEN)] for c in chunk]
-                    width = max(len(e) for e in encoded)
-                    padded = torch.tensor([e + [tok.pad_token_id] * (width - len(e)) for e in encoded], device="cuda")
-                    logp, mask = sequence_logp(model, tok, ids, padded, trie, with_grad=False)
-                    scores += (logp * mask).sum(dim=1).tolist()
-                model.set_adapter("default")
+                try:
+                    for first in range(0, len(pool), 16):
+                        chunk = pool[first:first + 16]
+                        encoded = [tok.encode(canonical_text(space.choices[c], anonymous), add_special_tokens=False)
+                                   + [tok.convert_tokens_to_ids(END_TOKEN)] for c in chunk]
+                        width = max(len(e) for e in encoded)
+                        padded = torch.tensor([e + [tok.pad_token_id] * (width - len(e)) for e in encoded], device="cuda")
+                        rival_logp, rival_mask = sequence_logp(model, tok, ids, padded, trie, with_grad=False)
+                        scores += (rival_logp * rival_mask).sum(dim=1).tolist()
+                finally:
+                    model.set_adapter("default")
                 weights = np.exp(np.array(scores) - max(scores))
-                weights /= weights.sum()
+                # Keep every pool member drawable so sampling without replacement cannot fail.
+                weights = (weights + 1e-12) / (weights + 1e-12).sum()
             else:
                 weights = None
             picks = rng.choice(len(pool), size=min(n_rivals, len(pool)), replace=False, p=weights)
@@ -208,6 +233,11 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
 
         model.train()
         logp, mask = sequence_logp(model, tok, ids, completions, trie, with_grad=True)
+        # On-policy check: the scored log-probabilities must match the sampler's.
+        width = min(sampled_logp.shape[1], logp.shape[1])
+        onpolicy_gap = float(((logp[:, :width].detach() - sampled_logp[:, :width]).abs() * mask[:, :width]).max())
+        if onpolicy_gap > 0.25:
+            raise RuntimeError(f"sampled and scored log-probabilities differ by {onpolicy_gap:.3f}")
         with model.disable_adapter():
             ref_logp, _ = sequence_logp(model, tok, ids, completions, trie, with_grad=False)
         delta = (ref_logp - logp).clamp(-20, 20)
@@ -224,7 +254,8 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
                      "reward_mean": float(np.mean(valid)) if valid else None, "invalid_rate": log.invalid / group,
                      "repaired_rate": log.repaired / group, "repeat_rate": log.repeats / group,
                      "unique_rate": len({c for c in cids if c}) / group, "rivals": len(rival_rewards),
-                     "best_in_history": min(history.values()) if history else None, "seconds": time.time() - start,
+                     "best_in_history": min(history.values()) if history else None, "onpolicy_gap": onpolicy_gap,
+                     "seconds": time.time() - start,
                      "peak_gb": torch.cuda.max_memory_allocated() / 2**30, "training_epochs": training_epochs})
         print({k: (round(v, 4) if isinstance(v, float) else v) for k, v in rows[-1].items()}, flush=True)
         if step % int(job.get("snapshot_every", 5)) == 0:

@@ -69,3 +69,36 @@ A GRPO smoke test with 40-equivalent episodes showed step time growing from
 snapshot. Both free-rival arms (league and uniform), in the LLM and in the
 CPU controller, now draw from the 32 configs evaluated most recently in the
 episode. Nothing else changes.
+
+## Amendment A20 (2026-11-23 18:45, before any E4 endpoint)
+
+The verifier found that generation inherited Qwen2.5-Instruct's
+generation_config.json (repetition_penalty 1.1, top_k 20), so the sampled
+distribution differed from the one GRPO scored, and LoRA dropout made the
+update score a different network. The first ILI training run (about five
+steps per policy, no deployment) and the first prompted-Qwen ILI run were
+made under that sampler; both are discarded and rerun.
+
+* Sampling uses an explicit configuration: temperature 1.0, top_k 0, top_p
+  1.0, repetition penalty 1.0, stopping at the end-of-turn token. Every
+  GRPO step checks that the scored log-probabilities match the sampler's
+  (largest gap logged; a gap above 0.25 stops the run).
+* LoRA dropout is 0.
+* The controller's free rivals come only from configs evaluated before the
+  current step, as in the LLM.
+* Family 1 and family 2 are tested on AUC with Holm within each family; G4
+  recomputes them from the runs files. Tests stay two-sample (not paired),
+  as registered.
+* ETTh1's pooled seed SD leaves out seed 2021, on which its multi-seed
+  configs were selected; ETTh1 replays write no claims (A18).
+
+Code digests after A20:
+
+```
+leaguetst/architect/prompt.py: c4297c7aabd47db3379c18f91dd53cf84bcaae14e9a35f3032ea2f6c026beca3
+leaguetst/architect/constrained.py: 37ddedaf91b98bf3d5aad3712e9df0d04a1a1eda1f2cd2b55bdeae3ae923cb9a
+leaguetst/architect/episode.py: c387b058dfeb9f3238c2c3d96c06cc42cdeadc7960e8eed2c9558fb7798832b2
+leaguetst/architect/llm.py: 7a99cdefa1806cdd32abddbe34bd62ccd40c404482ecef033b71effecd5af392
+leaguetst/search/replay.py: fb121a89f6fcc9c378388aa0b71b7d4ae7e08e5c271756d15e8b0b28c73a522e
+scripts/replay.py: 8be98e21f611520f74b26d332e736d89fd874edcda1d936917bf409c26537265
+```
