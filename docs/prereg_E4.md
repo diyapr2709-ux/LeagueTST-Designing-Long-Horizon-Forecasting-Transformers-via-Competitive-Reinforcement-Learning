@@ -102,3 +102,10 @@ leaguetst/architect/llm.py: 7a99cdefa1806cdd32abddbe34bd62ccd40c404482ecef033b71
 leaguetst/search/replay.py: fb121a89f6fcc9c378388aa0b71b7d4ae7e08e5c271756d15e8b0b28c73a522e
 scripts/replay.py: 8be98e21f611520f74b26d332e736d89fd874edcda1d936917bf409c26537265
 ```
+
+## Amendment A21 (2026-11-23 18:52, before any E4 endpoint)
+
+The on-policy check of A20 returned NaN (padding after the end-of-turn
+token has -inf scores, and -inf times a zero mask is NaN), so it could not
+fire. It now ignores padded positions. Sampling and training are unchanged;
+a separate three-step job measures the gap for the record.

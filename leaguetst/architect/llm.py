@@ -235,7 +235,10 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
         logp, mask = sequence_logp(model, tok, ids, completions, trie, with_grad=True)
         # On-policy check: the scored log-probabilities must match the sampler's.
         width = min(sampled_logp.shape[1], logp.shape[1])
-        onpolicy_gap = float(((logp[:, :width].detach() - sampled_logp[:, :width]).abs() * mask[:, :width]).max())
+        diff = (logp[:, :width].detach() - sampled_logp[:, :width]).abs()
+        # Positions after the end-of-turn token are padding with -inf scores; leave them out.
+        diff = torch.where(mask[:, :width] > 0, diff, torch.zeros_like(diff))
+        onpolicy_gap = float(diff.max())
         if onpolicy_gap > 0.25:
             raise RuntimeError(f"sampled and scored log-probabilities differ by {onpolicy_gap:.3f}")
         with model.disable_adapter():
