@@ -52,7 +52,7 @@ def build_messages(dataset: str, horizon: int, space: Space, history: list[tuple
         f"It reads the last {INPUT_LEN[dataset]} steps and forecasts the next {horizon}. "
         f"It is trained with a fixed recipe and scored by validation MSE (lower is better). "
         f"Its parameter count must stay at or below {BUDGETS[(dataset, horizon)]:,}; "
-        f"configurations over the cap are rejected."
+        f"a configuration over the cap is replaced by the nearest one that fits before it is trained."
     )
     lines = [task, "", "Choose one value for every field:", *fields, ""]
     if history:
@@ -73,8 +73,8 @@ def build_messages(dataset: str, horizon: int, space: Space, history: list[tuple
     ]
 
 
-def parse_proposal(text: str, space: Space, anonymous: bool = False) -> tuple[str | None, str]:
-    """Config id of the first JSON object in ``text``, or None with the reason."""
+def parse_choice(text: str, space: Space, anonymous: bool = False) -> tuple[dict[str, Any] | None, str]:
+    """The field values of the first JSON object in ``text``, or None with the reason."""
     match = re.search(r"\{.*?\}", text, flags=re.S)
     if not match:
         return None, "no json"
@@ -106,6 +106,14 @@ def parse_proposal(text: str, space: Space, anonymous: bool = False) -> tuple[st
         if value not in allowed:
             return None, f"{key} out of range"
         choice[field] = value
+    return choice, "ok"
+
+
+def parse_proposal(text: str, space: Space, anonymous: bool = False) -> tuple[str | None, str]:
+    """Config id of the first JSON object in ``text``, or None with the reason."""
+    choice, reason = parse_choice(text, space, anonymous)
+    if choice is None:
+        return None, reason
     cid = space.to_id(choice)
     if cid is None:
         return None, "over the cap"

@@ -107,6 +107,6 @@ def test_diverged_rows_rank_last_and_do_not_break_methods():
     table = Table(rows)
     space = Space(table.ids)
     assert table.n_diverged > 0 and np.isfinite(table.best_true)
-    for method in ("referee3", "pg", "pg_league", "asha", "epochk3"):
+    for method in ("referee", "pg", "pg_league", "asha", "epochk"):
         oracle = run_method(METHODS[method](), table, space, 1500, seed=2)
         assert oracle.spent > 0 and all(np.isfinite(v) for v in oracle.full_values.values())

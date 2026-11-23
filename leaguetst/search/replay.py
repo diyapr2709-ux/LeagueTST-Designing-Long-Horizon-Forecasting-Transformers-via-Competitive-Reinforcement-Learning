@@ -462,16 +462,18 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
     return run
 
 
-METHODS: dict[str, Callable[[], Callable[[Oracle, Space, np.random.Generator], None]]] = {
-    "random": lambda: random_search,
-    "re": lambda: regularized_evolution(),
-    "tpe": lambda: tpe(),
-    "asha": lambda: asha(),
-    "epochk3": lambda: screened_search(k=3, use_referee=False),
-    "referee3": lambda: screened_search(k=3, use_referee=True),
-    "pg": lambda: factorized_controller(rivals="none"),
-    "pg_league": lambda: factorized_controller(rivals="league"),
-    "pg_random_rivals": lambda: factorized_controller(rivals="random"),
+# Each factory takes the screening epoch k chosen in E2 (used by the
+# screened methods only).
+METHODS: dict[str, Callable[..., Callable[[Oracle, Space, np.random.Generator], None]]] = {
+    "random": lambda k=1: random_search,
+    "re": lambda k=1: regularized_evolution(),
+    "tpe": lambda k=1: tpe(),
+    "asha": lambda k=1: asha(),
+    "epochk": lambda k=1: screened_search(k=k, use_referee=False),
+    "referee": lambda k=1: screened_search(k=k, use_referee=True),
+    "pg": lambda k=1: factorized_controller(rivals="none"),
+    "pg_league": lambda k=1: factorized_controller(rivals="league"),
+    "pg_random_rivals": lambda k=1: factorized_controller(rivals="random"),
 }
 
 

@@ -55,15 +55,15 @@ def bootstrap_mean(values: np.ndarray, n: int = 4000, seed: int = 0) -> tuple[fl
     return float(np.quantile(means, 0.025)), float(np.quantile(means, 0.975))
 
 
-def run_cpu_methods(table: Table, space: Space, methods: list[str], seeds: int, out_dir: Path) -> None:
+def run_cpu_methods(table: Table, space: Space, methods: list[str], seeds: int, out_dir: Path, k: int) -> None:
     max_budget = BUDGETS[-1] * FULL_RUN_EPOCHS
     path = out_dir / "cpu_runs.jsonl"
     with open(path, "w", encoding="utf-8") as handle:
         for method in methods:
             start = time.time()
             for seed in range(seeds):
-                oracle = run_method(METHODS[method](), table, space, max_budget, seed)
-                handle.write(json.dumps({"method": method, "seed": seed, "spent": oracle.spent, "lookups": len(oracle.charged),
+                oracle = run_method(METHODS[method](k=k), table, space, max_budget, seed)
+                handle.write(json.dumps({"method": method, "seed": seed, "k": k, "spent": oracle.spent, "lookups": len(oracle.charged),
                                          "trace": oracle.trace, "charges": [list(c) for c in oracle.charges]}) + "\n")
             print(f"{method:18s} {seeds} seeds in {time.time() - start:.1f}s", flush=True)
 
@@ -149,6 +149,7 @@ def main() -> int:
     parser.add_argument("--horizon", type=int, required=True)
     parser.add_argument("--methods", nargs="+", default=list(METHODS))
     parser.add_argument("--seeds", type=int, default=30)
+    parser.add_argument("--k", type=int, help="screening epoch; defaults to E2's choice in results/fidelity")
     parser.add_argument("--summarize-only", action="store_true", help="recompute summaries from the runs files")
     parser.add_argument("--ledger", default=str(ROOT / "results" / "ledger.jsonl"))
     parser.add_argument("--out", default=str(ROOT / "results" / "search"))
@@ -164,7 +165,10 @@ def main() -> int:
     out_dir = Path(args.out) / args.item / f"{args.dataset}_T{args.horizon}"
     out_dir.mkdir(parents=True, exist_ok=True)
     if not args.summarize_only:
-        run_cpu_methods(table, space, args.methods, args.seeds, out_dir)
+        k = args.k
+        if k is None:
+            k = json.loads((ROOT / "results" / "fidelity" / f"{args.dataset}_T{args.horizon}.json").read_text())["chosen_k"]
+        run_cpu_methods(table, space, args.methods, args.seeds, out_dir, k)
     print(summarize(table, space, out_dir, args.item, args.table, args.dataset, args.horizon))
     return 0
 

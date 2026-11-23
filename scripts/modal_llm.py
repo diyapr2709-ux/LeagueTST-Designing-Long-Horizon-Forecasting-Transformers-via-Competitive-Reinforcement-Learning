@@ -32,7 +32,8 @@ image = (
     modal.Image.debian_slim(python_version="3.12")
     .pip_install("torch==2.15.0", "numpy==2.5.4", "pandas==3.1.0", "PyYAML==6.0.3", "scipy", "scikit-learn",
                  "transformers", "peft", "accelerate")
-    .env({"PYTHONUNBUFFERED": "1", "HF_HOME": HF, "TOKENIZERS_PARALLELISM": "false"})
+    .env({"PYTHONUNBUFFERED": "1", "HF_HOME": HF, "TOKENIZERS_PARALLELISM": "false",
+          "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_python_source("leaguetst")
     .add_local_dir(ROOT / "configs", "/root/configs")
 )
@@ -70,7 +71,7 @@ def _generate(tok, model, messages, n: int, temperature: float, max_new_tokens: 
 def _search_record(method, seed, oracle, log, budgets_epochs):
     return {"method": method, "seed": seed, "spent": oracle.spent, "lookups": len(oracle.charged), "trace": oracle.trace,
             "charges": [list(c) for c in oracle.charges], "steps": log.steps, "proposals": log.proposals,
-            "invalid": log.invalid, "repeats": log.repeats, "reasons": log.reasons}
+            "invalid": log.invalid, "repaired": log.repaired, "repeats": log.repeats, "reasons": log.reasons}
 
 
 @app.function(image=image, volumes=VOLUMES, gpu=GPU, cpu=4, memory=32768, timeout=6 * 3600,
@@ -129,6 +130,9 @@ def grpo_train(job: dict) -> dict:
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     tok, base = _load(job.get("model", MODEL))
+    base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+    base.enable_input_require_grads()
+    base.config.use_cache = False
     lora = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, task_type="CAUSAL_LM",
                       target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"])
     model = get_peft_model(base, lora)
@@ -167,8 +171,8 @@ def grpo_train(job: dict) -> dict:
         log = EpisodeLog()
         spent_before = oracle.spent
         try:
-            rewards, ids = score_group(oracle, space, texts, history, anonymous, log)
-            rival_rewards, _ = score_group(oracle, space, rival_texts, history, anonymous, EpisodeLog())
+            rewards, ids = score_group(oracle, space, texts, history, anonymous, log, rng)
+            rival_rewards, _ = score_group(oracle, space, rival_texts, history, anonymous, EpisodeLog(), rng)
             rival_rewards = [r for r in rival_rewards if r is not None]
             rival_rewards += [-math.log(oracle.full(c)) for c in rival_ids if c not in history]
         except BudgetExhausted:
@@ -190,11 +194,16 @@ def grpo_train(job: dict) -> dict:
         full = torch.cat([prompt_ids.unsqueeze(0).repeat(group, 1), completions], dim=1)
         mask = (completions != tok.pad_token_id).float()
         attention = torch.cat([torch.ones(group, prompt_ids.shape[0], device="cuda"), mask], dim=1)
-        logits = model(input_ids=full, attention_mask=attention).logits[:, prompt_ids.shape[0] - 1:-1].float()
-        logp = torch.log_softmax(logits, dim=-1).gather(-1, completions.unsqueeze(-1)).squeeze(-1)
+        keep = completions.shape[1] + 1  # logits only for the positions that predict completion tokens
+
+        def token_logp(net) -> torch.Tensor:
+            logits = net(input_ids=full, attention_mask=attention, logits_to_keep=keep).logits[:, :-1].float()
+            chosen = logits.gather(-1, completions.unsqueeze(-1)).squeeze(-1)
+            return chosen - torch.logsumexp(logits, dim=-1)
+
+        logp = token_logp(model)
         with torch.no_grad(), model.disable_adapter():
-            ref_logits = model(input_ids=full, attention_mask=attention).logits[:, prompt_ids.shape[0] - 1:-1].float()
-            ref_logp = torch.log_softmax(ref_logits, dim=-1).gather(-1, completions.unsqueeze(-1)).squeeze(-1)
+            ref_logp = token_logp(model)
         delta = ref_logp - logp
         kl = torch.exp(delta) - delta - 1.0
         per_token = -(advantages.unsqueeze(1) * logp) + beta * kl
@@ -207,7 +216,8 @@ def grpo_train(job: dict) -> dict:
         valid_ids = [c for c, r in zip(ids, rewards) if r is not None]
         row = {"step": step, "episode": episodes, "loss": float(loss), "kl": float((kl * mask).sum() / mask.sum()),
                "reward_mean": float(np.mean([r for r in rewards if r is not None])) if valid_ids else None,
-               "invalid_rate": log.invalid / group, "repeat_rate": log.repeats / group,
+               "invalid_rate": log.invalid / group, "repaired_rate": log.repaired / group, "repeat_rate": log.repeats / group,
+               "reasons": log.reasons, "sample": texts[0][:200] if step in (1, 10) else None,
                "unique_rate": len(set(c for c in ids if c is not None)) / group,
                "best_in_history": min(history.values()) if history else None, "seconds": time.time() - start,
                "peak_gb": torch.cuda.max_memory_allocated() / 2**30, "training_epochs": training_epochs}
