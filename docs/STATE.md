@@ -2,6 +2,28 @@
 
 Updated by every loop iteration. Newest first.
 
+## 2026-11-23, late evening
+
+* E1 ETTh1 T=336 seed 2021 complete (2,368 configs); top-100 reseeds and the
+  E6 PatchTST/42 arm are running on diya-027.
+* The two tables disagree: Spearman between the ETTh1 and ILI rankings is
+  -0.21, their top-237 sets share no config, ILI's best config ranks 2,157
+  on ETTh1 and ETTh1's best ranks 1,828 on ILI. A source-table portfolio
+  should transfer badly; the transfer test therefore asks whether a learned
+  policy carries search behaviour rather than config preferences.
+* ETTh1 E2: epoch-k ranking is useless at k=1 and 2 (tau -0.06) and weak at
+  k=3 (0.28); the referee reaches 0.85; k = 3.
+* ETTh1 E8 (one seed): instance normalisation explains 83% of the table's
+  variance; without RevIN validation MSE is 1.106, with it 1.166. Risk
+  recorded before any test evaluation: DLinear (no RevIN) also had lower
+  validation but higher test MSE than PatchTST/42, so validation selection
+  on ETTh1 may favour configs that do worse on the test months. The
+  registered validation-to-test rank check over the E3b configs measures
+  this. 32% of ETTh1 runs had their best epoch at the 30-epoch cap.
+* A20 fixed an off-policy sampler (Qwen's default repetition penalty) found
+  by the verifier; the affected LLM runs were discarded before any E4
+  endpoint and rerun.
+
 ## 2026-11-23, evening
 
 * K5 passed. On Modal, PatchTST/42's validation MSE is within 1 seed SD of
