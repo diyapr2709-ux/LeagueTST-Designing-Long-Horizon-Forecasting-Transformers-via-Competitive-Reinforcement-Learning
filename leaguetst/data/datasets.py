@@ -215,6 +215,10 @@ def build_splits(
     split. It is returned so that callers can undo the scaling if needed.
     """
     spec = BENCHMARKS[name]
+    if (Path(data_dir) / "MANIFEST.json").exists():
+        # A trainval copy is shorter than the full file, so borders computed
+        # from its length would be wrong (silently so for ILI).
+        raise ValueError(f"{data_dir} is a trainval copy; use leaguetst.data.trainval.build_trainval_splits")
     frame = load_benchmark_frame(data_dir, name)
     values = frame.to_numpy()
     borders = split_borders(len(values), input_len, spec.split_scheme)

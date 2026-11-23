@@ -7,8 +7,11 @@ this prereg id. Every test access is logged by leaguetst.data.test_split.
 
 For each arm, horizon and seed it scores the exact test MSE and MAE over
 every window (plus the drop-last values for comparison with the
-literature), then tests each pre-registered comparison on the primary
-endpoint with a paired two-level bootstrap and Holm's correction.
+literature). Each pre-registered comparison is tested on the primary
+endpoint, the mean over horizons of exact test MSE: a seed-level
+permutation test gives the p value (Holm over comparisons), and a two-level
+bootstrap of the same endpoint (seeds, then window blocks of length L + T)
+gives a supporting interval.
 
 Example:
     LEAGUETST_VAULT=~/leaguetst_vault python scripts/eval_test.py --prereg prereg/final_v1.json
@@ -32,9 +35,10 @@ sys.path.insert(0, str(ROOT))
 
 from leaguetst.data.test_split import load_test_split  # noqa: E402
 from leaguetst.eval.metrics import exact_and_drop_last  # noqa: E402
-from leaguetst.eval.stats import holm, paired_two_level_bootstrap  # noqa: E402
+from leaguetst.eval.stats import endpoint_bootstrap, holm, permutation_test  # noqa: E402
 from leaguetst.experiment import build_model  # noqa: E402
 from leaguetst.search.feasible import INPUT_LEN  # noqa: E402
+from leaguetst.table import recipe  # noqa: E402
 from leaguetst.utils import load_state_dict, save_json  # noqa: E402
 
 
@@ -75,33 +79,54 @@ def evaluate(prereg: dict, vault: Path, trainval: Path, root: Path, log_path: Pa
             model = build_model("patchtst", arm["model_config"], test.n_vars, INPUT_LEN[dataset], horizon)
             model.load_state_dict(load_state_dict(root / run["checkpoint"], expected_sha256=run["sha256"]))
             preds, targets = forecast(model, test)
-            metrics = exact_and_drop_last(preds, targets, int(run.get("batch_size", 128)))
+            batch_size = int(run.get("batch_size") or recipe(dataset)["batch_size"])
+            metrics = exact_and_drop_last(preds, targets, batch_size)
             per_window[arm["name"]][horizon][seed] = ((preds - targets) ** 2).reshape(len(preds), -1).mean(axis=1)
             runs_out.append({"arm": arm["name"], "dataset": dataset, "horizon": horizon, "seed": seed, **metrics})
             print(f"{arm['name']:28s} T={horizon:3d} seed {seed}: test MSE {metrics['mse']:.4f} (drop-last {metrics['mse_drop_last']:.4f})", flush=True)
 
     boot = prereg.get("bootstrap", {})
+    datasets = {arm["name"]: arm["dataset"] for arm in prereg["arms"]}
     comparisons = {}
     for comparison in prereg.get("comparisons", []):
         a, b = comparison["a"], comparison["b"]
-        per_horizon = {}
-        diffs = []
-        for horizon in sorted(per_window[a]):
-            seeds_a = sorted(per_window[a][horizon])
-            seeds_b = sorted(per_window[b][horizon])
-            arr_a = np.stack([per_window[a][horizon][s] for s in seeds_a])
-            arr_b = np.stack([per_window[b][horizon][s] for s in seeds_b])
-            result = paired_two_level_bootstrap(arr_a, arr_b, block=horizon,
-                                                n_resamples=int(boot.get("resamples", 4000)), seed=int(boot.get("seed", 0)))
-            per_horizon[horizon] = result
-            diffs.append(result["diff"])
-        comparisons[comparison["name"]] = {"a": a, "b": b, "per_horizon": per_horizon,
-                                           "endpoint_diff": float(np.mean(diffs)),
-                                           "endpoint_p": float(max(r["p"] for r in per_horizon.values()))}
+        horizons = sorted(per_window[a])
+        seeds_a = sorted(set.intersection(*(set(per_window[a][h]) for h in horizons)))
+        seeds_b = sorted(set.intersection(*(set(per_window[b][h]) for h in horizons)))
+        endpoint_a = [float(np.mean([per_window[a][h][s].mean() for h in horizons])) for s in seeds_a]
+        endpoint_b = [float(np.mean([per_window[b][h][s].mean() for h in horizons])) for s in seeds_b]
+        primary = permutation_test(np.array(endpoint_a), np.array(endpoint_b), seed=int(boot.get("seed", 0)))
+        input_len = INPUT_LEN[datasets[a]]
+        support = endpoint_bootstrap(
+            {h: np.stack([per_window[a][h][s] for s in seeds_a]) for h in horizons},
+            {h: np.stack([per_window[b][h][s] for s in seeds_b]) for h in horizons},
+            {h: input_len + h for h in horizons},
+            n_resamples=int(boot.get("resamples", 4000)),
+            seed=int(boot.get("seed", 0)),
+        )
+        per_horizon = {h: {"a": float(np.mean([per_window[a][h][s].mean() for s in seeds_a])),
+                           "b": float(np.mean([per_window[b][h][s].mean() for s in seeds_b]))} for h in horizons}
+        comparisons[comparison["name"]] = {"a": a, "b": b, "seeds_a": seeds_a, "seeds_b": seeds_b,
+                                           "endpoint_a": endpoint_a, "endpoint_b": endpoint_b,
+                                           "endpoint_diff": primary["diff"], "endpoint_p": primary["p"],
+                                           "bootstrap": support, "per_horizon": per_horizon}
     rejected = holm({k: v["endpoint_p"] for k, v in comparisons.items()}, float(prereg.get("alpha", 0.05)))
     for name in comparisons:
         comparisons[name]["significant_after_holm"] = rejected[name]
-    return {"prereg": prereg["id"], "runs": runs_out, "comparisons": comparisons}
+
+    # Validation-to-test rank agreement over registered groups of runs that
+    # carry their validation MSE (amendment A7: the 64 E3b checkpoints).
+    from scipy.stats import spearmanr
+
+    val_mse = {(arm["name"], int(r["horizon"]), int(r["seed"])): r.get("val_mse") for arm in prereg["arms"] for r in arm["runs"]}
+    rank_checks = {}
+    for group in prereg.get("rank_checks", []):
+        pairs = [(val_mse[(r["arm"], r["horizon"], r["seed"])], r["mse"]) for r in runs_out
+                 if r["arm"] in group["arms"] and val_mse.get((r["arm"], r["horizon"], r["seed"])) is not None]
+        if len(pairs) >= 3:
+            rho, p = spearmanr([v for v, _ in pairs], [t for _, t in pairs])
+            rank_checks[group["name"]] = {"n": len(pairs), "spearman": float(rho), "p": float(p)}
+    return {"prereg": prereg["id"], "runs": runs_out, "comparisons": comparisons, "rank_checks": rank_checks}
 
 
 def main() -> int:

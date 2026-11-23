@@ -54,6 +54,7 @@ def row_from_record(record: dict[str, Any], source: str) -> dict[str, Any]:
     }
     identity = {k: row[k] for k in KEY_FIELDS}
     identity["val_mse"] = row["val"]["mse"]
+    identity["best_val_mse"] = row["best_val_mse"]
     identity["checkpoint_sha256"] = row["checkpoint_sha256"]
     row["row_id"] = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:16]
     return row
@@ -91,8 +92,10 @@ def append_rows(rows: Iterable[dict[str, Any]], path: str | Path = LEDGER) -> di
                 existing = json.loads(line)
                 ids.add(existing["row_id"])
                 keys[tuple(existing[k] for k in KEY_FIELDS)] = existing["row_id"]
-        appended = skipped = 0
         stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        # Check the whole batch before writing anything, so a refused batch
+        # leaves the ledger as it was.
+        new_rows, skipped = [], 0
         for row in rows:
             if row["row_id"] in ids:
                 skipped += 1
@@ -100,11 +103,12 @@ def append_rows(rows: Iterable[dict[str, Any]], path: str | Path = LEDGER) -> di
             key = tuple(row[k] for k in KEY_FIELDS)
             if key in keys:
                 raise ValueError(f"ledger already holds {key} with a different result ({keys[key]}); refusing to replace it")
-            row = {**row, "appended_at": stamp}
-            handle.write(json.dumps(row, sort_keys=True) + "\n")
             ids.add(row["row_id"])
             keys[key] = row["row_id"]
-            appended += 1
+            new_rows.append({**row, "appended_at": stamp})
+        for row in new_rows:
+            handle.write(json.dumps(row, sort_keys=True) + "\n")
+        appended = len(new_rows)
         handle.flush()
         fcntl.flock(handle, fcntl.LOCK_UN)
     return {"appended": appended, "skipped": skipped}

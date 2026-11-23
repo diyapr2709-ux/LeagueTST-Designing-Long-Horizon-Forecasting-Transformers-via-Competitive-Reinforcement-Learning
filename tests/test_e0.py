@@ -177,9 +177,15 @@ def test_holm_and_paired_bootstrap():
 
 def test_test_split_logs_every_access(synthetic_data_dir, trainval_dir, tmp_path):
     log = tmp_path / "access.log"
+    prereg_dir = tmp_path / "prereg"
+    prereg_dir.mkdir()
     with pytest.raises(ValueError):
-        load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "", log)
-    test, _ = load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "unit", log)
+        load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "", log, prereg_dir)
+    with pytest.raises(ValueError):
+        load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "unit", log, prereg_dir)
+    assert not log.exists()
+    (prereg_dir / "unit.json").write_text("{}")
+    test, _ = load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "unit", log, prereg_dir)
     assert len(test) == 193 - 24 + 1
     lines = [json.loads(l) for l in log.read_text().splitlines()]
     assert lines[-1]["prereg"] == "unit" and lines[-1]["dataset"] == "ILI"
@@ -195,26 +201,65 @@ def test_test_split_refuses_a_different_file(synthetic_data_dir, trainval_dir, t
     path = vault / "illness" / "national_illness.csv"
     text = path.read_text().splitlines()
     path.write_text("\n".join(text[:-1]) + "\n")
+    prereg_dir = tmp_path / "prereg"
+    prereg_dir.mkdir()
+    (prereg_dir / "unit.json").write_text("{}")
     with pytest.raises(ValueError):
-        load_test_split(vault, trainval_dir, "ILI", 104, 24, "unit", tmp_path / "log")
+        load_test_split(vault, trainval_dir, "ILI", 104, 24, "unit", tmp_path / "log", prereg_dir)
 
 
 def test_prereg_refuses_bad_specs(tmp_path):
     import prereg
 
-    ckpt = tmp_path / "a.pt"
-    ckpt.write_bytes(b"weights")
     import hashlib
 
-    digest = hashlib.sha256(b"weights").hexdigest()
-    runs = [{"horizon": 24, "seed": s, "checkpoint": "a.pt", "sha256": digest} for s in range(5)]
+    runs = []
+    for s in range(5):
+        (tmp_path / f"a{s}.pt").write_bytes(f"weights {s}".encode())
+        runs.append({"horizon": 24, "seed": s, "checkpoint": f"a{s}.pt", "sha256": hashlib.sha256(f"weights {s}".encode()).hexdigest()})
     spec = {"id": "unit_1", "arms": [{"name": "x", "dataset": "ILI", "runs": runs}, {"name": "y", "dataset": "ILI", "runs": runs[:3]}],
             "comparisons": [{"name": "x vs y", "a": "x", "b": "y"}]}
     problems = prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log")
-    assert any("fewer than 5 seeds" in p for p in problems)
+    assert any("fewer than 5 distinct seeds" in p for p in problems)
     spec["arms"][1]["runs"] = runs
     assert prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log") == []
     (tmp_path / "log").write_text(json.dumps({"prereg": "unit_1"}) + "\n")
     assert any("already opened" in p for p in prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log"))
-    spec["arms"][0]["runs"][0] = {**runs[0], "sha256": "0" * 64}
+    spec["arms"][0]["runs"] = [dict(runs[0], seed=s) for s in range(5)]
+    assert any("repeats a checkpoint" in p for p in prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log2"))
+    spec["arms"][0]["runs"] = [dict(runs[0], sha256="0" * 64)] + runs[1:]
     assert any("digest" in p for p in prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log2"))
+
+
+def test_build_splits_refuses_a_trainval_copy(trainval_dir):
+    with pytest.raises(ValueError):
+        build_splits(trainval_dir, "ILI", 104, 24)
+
+
+def test_permutation_test_and_endpoint_bootstrap():
+    from leaguetst.eval.stats import endpoint_bootstrap, permutation_test
+
+    rng = np.random.default_rng(1)
+    same = permutation_test(rng.normal(0, 1, 10), rng.normal(0, 1, 10))
+    assert 0 < same["p"] <= 1
+    apart = permutation_test(rng.normal(-3, 1, 10), rng.normal(0, 1, 10))
+    assert apart["p"] < 0.001
+    # Opposite effects at different horizons cancel in the endpoint.
+    base = {h: rng.gamma(2.0, 0.2, (1, 200)) for h in (1, 2)}
+    a = {1: base[1] - 0.05 + rng.normal(0, 1e-3, (5, 200)), 2: base[2] + 0.05 + rng.normal(0, 1e-3, (5, 200))}
+    b = {h: base[h] + rng.normal(0, 1e-3, (5, 200)) for h in base}
+    result = endpoint_bootstrap(a, b, {1: 20, 2: 20}, n_resamples=300)
+    assert result["low"] < 0 < result["high"] and result["p"] > 0.05
+
+
+def test_refused_ledger_batch_writes_nothing(trainval_dir, tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    base = {"item": "T", "dataset": "ILI", "horizon": 24, "input_len": 104, "seed": 1, "model_config": {}, "n_params": 1,
+            "training": {}, "best_val_mse": 0.5, "best_epoch": 1, "epochs_run": 1, "val": {"mse": 0.5}, "history": []}
+    first = row_from_record({**base, "config_id": "c1"}, "t")
+    append_rows([first], ledger)
+    fresh = row_from_record({**base, "config_id": "c2"}, "t")
+    clash = row_from_record({**base, "config_id": "c1", "best_val_mse": 0.4, "val": {"mse": 0.4}}, "t")
+    with pytest.raises(ValueError):
+        append_rows([fresh, clash], ledger)
+    assert [r["config_id"] for r in read_rows(ledger)] == ["c1"]

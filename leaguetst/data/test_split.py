@@ -16,7 +16,9 @@ from pathlib import Path
 from leaguetst.data.datasets import BENCHMARKS, Standardizer, WindowDataset, load_benchmark_frame, split_borders
 from leaguetst.data.trainval import read_manifest
 
-ACCESS_LOG = Path("results/test_access.log")
+ROOT = Path(__file__).resolve().parents[2]
+ACCESS_LOG = ROOT / "results" / "test_access.log"
+PREREG_DIR = ROOT / "prereg"
 
 
 def load_test_split(
@@ -27,14 +29,16 @@ def load_test_split(
     horizon: int,
     prereg_id: str,
     log_path: str | Path = ACCESS_LOG,
+    prereg_dir: str | Path = PREREG_DIR,
 ) -> tuple[WindowDataset, Standardizer]:
     """Test windows of one benchmark, after logging the access.
 
-    The vault file must be the exact file the trainval copy was cut from
-    (same SHA-256 as the manifest's ``source_sha256``).
+    ``prereg_id`` must name an existing ``prereg/<id>.json``. The vault file
+    must be the exact file the trainval copy was cut from (same SHA-256 as
+    the manifest's ``source_sha256``).
     """
-    if not prereg_id:
-        raise ValueError("a prereg id is required to open the test split")
+    if not prereg_id or not (Path(prereg_dir) / f"{prereg_id}.json").is_file():
+        raise ValueError(f"no prereg file for {prereg_id!r}; the test split opens only for a registered evaluation")
     spec = BENCHMARKS[name]
     entry = read_manifest(trainval_dir)["datasets"][name]
     source = Path(vault_dir) / spec.relative_path

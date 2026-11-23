@@ -27,7 +27,6 @@ import hashlib
 import json
 import subprocess
 import sys
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,9 +60,16 @@ def validate(spec: dict, root: Path = ROOT, access_log: Path = ACCESS_LOG) -> li
             if name not in arms:
                 problems.append(f"comparison {comparison.get('name')}: unknown arm {name}")
                 continue
-            seeds = Counter(run["horizon"] for run in arms[name]["runs"])
-            if not seeds or min(seeds.values()) < MIN_SEEDS:
-                problems.append(f"arm {name} has fewer than {MIN_SEEDS} seeds at some horizon")
+            runs = arms[name]["runs"]
+            seeds: dict[int, set] = {}
+            checkpoints: dict[int, set] = {}
+            for run in runs:
+                seeds.setdefault(run["horizon"], set()).add(run["seed"])
+                checkpoints.setdefault(run["horizon"], set()).add(run["sha256"])
+            if not seeds or min(len(v) for v in seeds.values()) < MIN_SEEDS:
+                problems.append(f"arm {name} has fewer than {MIN_SEEDS} distinct seeds at some horizon")
+            if any(len(checkpoints[h]) != len([r for r in runs if r["horizon"] == h]) for h in checkpoints):
+                problems.append(f"arm {name} repeats a checkpoint")
         if comparison.get("a") in arms and comparison.get("b") in arms:
             ha = {r["horizon"] for r in arms[comparison["a"]]["runs"]}
             hb = {r["horizon"] for r in arms[comparison["b"]]["runs"]}
