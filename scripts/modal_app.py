@@ -34,7 +34,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 DATA, RUNS = "/data", "/runs"
 TRAINVAL = f"{DATA}/trainval"
-GPU = os.environ.get("LEAGUETST_GPU", "L4")
+# L4 had no capacity on 23 Nov (an L4 probe waited minutes while A10G and T4
+# started in seconds), so the GPU type is chosen per launch.
+GPU = os.environ.get("LEAGUETST_GPU", "A10G")
 MAX_CONTAINERS = int(os.environ.get("LEAGUETST_MAX_CONTAINERS", "10"))
 
 image = (
@@ -157,13 +159,14 @@ def pilot(dataset: str = "ETTh1", horizon: int = 336, n_configs: int = 32, worke
     from leaguetst.search import configs_by_id
     from leaguetst.table import TABLE_EPOCHS, TABLE_PATIENCE, patchtst42_config
 
+    item = f"K5_{GPU}"
     reference = [("patchtst42", patchtst42_config(dataset))]
-    jobs = [_job("K5", dataset, horizon, seed, reference, 1, TABLE_EPOCHS, TABLE_PATIENCE) for seed in (2021, 2022, 2023)]
+    jobs = [_job(item, dataset, horizon, seed, reference, 1, TABLE_EPOCHS, TABLE_PATIENCE) for seed in (2021, 2022, 2023)]
     table = configs_by_id()
     picked = random.Random(5).sample(sorted(table), n_configs)
     entries = [(key, table[key].to_dict()) for key in picked]
-    jobs.append(_job("K5", dataset, horizon, 2021, entries, workers, TABLE_EPOCHS, TABLE_PATIENCE))
-    jobs.append(_job("K5w1", dataset, horizon, 2021, entries[:8], 1, TABLE_EPOCHS, TABLE_PATIENCE))
+    jobs.append(_job(item, dataset, horizon, 2021, entries, workers, TABLE_EPOCHS, TABLE_PATIENCE))
+    jobs.append(_job(item + "w1", dataset, horizon, 2021, entries[:8], 1, TABLE_EPOCHS, TABLE_PATIENCE))
     for job, result in zip(jobs, train_chunk.map(jobs, return_exceptions=True)):
         print(job["item"], job["seed"], len(job["entries"]), "configs,", job["workers"], "workers:", result)
 

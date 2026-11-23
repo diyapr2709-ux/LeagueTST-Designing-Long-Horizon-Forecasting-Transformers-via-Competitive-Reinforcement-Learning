@@ -30,8 +30,8 @@ record, commit. No pushes to GitHub; the owner pushes.
 - [ ] E3b Table validity: retrain 64 configs live with seed 3001 (top 20 by
           table mean plus 44 stratified by table rank). Passes when the 95%
           interval of the mean signed gap (live minus table) contains 0 and
-          the median absolute gap is at most 1.15 seed SD. Spearman reported
-          on all 64 and on the top 20.
+          the median absolute gap is at most 1.15 seed SD (0.95 on ILI, A14).
+          Spearman reported on all 64 and on the top 20.
 - [ ] E2  Fidelity-k calibration (k in 1, 2, 3 by Kendall tau on 150 random
           configs, fixed before any search) and referee v1. The referee is
           kept only if it beats plain epoch-k ranking (amendment A9).
@@ -39,9 +39,11 @@ record, commit. No pushes to GitHub; the owner pushes.
           search, regularized evolution, TPE, ASHA, random + referee at 30
           search seeds; factorized categorical policy-gradient controller at
           30 seeds (A4); prompted Qwen without RL at 10 seeds.
-- [ ] E4  GRPO with Qwen2.5-1.5B and LoRA, table lookups as reward: league,
-          no league, and 4 random-config rivals, 10 seeds each (A5); Qwen
-          with anonymised field names (A4); transfer test (A4).
+- [ ] E4  GRPO with Qwen2.5-1.5B and LoRA, table lookups as reward. Primary:
+          the transfer test, ETTh1 to ILI and back, 10 seeds per direction,
+          against the portfolio and warm-started TPE controls (A12, A13).
+          Secondary: within-table league, no league and 4 random-config
+          rivals, 10 seeds each (A5); Qwen with anonymised field names (A4).
 - [ ] E5  Referee audits on the table: Kendall tau and top-2 regret on
           architect proposals against random configs.
 - [ ] Pick reseeds (27 Nov): every method's picks at the 25 and 50 budget
@@ -85,12 +87,13 @@ review. Each names the weakness it answers.
   table entry (`perwindow/<config>.npy`), so regret and table gaps can be
   bootstrapped over windows. Reason: single-number tables cannot carry
   intervals.
-* A2. ILI is trained at 3 seeds for every config, and its table value is
-  the 3-seed mean. ETTh1 keeps 1 seed plus 3 for the top 100 unless the
-  pilot shows a second full seed costs under $8, in which case seed 2022
-  runs for all ETTh1 configs too. Reason: with one draw per config the
-  best table entry is partly the luckiest seed; the ILI seed SD is 3 to 7%
-  of validation MSE.
+* A2. ILI is trained at 3 seeds for every config; ETTh1 keeps 1 seed plus
+  3 for the top 100 (no second full ETTh1 seed, A17). In replay, a lookup
+  returns one seed drawn at random per config and per search run, and
+  regret is scored against the multi-seed mean, so the search sees the
+  noise a live search would see. Reason: with one draw per config the best
+  table entry is partly the luckiest seed; the ILI seed SD is 3 to 7% of
+  validation MSE.
 * A3. Budgets are fixed now, before any replay: 10, 25, 50 and 100
   full-run equivalents, one equivalent being 30 epochs. The headline
   budgets are 25 and 50. Every method is charged the epochs each looked-up
@@ -117,16 +120,21 @@ review. Each names the weakness it answers.
   table is drawn as a reference line.
 * A7. E6 adds two arms, the table's best config by 3-seed mean and the
   random-search winner, to separate "the space is good" from "the method
-  is good". At the single test run, Kendall tau between validation and
-  test is reported over all E6 arms. Reason: on ETTh1, DLinear has lower
-  validation MSE than PatchTST/42 at all four horizons but higher test
-  MSE, so validation rankings may not transfer.
-* A8. The secondary claim uses 10 seeds per arm, one primary endpoint per
-  dataset (the 4-horizon mean of exact test MSE), a paired two-level
-  bootstrap (seeds, then window blocks of length T), and Holm over the two
-  datasets. IQM and probability of improvement are reported beside it.
-  Reason: with 5 seeds the smallest detectable gap on ETTh1 T = 336 is
-  about 0.0096, larger than plausible gains.
+  is good". The 64 checkpoints E3b trains are added to the prereg, and the
+  single test run reports validation-to-test Spearman over those 64
+  configs (no selection, no extra training). Reason: on ETTh1, DLinear has
+  lower validation MSE than PatchTST/42 at all four horizons but higher
+  test MSE, so validation rankings may not transfer; Kendall tau over 4
+  arms could not show it (smallest one-sided p 0.042).
+* A8. The secondary claim uses 10 seeds per arm and one primary endpoint
+  per dataset, the 4-horizon mean of exact test MSE. The primary test is a
+  seed-level permutation test on that endpoint (10 seeds against 10), Holm
+  over the two datasets; the paired two-level bootstrap (seeds, then window
+  blocks of length T) is supporting evidence, since T = 336 leaves about
+  8.6 non-overlapping blocks and T = 720 about 4. IQM and probability of
+  improvement are reported beside it. Reason: with 5 seeds the smallest
+  detectable gap on ETTh1 T = 336 is about 0.0096, larger than plausible
+  gains.
 * A9. The referee is kept only if it beats plain epoch-k ranking on the
   table, which costs nothing to check.
 * A10. The feasible set is narrow: 74 distinct architectures, each repeated
@@ -139,3 +147,36 @@ review. Each names the weakness it answers.
   drop-last published numbers, no RQ1 conclusion from test results, no
   ILI-only win, no "equal compute" when only epochs are equal. ILI is a
   robustness check, not primary evidence.
+
+## Amendments, 23 Nov, second review
+
+* A12. The transfer test is the primary RL comparison. A policy is trained
+  on the source table (its training cost reported once, under A6), frozen,
+  and deployed on the target table, charged only target lookups. Within-
+  table GRPO is secondary. Reason: at 25 or 50 full-run equivalents a GRPO
+  group of 12 lookups allows only about 2 to 8 updates, so within-table
+  GRPO is close to prompted Qwen.
+* A13. The transfer test has two non-RL controls, both free on the tables:
+  the source table's top-n configs evaluated in order on the target (a
+  portfolio), and TPE warm-started with those configs. The Spearman
+  correlation between the ETTh1 and ILI tables is reported after E1.
+* A14. E3b uses a median absolute gap of at most 0.95 seed SD on ILI,
+  whose table value is a 3-seed mean (expected median gap 0.78 SD); ETTh1
+  keeps 1.15 SD.
+* A15. Regret is also reported per distinct architecture (74 of them), and
+  fANOVA separates architecture fields from training-setting fields (heads,
+  dropout, instance norm). RQ1 is stated as "does RL fine-tuning help an
+  LLM tune a small PatchTST space"; a null result is acceptable.
+* A16. Paper stage, CPU only, off the E1 path: a wider space with a
+  head-type field (flatten, pooled linear, low-rank flatten), lookback,
+  widths up to 256 and channel mixing, with closed-form parameter counts
+  tested against instantiated models and a cost model fitted to E1's
+  per-epoch timings.
+* A17. Cut order if time or credit runs short, first cut first: the second
+  full ETTh1 seed (already cut); Qwen with anonymised field names; the
+  random-rival arm (run only if league beats no league); the two extra E6
+  arms down to 5 seeds (winner and PatchTST/42 stay at 10); within-table
+  GRPO from 10 seeds to 5 (transfer stays at 10). Never cut: E1 as
+  amended, E3b, the pick reseeds, the CPU replays, the factorized
+  controller, the transfer test with its portfolio control, and the E6
+  winner against PatchTST/42.
