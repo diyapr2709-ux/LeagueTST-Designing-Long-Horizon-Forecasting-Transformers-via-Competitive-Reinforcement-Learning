@@ -13,8 +13,12 @@ Spec format:
      "alpha": 0.05, "bootstrap": {"resamples": 4000, "seed": 0},
      "arms": [{"name": "winner_ETTh1", "dataset": "ETTh1", "model_config": {...},
                "runs": [{"horizon": 96, "seed": 1, "checkpoint": "results/final/...pt",
-                         "sha256": "...", "batch_size": 128}, ...]}, ...],
-     "comparisons": [{"name": "ETTh1 winner vs PatchTST/42", "a": "winner_ETTh1", "b": "patchtst42_ETTh1"}]}
+                         "sha256": "...", "val_mse": 0.6521, "batch_size": 128}, ...]}, ...],
+     "comparisons": [{"name": "ETTh1 winner vs PatchTST/42", "a": "winner_ETTh1", "b": "patchtst42_ETTh1"}],
+     "rank_checks": [{"name": "E3b ETTh1 validation vs test", "arms": ["e3b_ETTh1"]}]}
+
+Every run carries the validation MSE of its checkpoint; scripts/eval_test.py
+re-scores it before opening the test split, which catches a wrong config.
 
 Example:
     python scripts/prereg.py --spec results/final/prereg_spec.json
@@ -33,9 +37,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from leaguetst.utils import sha256_file  # noqa: E402
 
 MIN_SEEDS = 5
+RUN_FIELDS = ("horizon", "seed", "checkpoint", "sha256", "val_mse")
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 ACCESS_LOG = ROOT / "results" / "test_access.log"
 
 
@@ -48,7 +56,13 @@ def validate(spec: dict, root: Path = ROOT, access_log: Path = ACCESS_LOG) -> li
     if not arms:
         problems.append("no arms")
     for arm in arms.values():
+        if not arm.get("runs"):
+            problems.append(f"{arm['name']}: no runs")
         for run in arm.get("runs", []):
+            missing = [f for f in RUN_FIELDS if f not in run]
+            if missing:
+                problems.append(f"{arm['name']}: a run lacks {missing}")
+                continue
             path = root / run["checkpoint"]
             if not path.exists():
                 problems.append(f"{arm['name']}: missing {run['checkpoint']}")

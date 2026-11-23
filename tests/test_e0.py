@@ -218,7 +218,7 @@ def test_prereg_refuses_bad_specs(tmp_path):
     runs = []
     for s in range(5):
         (tmp_path / f"a{s}.pt").write_bytes(f"weights {s}".encode())
-        runs.append({"horizon": 24, "seed": s, "checkpoint": f"a{s}.pt", "sha256": hashlib.sha256(f"weights {s}".encode()).hexdigest()})
+        runs.append({"horizon": 24, "seed": s, "checkpoint": f"a{s}.pt", "sha256": hashlib.sha256(f"weights {s}".encode()).hexdigest(), "val_mse": 0.5})
     spec = {"id": "unit_1", "arms": [{"name": "x", "dataset": "ILI", "runs": runs}, {"name": "y", "dataset": "ILI", "runs": runs[:3]}],
             "comparisons": [{"name": "x vs y", "a": "x", "b": "y"}]}
     problems = prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log")

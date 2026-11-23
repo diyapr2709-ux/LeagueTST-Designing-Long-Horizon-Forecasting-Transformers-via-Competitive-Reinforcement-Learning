@@ -49,10 +49,17 @@ def numpy_patchtst_forward(
     inputs: np.ndarray,
     horizon: int,
 ) -> np.ndarray:
-    """Forecasts of shape (batch, horizon, variables) for inputs (batch, time, variables)."""
+    """Forecasts of shape (batch, horizon, variables) for inputs (batch, time, variables).
+
+    ``config`` must name every field that changes the computation; nothing
+    is defaulted, so a config missing a field fails instead of guessing.
+    """
+    for key in ("patch_len", "stride", "n_heads", "instance_norm", "channel_mode"):
+        if key not in config:
+            raise KeyError(f"model config lacks {key}")
     x = inputs.astype(np.float64)
     batch, _, n_vars = x.shape
-    if config.get("instance_norm", True):
+    if config["instance_norm"]:
         mean = x.mean(axis=1, keepdims=True)
         std = np.sqrt(x.var(axis=1, keepdims=True) + REVIN_EPS)
         x = (x - mean) / std
@@ -60,7 +67,7 @@ def numpy_patchtst_forward(
     series = x.transpose(0, 2, 1)  # (batch, vars, time)
     patches = _patches(series, int(config["patch_len"]), int(config["stride"]))  # (batch, vars, P, patch_len)
     n_patches = patches.shape[2]
-    mixing = config.get("channel_mode", "independent") == "mixing"
+    mixing = config["channel_mode"] == "mixing"
     if mixing:
         tokens_in = patches.transpose(0, 2, 1, 3).reshape(batch, n_patches, -1)
     else:
@@ -97,6 +104,6 @@ def numpy_patchtst_forward(
         out = _linear(h.reshape(batch, -1), state, "head").reshape(batch, horizon, n_vars)
     else:
         out = _linear(h.reshape(batch, n_vars, -1), state, "head").transpose(0, 2, 1)
-    if config.get("instance_norm", True):
+    if config["instance_norm"]:
         out = out * std + mean
     return out

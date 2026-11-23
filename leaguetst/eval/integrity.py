@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 LOCK = "prereg/e0_lock.json"
 APPEND_ONLY = ("results/ledger.jsonl", "results/test_access.log")
 LOCKED_FILES = (
+    "leaguetst/__init__.py",
+    "leaguetst/data/__init__.py",
+    "leaguetst/data/loaders.py",
+    "leaguetst/eval/__init__.py",
     "leaguetst/data/datasets.py",
     "leaguetst/data/trainval.py",
     "leaguetst/data/test_split.py",
@@ -92,12 +96,19 @@ def g3_problems(root: Path = ROOT) -> tuple[list[str], str]:
         problems.append(f"{LOCK} was changed after it was written ({len(history)} commits)")
     files = json.loads(lock_path.read_text())["files"]
     missing = [f for f in LOCKED_FILES if f not in files]
-    changed = [f for f in LOCKED_FILES if f in files and sha(root / f) != files[f]]
+    # Every file the committed lock names is checked, so shortening the list
+    # in this module cannot release a file.
+    covered = sorted(set(files) | set(LOCKED_FILES))
+    changed = [f for f in covered if f in files and (not (root / f).exists() or sha(root / f) != files[f])]
     if missing:
         problems.append("not covered by the lock: " + ", ".join(missing))
     if changed:
         problems.append("changed since the lock: " + ", ".join(changed))
-    anchored = bool(history) and _git("merge-base", "--is-ancestor", history[-1], "origin/main", root=root).returncode == 0
+    has_remote = _git("rev-parse", "--verify", "-q", "origin/main", root=root).returncode == 0
+    if has_remote and _git("merge-base", "--is-ancestor", "origin/main", "HEAD", root=root).returncode != 0:
+        problems.append("HEAD does not contain origin/main: pushed history was rewritten")
+    anchored = bool(history) and has_remote and \
+        _git("merge-base", "--is-ancestor", history[-1], "origin/main", root=root).returncode == 0
     note = f"lock {sha(lock_path)[:16]} in commit {history[-1][:8] if history else '?'}, " + \
         ("anchored on origin/main" if anchored else "not yet on origin/main (the owner's push anchors it)")
     return problems, note
@@ -110,3 +121,10 @@ def write_lock(root: Path = ROOT) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"files": {f: sha(root / f) for f in LOCKED_FILES}}, indent=2, sort_keys=True) + "\n")
     return path
+
+
+if __name__ == "__main__":
+    found, note = g3_problems(ROOT)
+    print("\n".join(found) if found else "G3 clean")
+    print(note)
+    raise SystemExit(1 if found else 0)
