@@ -180,3 +180,19 @@ review. Each names the weakness it answers.
   amended, E3b, the pick reseeds, the CPU replays, the factorized
   controller, the transfer test with its portfolio control, and the E6
   winner against PatchTST/42.
+
+## Amendments, 23 Nov, third review (before any LLM result)
+
+* A18. Regret is scored on the seeds a search never saw, in pooled seed-SD
+  units (the median of 3-seed SDs understates the SD by about 17%); the
+  "found best" rate is dropped because 59 ILI configs lie within one SD of
+  the best. ETTh1 lookups add a fixed Gaussian offset with the pooled SD of
+  its multi-seed configs, and ETTh1 claims come from the pick reseeds only.
+  Feasibility is handled the same way for the learned proposers: the
+  controller samples field by field over feasible prefixes and the LLM
+  decodes under a trie of the feasible configs; repeats are wasted at no
+  cost for both. Repair stays for TPE only, with a 5-seed LLM ablation. The
+  league is redesigned with free rivals from evaluated configs, against a
+  uniform-rival control and no rivals. Within-table GRPO is dropped (A17's
+  first cut after the second ETTh1 seed). The full LLM pre-registration is
+  docs/prereg_E4.md.

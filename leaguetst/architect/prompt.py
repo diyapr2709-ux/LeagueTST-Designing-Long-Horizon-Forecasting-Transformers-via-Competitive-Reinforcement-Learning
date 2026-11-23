@@ -66,7 +66,8 @@ def build_messages(dataset: str, horizon: int, space: Space, history: list[tuple
         lines.append("Propose one new configuration, different from those above, that you expect to score lower.")
     else:
         lines.append("Nothing has been evaluated yet. Propose the configuration you expect to score lowest.")
-    lines.append("Answer with a single JSON object and nothing else.")
+    order = ", ".join(names[f] for f in MUTABLE_FIELDS)
+    lines.append(f"Answer with a single JSON object with the fields in this order: {order}. Nothing else.")
     return [
         {"role": "system", "content": "You are an expert in deep learning for time-series forecasting."},
         {"role": "user", "content": "\n".join(lines)},

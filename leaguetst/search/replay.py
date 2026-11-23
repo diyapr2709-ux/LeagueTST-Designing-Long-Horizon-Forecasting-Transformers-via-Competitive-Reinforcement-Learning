@@ -87,9 +87,40 @@ class Table:
         return self._true[cid]
 
     def seed_sd(self) -> float:
-        """Median over configs with 3 or more seeds of the seed SD of best val MSE."""
-        sds = [np.std([o.best for o in seeds.values()], ddof=1) for seeds in self.obs.values() if len(seeds) >= 3]
-        return float(np.median(sds)) if sds else float("nan")
+        """Pooled seed SD of best val MSE: the root mean within-config variance over configs with 2+ seeds.
+
+        The median of 3-sample SDs runs about 17% below the true SD, so the
+        pooled value is the unit for regret.
+        """
+        variances = [np.var([o.best for o in seeds.values()], ddof=1) for seeds in self.obs.values() if len(seeds) >= 2]
+        return float(np.sqrt(np.mean(variances))) if variances else float("nan")
+
+    def heldout_value(self, cid: str, run_seed: int) -> tuple[float, bool]:
+        """Mean over the seeds a search run with ``run_seed`` did not see for ``cid``.
+
+        Returns the value and whether it is held out (False when the config has
+        only the seen seed, in which case the in-sample value is returned).
+        """
+        seeds = self.obs[cid]
+        seen = drawn_seed(sorted(seeds), run_seed, cid)
+        others = [o.best for s, o in seeds.items() if s != seen]
+        if others:
+            return float(np.mean(others)), True
+        return self._true[cid], False
+
+
+def drawn_seed(ordered_seeds: list[int], run_seed: int, cid: str) -> int:
+    """The table seed a search run sees for ``cid``: fixed by (run seed, config id)."""
+    digest = hashlib.sha256(f"{run_seed}:{cid}".encode()).hexdigest()
+    return ordered_seeds[int(digest[:12], 16) % len(ordered_seeds)]
+
+
+def noise_offset(run_seed: int, cid: str, sd: float) -> float:
+    """A fixed Gaussian offset per (run seed, config) for tables with one seed per config."""
+    if sd <= 0:
+        return 0.0
+    digest = hashlib.sha256(f"noise:{run_seed}:{cid}".encode()).hexdigest()
+    return float(np.random.default_rng(int(digest[:15], 16)).normal(0.0, sd))
 
 
 @dataclass
@@ -97,6 +128,7 @@ class Oracle:
     table: Table
     budget: int
     seed: int
+    noise_sd: float = 0.0
     rng: np.random.Generator = field(init=False)
     spent: int = 0
     charged: dict[str, int] = field(default_factory=dict)
@@ -117,10 +149,14 @@ class Oracle:
         """
         seeds = self.table.obs[cid]
         if cid not in self.obs_seed:
-            ordered = sorted(seeds)
-            digest = hashlib.sha256(f"{self.seed}:{cid}".encode()).hexdigest()
-            self.obs_seed[cid] = ordered[int(digest[:12], 16) % len(ordered)]
-        return seeds[self.obs_seed[cid]]
+            self.obs_seed[cid] = drawn_seed(sorted(seeds), self.seed, cid)
+        obs = seeds[self.obs_seed[cid]]
+        if self.noise_sd > 0 and len(seeds) == 1:
+            # One-seed tables: add a fixed offset so the search sees seed noise.
+            offset = noise_offset(self.seed, cid, self.noise_sd)
+            obs = Observation(tuple(max(v + offset, 1e-9) for v in obs.val_curve), obs.train_curve,
+                              max(obs.best + offset, 1e-9), obs.epochs_run)
+        return obs
 
     def _charge(self, cid: str, epochs: int, kind: str, read_epoch: int) -> None:
         extra = max(0, epochs - self.charged.get(cid, 0))
@@ -381,71 +417,110 @@ def screened_search(k: int, group: int = 8, promote: int = 2, use_referee: bool 
     return run
 
 
+class MaskedSampler:
+    """Field-by-field sampling restricted to prefixes of feasible configs."""
+
+    def __init__(self, space: Space):
+        self.space = space
+        self.rows = {cid: tuple(space.domains[f].index(space.choices[cid][f]) for f in MUTABLE_FIELDS) for cid in space.ids}
+        self.by_row = {row: cid for cid, row in self.rows.items()}
+        self.allowed: dict[tuple, list[int]] = {}
+        for row in self.rows.values():
+            for depth in range(len(MUTABLE_FIELDS)):
+                options = self.allowed.setdefault(row[:depth], [])
+                if row[depth] not in options:
+                    options.append(row[depth])
+
+    def probs(self, logits: dict[str, np.ndarray], prefix: tuple) -> tuple[np.ndarray, np.ndarray]:
+        """Masked softmax over the next field, and the allowed indices."""
+        field_name = MUTABLE_FIELDS[len(prefix)]
+        allowed = np.array(sorted(self.allowed[prefix]))
+        z = logits[field_name][allowed]
+        p = np.exp(z - z.max())
+        return p / p.sum(), allowed
+
+    def sample(self, logits: dict[str, np.ndarray], rng: np.random.Generator) -> tuple[str, tuple]:
+        prefix: tuple = ()
+        for _ in MUTABLE_FIELDS:
+            p, allowed = self.probs(logits, prefix)
+            prefix = prefix + (int(allowed[rng.choice(len(p), p=p)]),)
+        return self.by_row[prefix], prefix
+
+    def probability(self, logits: dict[str, np.ndarray], cid: str) -> float:
+        row, value = self.rows[cid], 1.0
+        for depth in range(len(MUTABLE_FIELDS)):
+            p, allowed = self.probs(logits, row[:depth])
+            value *= float(p[list(allowed).index(row[depth])])
+        return value
+
+
 def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 4, lr: float = 0.1,
                           snapshot_every: int = 2, entropy: float = 0.01):
-    """One softmax per field, trained with group-normalised policy gradient.
+    """One softmax per field, sampled field by field over feasible prefixes only,
+    trained with group-normalised policy gradient.
 
-    ``rivals`` is "none", "league" (samples from frozen past snapshots of the
-    policy) or "random" (uniform feasible configs). Rivals are charged their
-    lookups and enter the group baseline only. An infeasible sample scores
-    the group minimum minus one and costs nothing.
+    A sample already evaluated in this run is wasted: it scores the group
+    minimum minus one and costs nothing (the same rule as the LLM). Rivals
+    enter the group baseline only:
+
+    * "none": no rivals.
+    * "league": rivals drawn from the configs this run already evaluated,
+      weighted by their probability under a random past snapshot of the
+      policy; their values are known, so they cost nothing.
+    * "uniform": the same, drawn uniformly from the evaluated configs.
+    * "league_charged": rivals sampled from a past snapshot and looked up,
+      charged like any lookup (the first design, kept for the record).
     """
 
     def run(oracle: Oracle, space: Space, rng: np.random.Generator) -> None:
+        sampler = MaskedSampler(space)
         logits = {f: np.zeros(len(space.domains[f])) for f in MUTABLE_FIELDS}
         moment = {f: np.zeros_like(v) for f, v in logits.items()}
         second = {f: np.zeros_like(v) for f, v in logits.items()}
         snapshots = [{f: v.copy() for f, v in logits.items()}]
-        step = 0
-        updates = 0
-        idle_steps = 0
-
-        def sample(table_logits):
-            picks = {}
-            for f in MUTABLE_FIELDS:
-                p = np.exp(table_logits[f] - table_logits[f].max())
-                p /= p.sum()
-                picks[f] = int(rng.choice(len(p), p=p))
-            return picks
-
-        while True:
-            step += 1
+        updates = idle_steps = 0
+        while idle_steps < 50:
             spent_before = oracle.spent
-            own = [sample(logits) for _ in range(group)]
+            seen = set(oracle.full_values)
+            own = [sampler.sample(logits, rng) for _ in range(group)]
             rewards: list[float | None] = []
-            for picks in own:
-                cid = space.to_id({f: space.domains[f][i] for f, i in picks.items()})
-                rewards.append(None if cid is None else -math.log(oracle.full(cid)))
-            baseline_rewards = [r for r in rewards if r is not None]
-            if rivals != "none":
+            for cid, _ in own:
+                rewards.append(None if cid in seen else -math.log(oracle.full(cid)))
+            baseline = [r for r in rewards if r is not None]
+            if rivals in ("league", "uniform") and seen:
+                pool = sorted(seen)
+                if rivals == "league":
+                    snap = snapshots[rng.integers(len(snapshots))]
+                    weights = np.array([sampler.probability(snap, c) for c in pool])
+                    weights = weights / weights.sum() if weights.sum() > 0 else None
+                else:
+                    weights = None
+                picks = rng.choice(len(pool), size=min(n_rivals, len(pool)), replace=False, p=weights)
+                baseline += [-math.log(oracle.full_values[pool[i]]) for i in picks]
+            elif rivals == "league_charged":
+                snap = snapshots[rng.integers(len(snapshots))]
                 for _ in range(n_rivals):
-                    if rivals == "league":
-                        snap = snapshots[rng.integers(len(snapshots))]
-                        cid = space.to_id({f: space.domains[f][i] for f, i in sample(snap).items()})
-                    else:
-                        cid = space.ids[rng.integers(len(space.ids))]
-                    if cid is not None:
-                        baseline_rewards.append(-math.log(oracle.full(cid)))
-            if not baseline_rewards:
-                idle_steps += 1
-                if idle_steps >= 50:
-                    return
+                    cid, _ = sampler.sample(snap, rng)
+                    baseline.append(-math.log(oracle.full(cid)))
+            idle_steps = idle_steps + 1 if oracle.spent == spent_before else 0
+            if not baseline:
                 continue
             updates += 1
-            floor = min(baseline_rewards) - 1.0
+            floor = min(baseline) - 1.0
             filled = [floor if r is None else r for r in rewards]
-            pool = np.array(baseline_rewards + [floor] * sum(r is None for r in rewards))
-            advantages = (np.array(filled) - pool.mean()) / (pool.std() + 1e-8)
+            pool_rewards = np.array(baseline + [floor] * sum(r is None for r in rewards))
+            advantages = (np.array(filled) - pool_rewards.mean()) / (pool_rewards.std() + 1e-8)
+            grads = {f: np.zeros_like(v) for f, v in logits.items()}
+            for (_, row), adv in zip(own, advantages):
+                for depth, name in enumerate(MUTABLE_FIELDS):
+                    p, allowed = sampler.probs(logits, row[:depth])
+                    g = -p
+                    g[list(allowed).index(row[depth])] += 1.0
+                    grads[name][allowed] += adv * g / len(own)
             for f in MUTABLE_FIELDS:
-                p = np.exp(logits[f] - logits[f].max())
-                p /= p.sum()
-                grad = np.zeros_like(p)
-                for picks, adv in zip(own, advantages):
-                    onehot = np.zeros_like(p)
-                    onehot[picks[f]] = 1.0
-                    grad += adv * (onehot - p)
-                grad /= len(own)
-                grad += entropy * (-(p * (np.log(p + 1e-12) + 1)) + p * np.sum(p * (np.log(p + 1e-12) + 1)))
+                q = np.exp(logits[f] - logits[f].max())
+                q /= q.sum()
+                grad = grads[f] + entropy * (-(q * (np.log(q + 1e-12) + 1)) + q * np.sum(q * (np.log(q + 1e-12) + 1)))
                 moment[f] = 0.9 * moment[f] + 0.1 * grad
                 second[f] = 0.999 * second[f] + 0.001 * grad**2
                 m_hat = moment[f] / (1 - 0.9**updates)
@@ -453,11 +528,6 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
                 logits[f] = logits[f] + lr * m_hat / (np.sqrt(v_hat) + 1e-8)
             if updates % snapshot_every == 0:
                 snapshots.append({f: v.copy() for f, v in logits.items()})
-            # A policy that only proposes configs it has already paid for
-            # spends nothing; stop it rather than loop forever.
-            idle_steps = idle_steps + 1 if oracle.spent == spent_before else 0
-            if idle_steps >= 50:
-                return
 
     return run
 
@@ -473,13 +543,14 @@ METHODS: dict[str, Callable[..., Callable[[Oracle, Space, np.random.Generator], 
     "referee": lambda k=1: screened_search(k=k, use_referee=True),
     "pg": lambda k=1: factorized_controller(rivals="none"),
     "pg_league": lambda k=1: factorized_controller(rivals="league"),
-    "pg_random_rivals": lambda k=1: factorized_controller(rivals="random"),
+    "pg_uniform_rivals": lambda k=1: factorized_controller(rivals="uniform"),
+    "pg_league_charged": lambda k=1: factorized_controller(rivals="league_charged"),
 }
 
 
-def run_method(method: Callable, table: Table, space: Space, budget: int, seed: int) -> Oracle:
+def run_method(method: Callable, table: Table, space: Space, budget: int, seed: int, noise_sd: float = 0.0) -> Oracle:
     """Run one search until its budget is spent; return the oracle with its trace."""
-    oracle = Oracle(table, budget, seed)
+    oracle = Oracle(table, budget, seed, noise_sd)
     rng = np.random.default_rng(seed + 1_000_003)
     try:
         method(oracle, space, rng)
@@ -504,15 +575,22 @@ def regret_curve(oracle: Oracle, budgets: Iterable[int], fallback: float) -> lis
     return [regret_at(oracle, b, fallback) for b in budgets]
 
 
-def regret_from_trace(trace: Iterable, table: Table, budget: int, fallback: float) -> tuple[float, str | None]:
-    """Regret of the incumbent at ``budget`` and its config id, from a (spent, id) trace."""
+def regret_from_trace(trace: Iterable, table: Table, budget: int, fallback: float,
+                      run_seed: int | None = None) -> tuple[float, str | None]:
+    """Regret of the incumbent at ``budget`` and its config id, from a (spent, id) trace.
+
+    With ``run_seed`` the incumbent is scored on the seeds that run never saw
+    (amendment A18); otherwise on its multi-seed mean.
+    """
     incumbent = None
     for spent, cid in trace:
         if spent <= budget:
             incumbent = cid
         else:
             break
-    value = table.true_value(incumbent) if incumbent else fallback
+    if not incumbent:
+        return fallback - table.best_true, None
+    value = table.heldout_value(incumbent, run_seed)[0] if run_seed is not None else table.true_value(incumbent)
     return value - table.best_true, incumbent
 
 
@@ -538,6 +616,7 @@ def claim_values(table: Table, runs_dir: Path, method: str, baseline: str, budge
         chosen = sorted((r for r in runs if r["method"] == name), key=lambda r: r["seed"])
         if not chosen:
             raise ValueError(f"no runs for {name}")
-        return [regret_from_trace(r["trace"], table, budget_eq * FULL_RUN_EPOCHS, fallback)[0] / sigma for r in chosen]
+        return [regret_from_trace(r["trace"], table, budget_eq * FULL_RUN_EPOCHS, fallback, int(r["seed"]))[0] / sigma
+                for r in chosen]
 
     return values(method), values(baseline)

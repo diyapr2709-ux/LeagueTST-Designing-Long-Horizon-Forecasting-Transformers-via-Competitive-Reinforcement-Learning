@@ -35,7 +35,8 @@ sys.path.insert(0, str(ROOT))
 from leaguetst.eval.stats import holm, permutation_test  # noqa: E402
 from leaguetst.ledger import read_rows  # noqa: E402
 from leaguetst.search.replay import (  # noqa: E402
-    FULL_RUN_EPOCHS, METHODS, Space, Table, claim_values, load_runs, no_incumbent_value, regret_from_trace, run_method,
+    FULL_RUN_EPOCHS, METHODS, Space, Table, claim_values, load_runs, no_incumbent_value, portfolio, regret_from_trace,
+    run_method, tpe,
 )
 
 BUDGETS = (10, 25, 50, 100)
@@ -55,15 +56,31 @@ def bootstrap_mean(values: np.ndarray, n: int = 4000, seed: int = 0) -> tuple[fl
     return float(np.quantile(means, 0.025)), float(np.quantile(means, 0.975))
 
 
-def run_cpu_methods(table: Table, space: Space, methods: list[str], seeds: int, out_dir: Path, k: int) -> None:
+def transfer_methods(source: Table, target: Table, name: str, warm: int = 10) -> dict:
+    """Non-RL controls for the transfer test (amendment A13), built from the source table's ranking."""
+    order = [c for c in sorted(source.ids, key=source.true_value) if c in set(target.ids)]
+    return {f"portfolio_from_{name}": lambda k=1: portfolio(order),
+            f"tpe_warm_from_{name}": lambda k=1: tpe(warm_start=order[:warm])}
+
+
+def observation_noise(table: Table) -> float:
+    """Noise added to lookups when most configs have one seed (ETTh1): the pooled seed SD."""
+    single = sum(len(table.obs[c]) == 1 for c in table.ids) / len(table.ids)
+    return table.seed_sd() if single > 0.5 else 0.0
+
+
+def run_cpu_methods(table: Table, space: Space, methods: list[str], seeds: int, out_dir: Path, k: int,
+                    extra: dict | None = None, filename: str = "cpu_runs.jsonl") -> None:
     max_budget = BUDGETS[-1] * FULL_RUN_EPOCHS
-    path = out_dir / "cpu_runs.jsonl"
+    factories = {**METHODS, **(extra or {})}
+    noise = observation_noise(table)
+    path = out_dir / filename
     with open(path, "w", encoding="utf-8") as handle:
         for method in methods:
             start = time.time()
             for seed in range(seeds):
-                oracle = run_method(METHODS[method](k=k), table, space, max_budget, seed)
-                handle.write(json.dumps({"method": method, "seed": seed, "k": k, "spent": oracle.spent, "lookups": len(oracle.charged),
+                oracle = run_method(factories[method](k=k), table, space, max_budget, seed, noise)
+                handle.write(json.dumps({"method": method, "seed": seed, "k": k, "noise_sd": noise, "spent": oracle.spent, "lookups": len(oracle.charged),
                                          "trace": oracle.trace, "charges": [list(c) for c in oracle.charges]}) + "\n")
             print(f"{method:18s} {seeds} seeds in {time.time() - start:.1f}s", flush=True)
 
@@ -82,18 +99,22 @@ def summarize(table: Table, space: Space, out_dir: Path, item: str, table_item: 
     budget_runs, by_method = [], defaultdict(list)
     for run in runs:
         trace = [tuple(t) for t in run["trace"]]
-        run["regret"], run["incumbent"], run["arch_regret"] = {}, {}, {}
+        seed = int(run["seed"])
+        run["regret"], run["incumbent"], run["arch_regret"], run["heldout"] = {}, {}, {}, {}
         for b in BUDGETS:
-            regret, cid = regret_from_trace(trace, table, b * FULL_RUN_EPOCHS, fallback)
+            regret, cid = regret_from_trace(trace, table, b * FULL_RUN_EPOCHS, fallback, seed)
             run["regret"][b], run["incumbent"][b] = regret, cid
+            run["heldout"][b] = table.heldout_value(cid, seed)[1] if cid else True
             run["arch_regret"][b] = (arch_best[space.architecture(cid)] - table.best_true) if cid else fallback - table.best_true
-        run["regret_auc_sd"] = float(np.mean([regret_from_trace(trace, table, g, fallback)[0] for g in grid]) / sigma)
+        run["regret_auc_sd"] = float(np.mean([regret_from_trace(trace, table, g, fallback, seed)[0] for g in grid]) / sigma)
         by_method[run["method"]].append(run)
         budget_runs.append({"method": run["method"], "seed": run["seed"], "spent": run["spent"], "charges": run["charges"]})
     (out_dir / "budget.json").write_text(json.dumps({"table_item": table_item, "dataset": dataset, "horizon": horizon,
                                                      "budget_epochs": max_budget, "runs": budget_runs}) + "\n")
 
-    summary = {"table": {"configs": len(table.ids), "best_true": table.best_true, "best_id": table.best_id, "seed_sd": sigma,
+    plateau = sum(table.true_value(c) <= table.best_true + sigma for c in table.ids)
+    summary = {"table": {"configs": len(table.ids), "best_true": table.best_true, "best_id": table.best_id, "seed_sd_pooled": sigma,
+                         "within_one_sd_of_best": plateau, "observation_noise_sd": observation_noise(table),
                          "reference_seeds": table.reference_seeds, "diverged_rows": table.n_diverged,
                          "architectures": len(arch_best)}, "methods": {}}
     for method, group in by_method.items():
@@ -102,21 +123,23 @@ def summarize(table: Table, space: Space, out_dir: Path, item: str, table_item: 
             values = np.array([r["regret"][b] for r in group]) / sigma
             low, high = bootstrap_mean(values)
             entry[str(b)] = {"mean_sd": float(values.mean()), "low": low, "high": high, "median_sd": float(np.median(values)),
-                             "iqm_sd": iqm(values), "found_best": float(np.mean([r["incumbent"][b] == table.best_id for r in group])),
+                             "iqm_sd": iqm(values), "heldout_share": float(np.mean([r["heldout"][b] for r in group])),
                              "arch_mean_sd": float(np.mean([r["arch_regret"][b] for r in group]) / sigma)}
         entry["auc_sd"] = float(np.mean([r["regret_auc_sd"] for r in group]))
         summary["methods"][method] = entry
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
 
     lines = [f"# {item} replay on {table_item} {dataset} T={horizon}", "",
-             f"{len(table.ids)} configs, {len(arch_best)} architectures, seed SD {sigma:.4g}.",
-             "Regret of the incumbent in seed-SD units: mean over search seeds with a 95% bootstrap interval. "
-             "Budgets in full-run equivalents of 30 epochs. AUC is the mean regret over budgets 1 to 100.", "",
-             "| method | seeds | " + " | ".join(f"@{b}" for b in BUDGETS) + " | AUC | found best @50 |",
-             "|---|---|" + "---|" * (len(BUDGETS) + 2)]
+             f"{len(table.ids)} configs, {len(arch_best)} architectures, pooled seed SD {sigma:.4g}; "
+             f"{plateau} configs lie within one SD of the best multi-seed mean.",
+             "Regret of the incumbent, scored on the seeds the search never saw, in pooled seed-SD units: mean over "
+             "search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. AUC is the "
+             "mean regret over budgets 1 to 100.", "",
+             "| method | seeds | " + " | ".join(f"@{b}" for b in BUDGETS) + " | AUC |",
+             "|---|---|" + "---|" * (len(BUDGETS) + 1)]
     for method, entry in sorted(summary["methods"].items(), key=lambda kv: kv[1]["auc_sd"]):
         cells = [f"{entry[str(b)]['mean_sd']:.2f} [{entry[str(b)]['low']:.2f}, {entry[str(b)]['high']:.2f}]" for b in BUDGETS]
-        lines.append(f"| {method} | {entry['seeds']} | " + " | ".join(cells) + f" | {entry['auc_sd']:.2f} | {entry['50']['found_best']:.2f} |")
+        lines.append(f"| {method} | {entry['seeds']} | " + " | ".join(cells) + f" | {entry['auc_sd']:.2f} |")
     (out_dir / "summary.md").write_text("\n".join(lines) + "\n")
 
     claims = []
@@ -151,6 +174,7 @@ def main() -> int:
     parser.add_argument("--seeds", type=int, default=30)
     parser.add_argument("--k", type=int, help="screening epoch; defaults to E2's choice in results/fidelity")
     parser.add_argument("--summarize-only", action="store_true", help="recompute summaries from the runs files")
+    parser.add_argument("--transfer-from", help="DATASET:HORIZON of a source table; runs only the transfer controls")
     parser.add_argument("--ledger", default=str(ROOT / "results" / "ledger.jsonl"))
     parser.add_argument("--out", default=str(ROOT / "results" / "search"))
     args = parser.parse_args()
@@ -164,7 +188,13 @@ def main() -> int:
     space = Space(table.ids)
     out_dir = Path(args.out) / args.item / f"{args.dataset}_T{args.horizon}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    if not args.summarize_only:
+    if args.transfer_from:
+        source_name, source_horizon = args.transfer_from.split(":")
+        source = Table([r for r in read_rows(args.ledger) if r["item"] == args.table and r["dataset"] == source_name
+                        and int(r["horizon"]) == int(source_horizon)])
+        extra = transfer_methods(source, table, source_name)
+        run_cpu_methods(table, space, list(extra), args.seeds, out_dir, 1, extra, f"transfer_from_{source_name}_runs.jsonl")
+    elif not args.summarize_only:
         k = args.k
         if k is None:
             k = json.loads((ROOT / "results" / "fidelity" / f"{args.dataset}_T{args.horizon}.json").read_text())["chosen_k"]
