@@ -9,10 +9,10 @@ importance ratio is one and no clipping is needed. Log-probabilities are
 taken under the same masked distribution the completions were sampled
 from. Rivals enter the group baseline only and cost nothing:
 
-* "league": configs already evaluated in the episode, drawn with weights
-  proportional to their probability under a random past snapshot of the
-  policy (scored on the current prompt);
-* "uniform": configs already evaluated in the episode, drawn uniformly;
+* "league": among the 32 configs evaluated most recently in the episode,
+  drawn with weights proportional to their probability under a random past
+  snapshot of the policy (scored on the current prompt);
+* "uniform": among the same 32 configs, drawn uniformly;
 * "none": no rivals.
 """
 
@@ -31,6 +31,7 @@ from leaguetst.architect.prompt import build_messages
 from leaguetst.search.replay import BudgetExhausted, Oracle, Space, Table
 
 END_TOKEN = "<|im_end|>"
+RIVAL_POOL = 32
 
 
 def load(model_name: str):
@@ -177,7 +178,7 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
             continue
         training_epochs += oracle.spent - spent_before
         rival_rewards: list[float] = []
-        pool = sorted(history)
+        pool = list(history)[-RIVAL_POOL:]  # the most recently evaluated configs (amendment A19)
         if rivals in ("league", "uniform") and pool:
             if rivals == "league":
                 set_peft_model_state_dict(model, snapshots[int(rng.integers(len(snapshots)))], adapter_name="rival")

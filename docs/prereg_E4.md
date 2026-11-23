@@ -61,3 +61,11 @@ warm-started TPE after Holm. If the two tables' rankings correlate highly,
 the portfolio is expected to be hard to beat; a loss is reported as such.
 "Competitive" is claimed only if the league beats both none and uniform
 rivals after Holm.
+
+## Amendment A19 (2026-11-23 18:28, before any E4 or prompted result)
+
+A GRPO smoke test with 40-equivalent episodes showed step time growing from
+8 to 37 seconds as the league scored every evaluated config under a past
+snapshot. Both free-rival arms (league and uniform), in the LLM and in the
+CPU controller, now draw from the 32 configs evaluated most recently in the
+episode. Nothing else changes.

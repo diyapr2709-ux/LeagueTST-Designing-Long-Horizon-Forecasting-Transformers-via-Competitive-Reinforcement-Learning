@@ -33,6 +33,7 @@ from leaguetst.search.feasible import config_id, feasible_all
 from leaguetst.search.space import resolve_choice
 
 FULL_RUN_EPOCHS = 30
+RIVAL_POOL = 32
 MUTABLE_FIELDS = ("patch_len", "stride", "n_layers", "n_heads", "d_model", "ff_ratio", "dropout", "instance_norm")
 
 
@@ -464,10 +465,10 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
     enter the group baseline only:
 
     * "none": no rivals.
-    * "league": rivals drawn from the configs this run already evaluated,
-      weighted by their probability under a random past snapshot of the
-      policy; their values are known, so they cost nothing.
-    * "uniform": the same, drawn uniformly from the evaluated configs.
+    * "league": rivals drawn from the 32 configs this run evaluated most
+      recently, weighted by their probability under a random past snapshot
+      of the policy; their values are known, so they cost nothing.
+    * "uniform": the same pool, drawn uniformly.
     * "league_charged": rivals sampled from a past snapshot and looked up,
       charged like any lookup (the first design, kept for the record).
     """
@@ -488,7 +489,7 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
                 rewards.append(None if cid in seen else -math.log(oracle.full(cid)))
             baseline = [r for r in rewards if r is not None]
             if rivals in ("league", "uniform") and seen:
-                pool = sorted(seen)
+                pool = list(oracle.full_values)[-RIVAL_POOL:]  # most recently evaluated (A19)
                 if rivals == "league":
                     snap = snapshots[rng.integers(len(snapshots))]
                     weights = np.array([sampler.probability(snap, c) for c in pool])
