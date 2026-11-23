@@ -237,59 +237,69 @@ def _rows(dataset: str, horizon: int, item: str = "E1") -> list:
 HORIZON = {"ETTh1": 336, "ILI": 24}
 
 
-def _save(path: Path, records: list) -> None:
+def _append(path: Path, records: list) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as handle:
         for record in records:
             handle.write(json.dumps(record, sort_keys=True) + "\n")
 
 
+@app.function(image=image, volumes=VOLUMES, cpu=1, memory=4096, timeout=24 * 3600)
+def driver(plan: dict) -> str:
+    """Run training (if any) then search jobs remotely, so a sleeping laptop loses nothing.
+
+    Results go to /runs/<item>/<name>/ on the volume: training.jsonl and
+    <method>_runs.jsonl, collected later with ``modal volume get``.
+    """
+    out = Path(RUNS) / plan["item"] / plan["name"]
+    out.mkdir(parents=True, exist_ok=True)
+    adapters = []
+    if plan.get("train_jobs"):
+        for job, result in zip(plan["train_jobs"], grpo_train.map(plan["train_jobs"], return_exceptions=True)):
+            if isinstance(result, Exception):
+                _append(out / "training.jsonl", [{"out_dir": job["out_dir"], "error": repr(result)}])
+                continue
+            _append(out / "training.jsonl", [{"out_dir": job["out_dir"], **result}])
+            adapters.append(result["adapter"])
+            runs_vol.commit()
+    search_jobs = plan["search_jobs"]
+    if plan.get("train_jobs"):
+        search_jobs = [{**job, "adapter": adapter} for job, adapter in zip(search_jobs, adapters)]
+    for result in llm_search.map(search_jobs, return_exceptions=True):
+        if isinstance(result, Exception):
+            _append(out / "errors.jsonl", [{"error": repr(result)}])
+        else:
+            _append(out / f"{plan['method']}_runs.jsonl", result)
+        runs_vol.commit()
+    return str(out)
+
+
 @app.local_entrypoint()
 def prompted(dataset: str = "ILI", seeds: int = 10, budget_eq: int = 100, anonymous: bool = False, item: str = "E3",
              model: str = MODEL, per_container: int = 2):
-    """Prompted Qwen without RL, ``seeds`` search seeds in parallel containers."""
+    """Prompted Qwen without RL, ``seeds`` search seeds spread over containers."""
     rows = _rows(dataset, HORIZON[dataset])
     method = "qwen_prompted" + ("_anon" if anonymous else "")
     jobs = [{"rows": rows, "dataset": dataset, "horizon": HORIZON[dataset], "budget": budget_eq * 30, "method": method,
              "seeds": list(range(s, min(s + per_container, seeds))), "anonymous": anonymous, "model": model}
             for s in range(0, seeds, per_container)]
-    out = ROOT / "results" / "search" / item / f"{dataset}_T{HORIZON[dataset]}" / f"{method}_runs.jsonl"
-    for result in llm_search.map(jobs, return_exceptions=True):
-        if isinstance(result, Exception):
-            print("failed:", repr(result))
-            continue
-        _save(out, result)
-    print("wrote", out)
+    plan = {"item": item, "name": f"{dataset}_T{HORIZON[dataset]}", "method": method, "search_jobs": jobs}
+    print("results in", driver.remote(plan))
 
 
 @app.local_entrypoint()
 def grpo(source: str = "ILI", target: str = "", seeds: int = 10, rivals: str = "league", steps: int = 120,
          budget_eq: int = 100, item: str = "E4", model: str = MODEL, lr: float = 5e-5, anonymous: bool = False):
-    """Train one policy per seed on ``source``; deploy each on ``target`` (or on source when empty)."""
+    """Train one policy per seed on ``source``; deploy each on ``target`` (source when empty)."""
     target = target or source
-    src_rows = _rows(source, HORIZON[source])
     tag = f"grpo_{rivals}{'_anon' if anonymous else ''}_{source}"
-    jobs = [{"rows": src_rows, "dataset": source, "horizon": HORIZON[source], "seed": 100 + s, "steps": steps,
-             "episode_budget": budget_eq * 30, "rivals": rivals, "lr": lr, "model": model, "anonymous": anonymous,
-             "out_dir": f"{RUNS}/{item}/{tag}/seed{100 + s}"} for s in range(seeds)]
-    trained = []
-    for job, result in zip(jobs, grpo_train.map(jobs, return_exceptions=True)):
-        if isinstance(result, Exception):
-            print("training failed:", repr(result))
-            continue
-        print("trained", job["out_dir"], {k: v for k, v in result.items() if k != "last"})
-        trained.append((job, result))
-    summary = ROOT / "results" / "search" / item / f"{tag}_training.jsonl"
-    _save(summary, [{"out_dir": j["out_dir"], **r} for j, r in trained])
-    tgt_rows = _rows(target, HORIZON[target])
+    train_jobs = [{"rows": _rows(source, HORIZON[source]), "dataset": source, "horizon": HORIZON[source], "seed": 100 + s,
+                   "steps": steps, "episode_budget": budget_eq * 30, "rivals": rivals, "lr": lr, "model": model,
+                   "anonymous": anonymous, "out_dir": f"{RUNS}/{item}/{tag}/seed{100 + s}"} for s in range(seeds)]
     method = f"{tag}_to_{target}"
-    deploy_jobs = [{"rows": tgt_rows, "dataset": target, "horizon": HORIZON[target], "budget": budget_eq * 30,
-                    "method": method, "seeds": [s], "adapter": result["adapter"], "anonymous": anonymous, "model": model}
-                   for s, (_, result) in enumerate(trained)]
-    out = ROOT / "results" / "search" / item / f"{target}_T{HORIZON[target]}" / f"{method}_runs.jsonl"
-    for result in llm_search.map(deploy_jobs, return_exceptions=True):
-        if isinstance(result, Exception):
-            print("deploy failed:", repr(result))
-            continue
-        _save(out, result)
-    print("wrote", out)
+    target_rows = _rows(target, HORIZON[target])
+    search_jobs = [{"rows": target_rows, "dataset": target, "horizon": HORIZON[target], "budget": budget_eq * 30,
+                    "method": method, "seeds": [s], "anonymous": anonymous, "model": model} for s in range(seeds)]
+    plan = {"item": item, "name": f"{target}_T{HORIZON[target]}", "method": method, "train_jobs": train_jobs,
+            "search_jobs": search_jobs}
+    print("results in", driver.remote(plan))

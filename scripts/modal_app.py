@@ -196,3 +196,27 @@ def table(item: str = "E1", dataset: str = "ETTh1", horizon: int = 336, seed: in
 @app.local_entrypoint()
 def status(item: str = "E1", dataset: str = "ETTh1", horizon: int = 336, seed: int = 2021):
     print(json.dumps(count_records.remote(item, dataset, horizon, seed), indent=2))
+
+
+@app.local_entrypoint()
+def final(spec: str, item: str = "E6", workers: int = 4):
+    """E6: named arms at every horizon of one dataset, trained with the reproduction recipe.
+
+    ``spec`` is a JSON file: {"dataset": "ETTh1", "epochs": 100, "patience": 100,
+    "arms": [{"name": "winner", "model_config": {...}, "seeds": [2021, ...]}, ...]}.
+    One job per (horizon, seed) trains every arm that uses that seed.
+    """
+    from leaguetst.data import BENCHMARKS
+
+    plan = json.loads(Path(spec).read_text())
+    dataset = plan["dataset"]
+    jobs = []
+    for horizon in BENCHMARKS[dataset].horizons:
+        seeds = sorted({s for arm in plan["arms"] for s in arm["seeds"]})
+        for seed in seeds:
+            entries = [(arm["name"], arm["model_config"]) for arm in plan["arms"] if seed in arm["seeds"]]
+            jobs.append(_job(item, dataset, horizon, seed, entries, min(workers, len(entries)),
+                             int(plan.get("epochs", 100)), int(plan.get("patience", 100))))
+    print(f"{item} {dataset}: {len(jobs)} jobs, {sum(len(j['entries']) for j in jobs)} runs, git {jobs[0]['git_hash']}")
+    for result in driver.remote(jobs):
+        print(result)
