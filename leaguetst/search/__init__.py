@@ -1,9 +1,30 @@
-"""Design space and search methods.
+"""Design space, feasible set and search methods."""
 
-Only the design space is implemented at this stage. Random search,
-regularized evolution, the architect league and the referee come later.
-"""
-
+from leaguetst.search.feasible import (
+    BUDGETS,
+    SETTINGS,
+    config_id,
+    configs_by_id,
+    feasible_all,
+    feasible_configs,
+    feasible_table,
+    fits,
+    patchtst_parameters,
+)
 from leaguetst.search.space import SEARCH_SPACE, enumerate_configs, sample_config, space_size
 
-__all__ = ["SEARCH_SPACE", "enumerate_configs", "sample_config", "space_size"]
+__all__ = [
+    "BUDGETS",
+    "SEARCH_SPACE",
+    "SETTINGS",
+    "config_id",
+    "configs_by_id",
+    "enumerate_configs",
+    "feasible_all",
+    "feasible_configs",
+    "feasible_table",
+    "fits",
+    "patchtst_parameters",
+    "sample_config",
+    "space_size",
+]

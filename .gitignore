@@ -18,3 +18,11 @@ checkpoints/
 .vscode/
 .idea/
 .DS_Store
+
+# Train and validation copies are rebuilt by scripts/make_trainval.py; the
+# manifest with their digests is committed.
+data/trainval/**/*.csv
+
+# Raw records, checkpoints and per-window errors downloaded from Modal;
+# results/ledger.jsonl holds the committed rows.
+results/runs/
