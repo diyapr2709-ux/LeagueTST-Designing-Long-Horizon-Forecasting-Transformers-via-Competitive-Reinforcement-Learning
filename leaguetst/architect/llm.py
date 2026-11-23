@@ -239,8 +239,11 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
         # Positions after the end-of-turn token are padding with -inf scores; leave them out.
         diff = torch.where(mask[:, :width] > 0, diff, torch.zeros_like(diff))
         onpolicy_gap = float(diff.max())
-        if onpolicy_gap > 0.25:
-            raise RuntimeError(f"sampled and scored log-probabilities differ by {onpolicy_gap:.3f}")
+        onpolicy_mean = float(diff.sum() / mask[:, :width].sum().clamp(min=1))
+        # bf16 cached generation and a fresh forward pass differ by up to about 0.25
+        # nats on single tokens; a different sampler shifts many tokens (A22).
+        if onpolicy_mean > 0.05:
+            raise RuntimeError(f"sampled and scored log-probabilities differ by {onpolicy_mean:.3f} per token on average")
         with model.disable_adapter():
             ref_logp, _ = sequence_logp(model, tok, ids, completions, trie, with_grad=False)
         delta = (ref_logp - logp).clamp(-20, 20)
@@ -257,7 +260,7 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
                      "reward_mean": float(np.mean(valid)) if valid else None, "invalid_rate": log.invalid / group,
                      "repaired_rate": log.repaired / group, "repeat_rate": log.repeats / group,
                      "unique_rate": len({c for c in cids if c}) / group, "rivals": len(rival_rewards),
-                     "best_in_history": min(history.values()) if history else None, "onpolicy_gap": onpolicy_gap,
+                     "best_in_history": min(history.values()) if history else None, "onpolicy_gap": onpolicy_gap, "onpolicy_mean": onpolicy_mean,
                      "seconds": time.time() - start,
                      "peak_gb": torch.cuda.max_memory_allocated() / 2**30, "training_epochs": training_epochs})
         print({k: (round(v, 4) if isinstance(v, float) else v) for k, v in rows[-1].items()}, flush=True)

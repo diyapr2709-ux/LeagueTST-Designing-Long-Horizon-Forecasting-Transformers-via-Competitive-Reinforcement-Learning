@@ -109,3 +109,12 @@ The on-policy check of A20 returned NaN (padding after the end-of-turn
 token has -inf scores, and -inf times a zero mask is NaN), so it could not
 fire. It now ignores padded positions. Sampling and training are unchanged;
 a separate three-step job measures the gap for the record.
+
+## Amendment A22 (2026-11-23 18:54, before any E4 endpoint)
+
+The check job measured the largest per-token gap between the sampler's and
+the scoring pass's log-probabilities at 0.13 to 0.24 nats, the usual bf16
+difference between cached generation and a fresh forward pass. The check
+now stops a run only when the mean gap per token exceeds 0.05 (a different
+sampler, such as a repetition penalty, shifts many tokens); both the mean
+and the largest gap are logged.
