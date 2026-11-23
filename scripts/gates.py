@@ -175,9 +175,14 @@ def g4(item: str) -> tuple[bool, str]:
 
 
 def g5(item: str) -> tuple[bool, str]:
-    path = ROOT / "results" / "search" / item / "budget.json"
-    if not path.exists():
-        return (item not in SEARCH_ITEMS), (f"results/search/{item}/budget.json is missing" if item in SEARCH_ITEMS else "item runs no search")
+    paths = sorted((ROOT / "results" / "search" / item).glob("*/budget.json"))
+    if not paths:
+        return (item not in SEARCH_ITEMS), (f"no budget log under results/search/{item}/" if item in SEARCH_ITEMS else "item runs no search")
+    results = [g5_one(path) for path in paths]
+    return all(ok for ok, _ in results), "; ".join(detail for _, detail in results)
+
+
+def g5_one(path: Path) -> tuple[bool, str]:
     log = json.loads(path.read_text())
     runs_by_key = {(r["config_id"], int(r["seed"])): int(r["epochs_charged"]) for r in read_rows(LEDGER)
                    if r["item"] == log["table_item"] and r["dataset"] == log["dataset"] and int(r["horizon"]) == int(log["horizon"])}
@@ -199,7 +204,8 @@ def g5(item: str) -> tuple[bool, str]:
         spent = sum(totals.values())
         if spent != run["spent"] or spent > log["budget_epochs"]:
             problems.append(f"{label}: recount {spent}, logged {run['spent']}, budget {log['budget_epochs']}")
-    return (not problems), ("; ".join(problems[:5]) if problems else f"{len(log['runs'])} runs recounted within {log['budget_epochs']} epochs")
+    where = f"{log['dataset']} T{log['horizon']}"
+    return (not problems), (f"{where}: " + "; ".join(problems[:5]) if problems else f"{where}: {len(log['runs'])} runs recounted within {log['budget_epochs']} epochs")
 
 
 def g6(item: str) -> tuple[bool, str]:

@@ -183,17 +183,28 @@ def portfolio(order: list[str]) -> Callable[[Oracle, Space, np.random.Generator]
     return run
 
 
-def mutate(cid: str, space: Space, rng: np.random.Generator, tries: int = 200) -> str:
+def mutate(cid: str, space: Space, rng: np.random.Generator, seen: set[str] | None = None, tries: int = 200) -> str:
+    """A feasible one-field mutation, preferring configs not evaluated yet.
+
+    When no unseen feasible mutation turns up in ``tries`` attempts, the
+    nearest unseen config to the parent is returned instead.
+    """
     parent = space.choices[cid]
+    fallback = None
     for _ in range(tries):
         name = MUTABLE_FIELDS[rng.integers(len(MUTABLE_FIELDS))]
         options = [v for v in space.domains[name] if v != parent[name]]
         if not options:
             continue
         child = space.to_id({**parent, name: options[rng.integers(len(options))]})
-        if child is not None:
+        if child is None:
+            continue
+        if seen is None or child not in seen:
             return child
-    return space.ids[rng.integers(len(space.ids))]
+        fallback = fallback or child
+    if seen is not None:
+        return nearest_unseen(parent, space, seen, rng)
+    return fallback or space.ids[rng.integers(len(space.ids))]
 
 
 def regularized_evolution(population_size: int = 20, sample_size: int = 5):
@@ -201,44 +212,73 @@ def regularized_evolution(population_size: int = 20, sample_size: int = 5):
 
     def run(oracle: Oracle, space: Space, rng: np.random.Generator) -> None:
         population: deque[tuple[str, float]] = deque()
+        seen: set[str] = set()
         for index in rng.permutation(len(space.ids))[:population_size]:
             cid = space.ids[index]
             population.append((cid, oracle.full(cid)))
+            seen.add(cid)
         while True:
             picks = rng.choice(len(population), size=min(sample_size, len(population)), replace=False)
             parent = min((population[i] for i in picks), key=lambda item: item[1])[0]
-            child = mutate(parent, space, rng)
+            child = mutate(parent, space, rng, seen)
             population.append((child, oracle.full(child)))
+            seen.add(child)
             population.popleft()
 
     return run
 
 
-def tpe(n_startup: int = 10, warm_start: list[str] | None = None, max_asks: int = 50_000):
-    """Optuna's multivariate TPE over the fields; infeasible proposals fail at no cost."""
+def nearest_unseen(params: dict[str, Any], space: Space, seen: set[str], rng: np.random.Generator) -> str:
+    """The unseen feasible config closest to ``params`` in fields changed (ties at random)."""
+    best, best_distance = [], None
+    for cid in space.ids:
+        if cid in seen:
+            continue
+        choice = space.choices[cid]
+        distance = sum(choice[f] != params[f] for f in MUTABLE_FIELDS)
+        if best_distance is None or distance < best_distance:
+            best, best_distance = [cid], distance
+        elif distance == best_distance:
+            best.append(cid)
+    if not best:
+        raise BudgetExhausted
+    return best[rng.integers(len(best))]
+
+
+def tpe(n_startup: int = 10, warm_start: list[str] | None = None, max_trials: int = 5_000):
+    """Optuna's multivariate TPE over the fields.
+
+    A proposal that is infeasible or already evaluated is replaced by the
+    nearest unseen feasible config; the raw proposal is discarded as failed
+    and the evaluated config is added as a completed trial, so the model
+    learns only from configs that were actually charged.
+    """
 
     def run(oracle: Oracle, space: Space, rng: np.random.Generator) -> None:
         import optuna
 
         optuna.logging.set_verbosity(optuna.logging.WARNING)
+        distributions = {f: optuna.distributions.CategoricalDistribution(space.domains[f]) for f in MUTABLE_FIELDS}
         sampler = optuna.samplers.TPESampler(seed=int(rng.integers(2**31)), n_startup_trials=n_startup, multivariate=True)
         study = optuna.create_study(direction="minimize", sampler=sampler)
+        seen: set[str] = set()
+
+        def evaluate(cid: str) -> None:
+            value = oracle.full(cid)
+            seen.add(cid)
+            study.add_trial(optuna.trial.create_trial(
+                params={f: space.choices[cid][f] for f in MUTABLE_FIELDS}, distributions=distributions, value=math.log(value)))
+
         for cid in warm_start or []:
-            if cid in space.id_set:
-                study.enqueue_trial({f: space.choices[cid][f] for f in MUTABLE_FIELDS})
-        for _ in range(max_asks):
-            trial = study.ask()
-            choice = {f: trial.suggest_categorical(f, space.domains[f]) for f in MUTABLE_FIELDS}
-            cid = space.to_id(choice)
-            if cid is None:
-                study.tell(trial, state=optuna.trial.TrialState.FAIL)
-                continue
-            try:
-                value = oracle.full(cid)
-            except BudgetExhausted:
-                study.tell(trial, state=optuna.trial.TrialState.FAIL)
-                raise
-            study.tell(trial, math.log(value))
+            if cid in space.id_set and cid not in seen:
+                evaluate(cid)
+        for _ in range(max_trials):
+            trial = study.ask(distributions)
+            cid = space.to_id(trial.params)
+            if cid is None or cid in seen:
+                cid = nearest_unseen(trial.params, space, seen, rng)
+            study.tell(trial, state=optuna.trial.TrialState.FAIL)
+            evaluate(cid)
 
     return run
 
@@ -328,6 +368,7 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
         second = {f: np.zeros_like(v) for f, v in logits.items()}
         snapshots = [{f: v.copy() for f, v in logits.items()}]
         step = 0
+        idle_steps = 0
 
         def sample(table_logits):
             picks = {}
@@ -339,6 +380,7 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
 
         while True:
             step += 1
+            spent_before = oracle.spent
             own = [sample(logits) for _ in range(group)]
             rewards: list[float | None] = []
             for picks in own:
@@ -377,6 +419,11 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
                 logits[f] = logits[f] + lr * m_hat / (np.sqrt(v_hat) + 1e-8)
             if step % snapshot_every == 0:
                 snapshots.append({f: v.copy() for f, v in logits.items()})
+            # A policy that only proposes configs it has already paid for
+            # spends nothing; stop it rather than loop forever.
+            idle_steps = idle_steps + 1 if oracle.spent == spent_before else 0
+            if idle_steps >= 50:
+                return
 
     return run
 
