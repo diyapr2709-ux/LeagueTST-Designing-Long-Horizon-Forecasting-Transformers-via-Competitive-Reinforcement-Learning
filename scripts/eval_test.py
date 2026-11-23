@@ -9,9 +9,11 @@ the validation windows with the locked NumPy model, reproduces the
 validation MSE registered for it within 1e-6 (which catches a wrong config).
 
 Each run's per-window test errors and metrics are saved as soon as they are
-scored, under results/final/test_<id>/. Statistics are computed from those
-files, so ``--analyze-only`` can recompute them without opening the test
-split again, and ``--resume`` scores only runs that were not saved.
+scored, under results/final/test_<id>/; commit that folder together with
+results/test_access.log right after scoring. Statistics are computed from
+those files, so ``--analyze-only`` can recompute them from the committed
+files without opening the test split again, and ``--resume`` scores only
+the runs an interrupted evaluation did not save.
 
 The primary endpoint is the mean over horizons of exact test MSE. A
 seed-level permutation test gives each comparison's p value (Holm over
@@ -194,7 +196,15 @@ def main() -> int:
     path = Path(args.prereg).resolve()
     prereg = json.loads(path.read_text(encoding="utf-8"))
     save_dir = ROOT / "results" / "final" / f"test_{prereg['id']}"
-    if not args.analyze_only:
+    if args.analyze_only:
+        # Saved run files are evidence; read them only when committed unchanged.
+        saved = sorted(save_dir.iterdir()) if save_dir.exists() else []
+        stale = [p for p in saved if not committed_unchanged(p, ROOT)]
+        if not saved or stale or not committed_unchanged(path, ROOT):
+            print("--analyze-only reads only a committed prereg and committed, unchanged run files "
+                  f"under {save_dir.relative_to(ROOT)}; commit them with results/test_access.log after scoring")
+            return 1
+    else:
         vault = os.environ.get("LEAGUETST_VAULT")
         if not vault:
             print("set LEAGUETST_VAULT to the decrypted vault folder")
@@ -205,6 +215,9 @@ def main() -> int:
         opened = already_opened(prereg["id"])
         if opened and not args.resume:
             print(f"the test split was already opened for {prereg['id']}; use --resume only to finish an interrupted run")
+            return 1
+        if args.resume and not opened:
+            print(f"nothing to resume: the test split was never opened for {prereg['id']}")
             return 1
         problems = preflight(prereg, ROOT, Path(args.trainval), check_opened=not args.resume)
         problems = [p for p in problems if not (args.resume and "test_access.log has uncommitted changes" in p)]
