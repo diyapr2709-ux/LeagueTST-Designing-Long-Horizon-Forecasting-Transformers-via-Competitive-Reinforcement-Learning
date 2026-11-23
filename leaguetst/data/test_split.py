@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,6 +22,18 @@ ACCESS_LOG = ROOT / "results" / "test_access.log"
 PREREG_DIR = ROOT / "prereg"
 
 
+def is_registered(prereg_id: str) -> bool:
+    """Whether prereg/<id>.json exists and is committed unchanged in the repository."""
+    if not prereg_id:
+        return False
+    rel = f"prereg/{prereg_id}.json"
+    if not (ROOT / rel).is_file():
+        return False
+    tracked = subprocess.run(["git", "ls-files", "--error-unmatch", rel], cwd=ROOT, capture_output=True).returncode == 0
+    clean = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", rel], cwd=ROOT).returncode == 0
+    return tracked and clean
+
+
 def load_test_split(
     vault_dir: str | Path,
     trainval_dir: str | Path,
@@ -28,17 +41,15 @@ def load_test_split(
     input_len: int,
     horizon: int,
     prereg_id: str,
-    log_path: str | Path = ACCESS_LOG,
-    prereg_dir: str | Path = PREREG_DIR,
 ) -> tuple[WindowDataset, Standardizer]:
-    """Test windows of one benchmark, after logging the access.
+    """Test windows of one benchmark, after logging the access to ACCESS_LOG.
 
-    ``prereg_id`` must name an existing ``prereg/<id>.json``. The vault file
-    must be the exact file the trainval copy was cut from (same SHA-256 as
-    the manifest's ``source_sha256``).
+    ``prereg_id`` must name a committed, unchanged ``prereg/<id>.json``. The
+    vault file must be the exact file the trainval copy was cut from (same
+    SHA-256 as the manifest's ``source_sha256``).
     """
-    if not prereg_id or not (Path(prereg_dir) / f"{prereg_id}.json").is_file():
-        raise ValueError(f"no prereg file for {prereg_id!r}; the test split opens only for a registered evaluation")
+    if not is_registered(prereg_id):
+        raise ValueError(f"no committed prereg file for {prereg_id!r}; the test split opens only for a registered evaluation")
     spec = BENCHMARKS[name]
     entry = read_manifest(trainval_dir)["datasets"][name]
     source = Path(vault_dir) / spec.relative_path
@@ -46,7 +57,7 @@ def load_test_split(
     if digest != entry["source_sha256"]:
         raise ValueError(f"{source} is not the file the trainval copy was cut from")
 
-    log_path = Path(log_path)
+    log_path = ACCESS_LOG
     log_path.parent.mkdir(parents=True, exist_ok=True)
     line = {
         "time": datetime.now(timezone.utc).isoformat(timespec="seconds"),

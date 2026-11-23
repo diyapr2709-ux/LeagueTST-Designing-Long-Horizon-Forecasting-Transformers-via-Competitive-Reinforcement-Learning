@@ -59,7 +59,7 @@ def test_every_method_respects_the_budget_and_recounts(table, space, method):
     oracle = run_method(METHODS[method](), table, space, budget, seed=4)
     assert 0 < oracle.spent <= budget
     totals = defaultdict(int)
-    for cid, seed, epochs, kind in oracle.charges:
+    for cid, seed, epochs, kind, read_epoch in oracle.charges:
         totals[(cid, seed)] += epochs
         assert oracle.obs_seed[cid] == seed
     assert sum(totals.values()) == oracle.spent
@@ -82,3 +82,31 @@ def test_regret_is_scored_against_the_multi_seed_mean(table):
     oracle = Oracle(table, budget=10_000, seed=0)
     oracle.full(table.best_id)
     assert regret_at(oracle, 10_000, 1.0) == pytest.approx(0.0)
+
+
+def test_common_random_numbers_across_methods(table, space):
+    a = run_method(METHODS["random"](), table, space, 3000, seed=11)
+    b = run_method(METHODS["re"](), table, space, 3000, seed=11)
+    shared = set(a.obs_seed) & set(b.obs_seed)
+    assert shared and all(a.obs_seed[c] == b.obs_seed[c] for c in shared)
+
+
+def test_diverged_rows_rank_last_and_do_not_break_methods():
+    rows = []
+    rng = np.random.default_rng(1)
+    for i, (cid, config) in enumerate(configs_by_id().items()):
+        for seed in (1, 2, 3):
+            n = int(rng.integers(5, 31))
+            curve = list(0.5 + rng.normal(0, 0.01, n))
+            best = min(curve)
+            if i % 5 == 0 and seed == 1:
+                curve[0] = float("nan")
+                best = float("inf")
+            rows.append({"config_id": cid, "seed": seed, "val_curve": curve, "train_curve": curve, "best_val_mse": best,
+                         "epochs_run": n, "model_config": config.to_dict()})
+    table = Table(rows)
+    space = Space(table.ids)
+    assert table.n_diverged > 0 and np.isfinite(table.best_true)
+    for method in ("referee3", "pg", "pg_league", "asha", "epochk3"):
+        oracle = run_method(METHODS[method](), table, space, 1500, seed=2)
+        assert oracle.spent > 0 and all(np.isfinite(v) for v in oracle.full_values.values())

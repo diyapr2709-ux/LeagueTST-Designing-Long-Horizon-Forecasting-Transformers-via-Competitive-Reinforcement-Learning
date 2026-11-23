@@ -175,17 +175,18 @@ def test_holm_and_paired_bootstrap():
     assert lower["high"] < 0 and lower["p"] < 0.05
 
 
-def test_test_split_logs_every_access(synthetic_data_dir, trainval_dir, tmp_path):
+def test_test_split_logs_every_access(synthetic_data_dir, trainval_dir, tmp_path, monkeypatch):
+    from leaguetst.data import test_split
+
     log = tmp_path / "access.log"
-    prereg_dir = tmp_path / "prereg"
-    prereg_dir.mkdir()
+    monkeypatch.setattr(test_split, "ACCESS_LOG", log)
     with pytest.raises(ValueError):
-        load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "", log, prereg_dir)
+        load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "")
     with pytest.raises(ValueError):
-        load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "unit", log, prereg_dir)
+        load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "not_registered_anywhere")
     assert not log.exists()
-    (prereg_dir / "unit.json").write_text("{}")
-    test, _ = load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "unit", log, prereg_dir)
+    monkeypatch.setattr(test_split, "is_registered", lambda prereg_id: prereg_id == "unit")
+    test, _ = load_test_split(synthetic_data_dir, trainval_dir, "ILI", 104, 24, "unit")
     assert len(test) == 193 - 24 + 1
     lines = [json.loads(l) for l in log.read_text().splitlines()]
     assert lines[-1]["prereg"] == "unit" and lines[-1]["dataset"] == "ILI"
@@ -193,19 +194,20 @@ def test_test_split_logs_every_access(synthetic_data_dir, trainval_dir, tmp_path
     assert torch.equal(full["test"].values, test.values)
 
 
-def test_test_split_refuses_a_different_file(synthetic_data_dir, trainval_dir, tmp_path):
+def test_test_split_refuses_a_different_file(synthetic_data_dir, trainval_dir, tmp_path, monkeypatch):
     import shutil
 
+    from leaguetst.data import test_split
+
+    monkeypatch.setattr(test_split, "ACCESS_LOG", tmp_path / "log")
+    monkeypatch.setattr(test_split, "is_registered", lambda prereg_id: True)
     vault = tmp_path / "vault"
     shutil.copytree(synthetic_data_dir, vault)
     path = vault / "illness" / "national_illness.csv"
     text = path.read_text().splitlines()
     path.write_text("\n".join(text[:-1]) + "\n")
-    prereg_dir = tmp_path / "prereg"
-    prereg_dir.mkdir()
-    (prereg_dir / "unit.json").write_text("{}")
     with pytest.raises(ValueError):
-        load_test_split(vault, trainval_dir, "ILI", 104, 24, "unit", tmp_path / "log", prereg_dir)
+        load_test_split(vault, trainval_dir, "ILI", 104, 24, "unit")
 
 
 def test_prereg_refuses_bad_specs(tmp_path):
@@ -229,6 +231,9 @@ def test_prereg_refuses_bad_specs(tmp_path):
     assert any("repeats a checkpoint" in p for p in prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log2"))
     spec["arms"][0]["runs"] = [dict(runs[0], sha256="0" * 64)] + runs[1:]
     assert any("digest" in p for p in prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log2"))
+    other = [dict(r, horizon=36, seed=r["seed"] + 5) for r in runs]
+    spec["arms"][0]["runs"] = runs + other
+    assert any("same seeds at every horizon" in p for p in prereg.validate(spec, root=tmp_path, access_log=tmp_path / "log2"))
 
 
 def test_build_splits_refuses_a_trainval_copy(trainval_dir):
@@ -263,3 +268,57 @@ def test_refused_ledger_batch_writes_nothing(trainval_dir, tmp_path):
     with pytest.raises(ValueError):
         append_rows([fresh, clash], ledger)
     assert [r["config_id"] for r in read_rows(ledger)] == ["c1"]
+
+
+def test_statistics_refuse_empty_or_non_finite_input():
+    from leaguetst.eval.stats import endpoint_bootstrap, permutation_test
+
+    with pytest.raises(ValueError):
+        permutation_test([], [1.0, 2.0, 3.0])
+    with pytest.raises(ValueError):
+        permutation_test([1.0, float("nan"), 2.0], [1.0, 2.0])
+    with pytest.raises(ValueError):
+        permutation_test([1.0], [1.0, 2.0])
+    with pytest.raises(ValueError):
+        endpoint_bootstrap({}, {}, {})
+    with pytest.raises(ValueError):
+        endpoint_bootstrap({1: np.ones((1, 10))}, {1: np.ones((3, 10))}, {1: 2})
+
+
+def _git_repo(path):
+    import subprocess
+
+    def git(*args):
+        subprocess.run(["git", *args], cwd=path, check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "unit@example.com")
+    git("config", "user.name", "unit")
+    return git
+
+
+@pytest.mark.parametrize("attack", ["delete_uncommitted", "truncate_committed", "delete_committed", "edit_uncommitted"])
+def test_append_only_files_resist_truncation_and_deletion(tmp_path, attack):
+    from leaguetst.eval.integrity import append_only_problems
+
+    git = _git_repo(tmp_path)
+    rel = "results/ledger.jsonl"
+    path = tmp_path / rel
+    path.parent.mkdir(parents=True)
+    path.write_text("a\n")
+    git("add", rel)
+    git("commit", "-q", "-m", "one")
+    path.write_text("a\nb\n")
+    git("commit", "-q", "-am", "two")
+    assert append_only_problems(rel, tmp_path) == []
+    if attack == "delete_uncommitted":
+        path.unlink()
+    elif attack == "truncate_committed":
+        path.write_text("a\n")
+        git("commit", "-q", "-am", "truncate")
+    elif attack == "delete_committed":
+        git("rm", "-q", rel)
+        git("commit", "-q", "-m", "delete")
+    else:
+        path.write_text("a\nX\n")
+    assert append_only_problems(rel, tmp_path)

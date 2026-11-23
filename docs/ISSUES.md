@@ -10,3 +10,22 @@ Problems found during the build that are logged instead of worked around.
 | 2026-11-23 | The plan doc keeps the E0 prompt in a claude.ai chat that Claude Code cannot open. E0 was built from the doc's rescope and setup sections instead. | noted |
 | 2026-11-23 | Team question: the progress report lists three authors while the plan doc treats the work as individual. The owner settles this with teammates and the instructor. | open, owner |
 | 2026-11-23 | `pytest -q` together with `addopts = "-q"` hides the "N passed" line. gates.py reads the exit code, not the text. | noted |
+
+## Contacts with test rows during the 23 Nov build session
+
+The vault step (K0) was not done yet, so the full CSVs were readable. Every
+known contact is listed here. None reached a table, a search, a model
+selection or any score on test.
+
+| Who | What | What was seen |
+|---|---|---|
+| Builder (main session) | `build_splits` and `build_dataloaders` on data/ while checking that data/trainval and the GPU loader reproduce the full pipeline | Test datasets were built in memory; only train and validation were compared or iterated. Nothing from test was printed. |
+| Verifier agent, baseline audit | `build_splits` and `build_dataloaders` on data/ to check split borders and loader flags | Test window counts only (ETTh1 2785 / 2689 / 2545 / 2161, ILI 170 / 158 / 146 / 134), which the committed records already hold. |
+| Verifier agent, milestone 1 | Printed the first 40 bytes of the first test-only row of each full CSV while checking the byte prefix | Part of one test row per dataset: ETTh1 "2017-10-24 00:00:00,9.979999542236328,3." and ILI "2016-10-25 00:00:00,0.733295,0.818527,15". |
+| Verifier agent, milestone 2 | `load_test_split` for ILI T=24 with a scratch prereg file and log, to show the door could be bypassed | Window count only (170). The access is not in results/test_access.log because it went to a scratch log. |
+
+Since then the agents are told never to load, slice, print or count test
+rows, and to use the synthetic fixtures to demonstrate bypasses. The test
+door now requires a committed prereg file and always logs to
+results/test_access.log. The remaining protection is the owner's vault
+step: moving and encrypting the full CSVs.

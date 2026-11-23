@@ -10,6 +10,16 @@ import numpy as np
 EXACT_LIMIT = 250_000
 
 
+def _checked(values, name: str) -> np.ndarray:
+    """A 1-D float array with at least two finite values, or ValueError."""
+    array = np.asarray(values, dtype=np.float64).ravel()
+    if len(array) < 2:
+        raise ValueError(f"{name} needs at least two values, got {len(array)}")
+    if not np.all(np.isfinite(array)):
+        raise ValueError(f"{name} holds non-finite values")
+    return array
+
+
 def permutation_test(a: np.ndarray, b: np.ndarray, n_permutations: int = 100_000, seed: int = 0) -> dict[str, float]:
     """Two-sided test of mean(a) = mean(b) for independent per-seed values.
 
@@ -17,8 +27,8 @@ def permutation_test(a: np.ndarray, b: np.ndarray, n_permutations: int = 100_000
     them (10 seeds against 10 gives 184,756); otherwise Monte Carlo with
     the observed labelling counted, so p is never zero.
     """
-    a = np.asarray(a, dtype=np.float64)
-    b = np.asarray(b, dtype=np.float64)
+    a = _checked(a, "a")
+    b = _checked(b, "b")
     pooled = np.concatenate([a, b])
     n, k = len(pooled), len(a)
     observed = a.mean() - b.mean()
@@ -67,8 +77,13 @@ def endpoint_bootstrap(
     is kept and seed variance is included.
     """
     horizons = sorted(a)
-    if sorted(b) != horizons:
-        raise ValueError("arms must cover the same horizons")
+    if not horizons or sorted(b) != horizons:
+        raise ValueError("arms must cover the same, non-empty set of horizons")
+    for arm in (a, b):
+        for h in horizons:
+            values = np.asarray(arm[h], dtype=np.float64)
+            if values.ndim != 2 or values.shape[0] < 2 or values.shape[1] < 1 or not np.all(np.isfinite(values)):
+                raise ValueError(f"horizon {h}: need a finite (seeds >= 2, windows) array")
     n_a = {a[h].shape[0] for h in horizons}
     n_b = {b[h].shape[0] for h in horizons}
     if len(n_a) != 1 or len(n_b) != 1:

@@ -28,18 +28,18 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
-import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from leaguetst.data.test_split import load_test_split  # noqa: E402
 from leaguetst.eval.metrics import exact_and_drop_last  # noqa: E402
+from leaguetst.eval.numpy_model import numpy_patchtst_forward  # noqa: E402
+from leaguetst.eval.rescore import load_numpy_state  # noqa: E402
 from leaguetst.eval.stats import endpoint_bootstrap, holm, permutation_test  # noqa: E402
-from leaguetst.experiment import build_model  # noqa: E402
-from leaguetst.search.feasible import INPUT_LEN  # noqa: E402
-from leaguetst.table import recipe  # noqa: E402
-from leaguetst.utils import load_state_dict, save_json  # noqa: E402
+
+INPUT_LEN = {"ETTh1": 336, "ILI": 104}
+BATCH_SIZE = {"ETTh1": 128, "ILI": 16}  # the PatchTST/42 recipes, for the drop-last column only
 
 
 def committed_unchanged(path: Path, root: Path) -> bool:
@@ -55,31 +55,31 @@ def already_opened(prereg_id: str, log_path: Path) -> bool:
     return any(json.loads(line).get("prereg") == prereg_id for line in log_path.read_text().splitlines() if line.strip())
 
 
-@torch.no_grad()
-def forecast(model: torch.nn.Module, dataset, batch_size: int = 256) -> tuple[np.ndarray, np.ndarray]:
-    model.eval()
+def forecast(state: dict, model_config: dict, dataset, horizon: int, chunk: int = 256) -> tuple[np.ndarray, np.ndarray]:
+    """Forecasts from the locked NumPy model, and the targets, for every test window."""
+    values = dataset.values.double().numpy()
+    input_len = dataset.input_len
+    starts = np.arange(len(dataset))
     preds, targets = [], []
-    for start in range(0, len(dataset), batch_size):
-        items = [dataset[i] for i in range(start, min(start + batch_size, len(dataset)))]
-        inputs = torch.stack([x for x, _ in items])
-        preds.append(model(inputs).double().numpy())
-        targets.append(torch.stack([y for _, y in items]).double().numpy())
+    for first in range(0, len(starts), chunk):
+        block = starts[first:first + chunk]
+        inputs = values[block[:, None] + np.arange(input_len)[None, :]]
+        targets.append(values[block[:, None] + input_len + np.arange(horizon)[None, :]])
+        preds.append(numpy_patchtst_forward(state, model_config, inputs, horizon))
     return np.concatenate(preds), np.concatenate(targets)
 
 
-def evaluate(prereg: dict, vault: Path, trainval: Path, root: Path, log_path: Path) -> dict:
+def evaluate(prereg: dict, vault: Path, trainval: Path, root: Path) -> dict:
     per_window: dict[str, dict[int, dict[int, np.ndarray]]] = defaultdict(lambda: defaultdict(dict))
     runs_out = []
-    torch.set_num_threads(4)
     for arm in prereg["arms"]:
         dataset = arm["dataset"]
         for run in arm["runs"]:
             horizon, seed = int(run["horizon"]), int(run["seed"])
-            test, _ = load_test_split(vault, trainval, dataset, INPUT_LEN[dataset], horizon, prereg["id"], log_path)
-            model = build_model("patchtst", arm["model_config"], test.n_vars, INPUT_LEN[dataset], horizon)
-            model.load_state_dict(load_state_dict(root / run["checkpoint"], expected_sha256=run["sha256"]))
-            preds, targets = forecast(model, test)
-            batch_size = int(run.get("batch_size") or recipe(dataset)["batch_size"])
+            test, _ = load_test_split(vault, trainval, dataset, INPUT_LEN[dataset], horizon, prereg["id"])
+            state = load_numpy_state(root / run["checkpoint"], run["sha256"])
+            preds, targets = forecast(state, arm["model_config"], test, horizon)
+            batch_size = int(run.get("batch_size") or BATCH_SIZE[dataset])
             metrics = exact_and_drop_last(preds, targets, batch_size)
             per_window[arm["name"]][horizon][seed] = ((preds - targets) ** 2).reshape(len(preds), -1).mean(axis=1)
             runs_out.append({"arm": arm["name"], "dataset": dataset, "horizon": horizon, "seed": seed, **metrics})
@@ -93,6 +93,9 @@ def evaluate(prereg: dict, vault: Path, trainval: Path, root: Path, log_path: Pa
         horizons = sorted(per_window[a])
         seeds_a = sorted(set.intersection(*(set(per_window[a][h]) for h in horizons)))
         seeds_b = sorted(set.intersection(*(set(per_window[b][h]) for h in horizons)))
+        registered = {name: {int(r["seed"]) for arm in prereg["arms"] if arm["name"] == name for r in arm["runs"]} for name in (a, b)}
+        if set(seeds_a) != registered[a] or set(seeds_b) != registered[b] or sorted(per_window[b]) != horizons:
+            raise ValueError(f"{comparison['name']}: scored seeds or horizons differ from the prereg")
         endpoint_a = [float(np.mean([per_window[a][h][s].mean() for h in horizons])) for s in seeds_a]
         endpoint_b = [float(np.mean([per_window[b][h][s].mean() for h in horizons])) for s in seeds_b]
         primary = permutation_test(np.array(endpoint_a), np.array(endpoint_b), seed=int(boot.get("seed", 0)))
@@ -109,7 +112,7 @@ def evaluate(prereg: dict, vault: Path, trainval: Path, root: Path, log_path: Pa
         comparisons[comparison["name"]] = {"a": a, "b": b, "seeds_a": seeds_a, "seeds_b": seeds_b,
                                            "endpoint_a": endpoint_a, "endpoint_b": endpoint_b,
                                            "endpoint_diff": primary["diff"], "endpoint_p": primary["p"],
-                                           "bootstrap": support, "per_horizon": per_horizon}
+                                           "bootstrap_supporting": support, "per_horizon": per_horizon}
     rejected = holm({k: v["endpoint_p"] for k, v in comparisons.items()}, float(prereg.get("alpha", 0.05)))
     for name in comparisons:
         comparisons[name]["significant_after_holm"] = rejected[name]
@@ -147,7 +150,7 @@ def main() -> int:
     if already_opened(prereg["id"], log_path):
         print(f"the test split was already opened for {prereg['id']}; the evaluation runs once")
         return 1
-    result = evaluate(prereg, Path(vault).expanduser(), Path(args.trainval), ROOT, log_path)
+    result = evaluate(prereg, Path(vault).expanduser(), Path(args.trainval), ROOT)
     out = ROOT / "results" / "final" / f"test_{prereg['id']}.json"
     save_json(result, out)
     for name, comparison in result["comparisons"].items():

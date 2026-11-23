@@ -70,6 +70,10 @@ def validate(spec: dict, root: Path = ROOT, access_log: Path = ACCESS_LOG) -> li
                 problems.append(f"arm {name} has fewer than {MIN_SEEDS} distinct seeds at some horizon")
             if any(len(checkpoints[h]) != len([r for r in runs if r["horizon"] == h]) for h in checkpoints):
                 problems.append(f"arm {name} repeats a checkpoint")
+            if len({(r["horizon"], r["seed"]) for r in runs}) != len(runs):
+                problems.append(f"arm {name} repeats a (horizon, seed) pair")
+            if len({frozenset(v) for v in seeds.values()}) > 1:
+                problems.append(f"arm {name} does not use the same seeds at every horizon")
         if comparison.get("a") in arms and comparison.get("b") in arms:
             ha = {r["horizon"] for r in arms[comparison["a"]]["runs"]}
             hb = {r["horizon"] for r in arms[comparison["b"]]["runs"]}

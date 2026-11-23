@@ -19,8 +19,11 @@ draw.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from collections import deque
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 
@@ -46,21 +49,39 @@ class Observation:
 
 
 class Table:
-    """Per-config, per-seed observations from ledger rows of one setting."""
+    """Per-config, per-seed observations from ledger rows of one setting.
+
+    A diverged run (non-finite best value or curve entries) keeps its charge
+    but its values are replaced by a penalty, ten times the largest finite
+    best value, so it ranks last without breaking any method. The regret
+    reference is the best multi-seed mean among configs with the most seeds.
+    """
 
     def __init__(self, rows: Iterable[dict[str, Any]], min_seeds: int = 1):
+        rows = list(rows)
+        finite = [float(r["best_val_mse"]) for r in rows if math.isfinite(float(r["best_val_mse"]))]
+        self.penalty = 10.0 * max(finite) if finite else 1e6
+        self.n_diverged = 0
         observations: dict[str, dict[int, Observation]] = {}
         self.model_configs: dict[str, dict[str, Any]] = {}
         for row in rows:
-            obs = Observation(tuple(row["val_curve"]), tuple(row.get("train_curve", ())), float(row["best_val_mse"]),
-                              int(row["epochs_run"]))
+            best = float(row["best_val_mse"])
+            curve = tuple(v if math.isfinite(v) else self.penalty for v in map(float, row["val_curve"])) or (self.penalty,)
+            train = tuple(v if math.isfinite(v) else self.penalty for v in map(float, row.get("train_curve", ())))
+            if not math.isfinite(best):
+                best = self.penalty
+                self.n_diverged += 1
+            obs = Observation(curve, train, best, max(1, int(row["epochs_run"])))
             observations.setdefault(row["config_id"], {})[int(row["seed"])] = obs
             self.model_configs[row["config_id"]] = row["model_config"]
         self.obs = {cid: seeds for cid, seeds in observations.items() if len(seeds) >= min_seeds}
         self.ids = sorted(self.obs)
         self._true = {cid: float(np.mean([o.best for o in seeds.values()])) for cid, seeds in self.obs.items()}
-        self.best_true = min(self._true.values())
-        self.best_id = min(self._true, key=self._true.get)
+        most = max(len(seeds) for seeds in self.obs.values())
+        reference = {cid: v for cid, v in self._true.items() if len(self.obs[cid]) == most}
+        self.best_id = min(reference, key=reference.get)
+        self.best_true = reference[self.best_id]
+        self.reference_seeds = most
 
     def true_value(self, cid: str) -> float:
         return self._true[cid]
@@ -82,25 +103,33 @@ class Oracle:
     obs_seed: dict[str, int] = field(default_factory=dict)
     full_values: dict[str, float] = field(default_factory=dict)
     trace: list[tuple[int, str]] = field(default_factory=list)
-    charges: list[tuple[str, int, int, str]] = field(default_factory=list)
+    charges: list[tuple[str, int, int, str, int]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.rng = np.random.default_rng(self.seed)
 
     def _observation(self, cid: str) -> Observation:
+        """The seed this search run sees for ``cid``.
+
+        The draw depends only on (search seed, config id), so every method run
+        with the same search seed sees the same draw for the same config
+        (common random numbers for paired comparisons).
+        """
         seeds = self.table.obs[cid]
         if cid not in self.obs_seed:
-            self.obs_seed[cid] = int(self.rng.choice(sorted(seeds)))
+            ordered = sorted(seeds)
+            digest = hashlib.sha256(f"{self.seed}:{cid}".encode()).hexdigest()
+            self.obs_seed[cid] = ordered[int(digest[:12], 16) % len(ordered)]
         return seeds[self.obs_seed[cid]]
 
-    def _charge(self, cid: str, epochs: int, kind: str) -> None:
+    def _charge(self, cid: str, epochs: int, kind: str, read_epoch: int) -> None:
         extra = max(0, epochs - self.charged.get(cid, 0))
         if self.spent + extra > self.budget:
             raise BudgetExhausted
         if extra:
             self.spent += extra
             self.charged[cid] = self.charged.get(cid, 0) + extra
-            self.charges.append((cid, self.obs_seed[cid], extra, kind))
+            self.charges.append((cid, self.obs_seed[cid], extra, kind, read_epoch))
 
     def _record_full(self, cid: str, value: float) -> None:
         if cid not in self.full_values:
@@ -110,7 +139,7 @@ class Oracle:
 
     def full(self, cid: str) -> float:
         obs = self._observation(cid)
-        self._charge(cid, obs.epochs_run, "full")
+        self._charge(cid, obs.epochs_run, "full", obs.epochs_run)
         self._record_full(cid, obs.best)
         return obs.best
 
@@ -118,7 +147,7 @@ class Oracle:
         """Best validation MSE up to ``epoch``; a run that stopped earlier counts as complete."""
         obs = self._observation(cid)
         epochs = min(epoch, obs.epochs_run)
-        self._charge(cid, epochs, "partial")
+        self._charge(cid, epochs, "partial", epoch)
         if epoch >= obs.epochs_run:
             self._record_full(cid, obs.best)
             return obs.best
@@ -133,10 +162,10 @@ class Oracle:
 class Space:
     """Field domains of the feasible set and the map from choices to config ids."""
 
-    def __init__(self, ids: Iterable[str] | None = None):
+    def __init__(self, ids: Iterable[str]):
         feasible = feasible_all()
-        allowed = set(ids) if ids is not None else None
-        self.ids = sorted(config_id(c) for c in feasible if allowed is None or config_id(c) in allowed)
+        allowed = set(ids)
+        self.ids = sorted(config_id(c) for c in feasible if config_id(c) in allowed)
         self.id_set = set(self.ids)
         self.choices: dict[str, dict[str, Any]] = {}
         for config in feasible:
@@ -353,7 +382,7 @@ def screened_search(k: int, group: int = 8, promote: int = 2, use_referee: bool 
 
 
 def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 4, lr: float = 0.1,
-                          snapshot_every: int = 5, entropy: float = 0.01):
+                          snapshot_every: int = 2, entropy: float = 0.01):
     """One softmax per field, trained with group-normalised policy gradient.
 
     ``rivals`` is "none", "league" (samples from frozen past snapshots of the
@@ -368,6 +397,7 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
         second = {f: np.zeros_like(v) for f, v in logits.items()}
         snapshots = [{f: v.copy() for f, v in logits.items()}]
         step = 0
+        updates = 0
         idle_steps = 0
 
         def sample(table_logits):
@@ -397,7 +427,11 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
                     if cid is not None:
                         baseline_rewards.append(-math.log(oracle.full(cid)))
             if not baseline_rewards:
+                idle_steps += 1
+                if idle_steps >= 50:
+                    return
                 continue
+            updates += 1
             floor = min(baseline_rewards) - 1.0
             filled = [floor if r is None else r for r in rewards]
             pool = np.array(baseline_rewards + [floor] * sum(r is None for r in rewards))
@@ -414,10 +448,10 @@ def factorized_controller(group: int = 8, rivals: str = "none", n_rivals: int = 
                 grad += entropy * (-(p * (np.log(p + 1e-12) + 1)) + p * np.sum(p * (np.log(p + 1e-12) + 1)))
                 moment[f] = 0.9 * moment[f] + 0.1 * grad
                 second[f] = 0.999 * second[f] + 0.001 * grad**2
-                m_hat = moment[f] / (1 - 0.9**step)
-                v_hat = second[f] / (1 - 0.999**step)
+                m_hat = moment[f] / (1 - 0.9**updates)
+                v_hat = second[f] / (1 - 0.999**updates)
                 logits[f] = logits[f] + lr * m_hat / (np.sqrt(v_hat) + 1e-8)
-            if step % snapshot_every == 0:
+            if updates % snapshot_every == 0:
                 snapshots.append({f: v.copy() for f, v in logits.items()})
             # A policy that only proposes configs it has already paid for
             # spends nothing; stop it rather than loop forever.
@@ -466,3 +500,42 @@ def regret_at(oracle: Oracle, budget: int, fallback: float) -> float:
 
 def regret_curve(oracle: Oracle, budgets: Iterable[int], fallback: float) -> list[float]:
     return [regret_at(oracle, b, fallback) for b in budgets]
+
+
+def regret_from_trace(trace: Iterable, table: Table, budget: int, fallback: float) -> tuple[float, str | None]:
+    """Regret of the incumbent at ``budget`` and its config id, from a (spent, id) trace."""
+    incumbent = None
+    for spent, cid in trace:
+        if spent <= budget:
+            incumbent = cid
+        else:
+            break
+    value = table.true_value(incumbent) if incumbent else fallback
+    return value - table.best_true, incumbent
+
+
+def no_incumbent_value(table: Table) -> float:
+    """Value used for the regret of a run with no fully trained config yet: the table mean."""
+    return float(np.mean([table.true_value(c) for c in table.ids]))
+
+
+def load_runs(runs_dir: Path) -> list[dict[str, Any]]:
+    runs = []
+    for path in sorted(Path(runs_dir).glob("*_runs.jsonl")):
+        runs += [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return runs
+
+
+def claim_values(table: Table, runs_dir: Path, method: str, baseline: str, budget_eq: int) -> tuple[list[float], list[float]]:
+    """Per-search-seed regrets in seed-SD units of ``method`` and ``baseline`` at one budget."""
+    sigma = table.seed_sd()
+    fallback = no_incumbent_value(table)
+    runs = load_runs(runs_dir)
+
+    def values(name: str) -> list[float]:
+        chosen = sorted((r for r in runs if r["method"] == name), key=lambda r: r["seed"])
+        if not chosen:
+            raise ValueError(f"no runs for {name}")
+        return [regret_from_trace(r["trace"], table, budget_eq * FULL_RUN_EPOCHS, fallback)[0] / sigma for r in chosen]
+
+    return values(method), values(baseline)

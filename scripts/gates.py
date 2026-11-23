@@ -29,6 +29,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+
+import numpy as np
 import re
 import subprocess
 import sys
@@ -41,23 +43,10 @@ sys.path.insert(0, str(ROOT))
 from leaguetst.ledger import read_rows  # noqa: E402
 
 LEDGER = ROOT / "results" / "ledger.jsonl"
-LOCK = ROOT / "prereg" / "e0_lock.json"
-LOCKED_FILES = (
-    "leaguetst/data/datasets.py",
-    "leaguetst/data/trainval.py",
-    "leaguetst/data/test_split.py",
-    "data/trainval/MANIFEST.json",
-    "leaguetst/eval/metrics.py",
-    "leaguetst/eval/numpy_model.py",
-    "leaguetst/eval/rescore.py",
-    "leaguetst/eval/stats.py",
-    "scripts/eval_test.py",
-    "scripts/prereg.py",
-)
 TOLERANCE = 1e-6
 TOP_ROWS = 20
 ROW_ITEMS = ("E1", "E3b", "E6", "PICK")
-CLAIM_ITEMS = ("E3", "E4", "E6")
+CLAIM_ITEMS = ("E3", "E4")
 SEARCH_ITEMS = ("E3", "E4")
 
 
@@ -67,10 +56,6 @@ def sha(path: Path) -> str:
 
 def git(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
-
-
-def committed_clean(rel: str) -> bool:
-    return git("ls-files", "--error-unmatch", rel).returncode == 0 and git("diff", "--quiet", "HEAD", "--", rel).returncode == 0
 
 
 def in_sample(row_id: str) -> bool:
@@ -121,57 +106,54 @@ def g2(item: str) -> tuple[bool, str]:
 
 
 def g3() -> tuple[bool, str]:
-    problems = []
-    log = ROOT / "results" / "test_access.log"
-    if log.exists():
-        rel = str(log.relative_to(ROOT))
-        if not committed_clean(rel):
-            problems.append("results/test_access.log changed since the last commit")
-        for line in log.read_text().splitlines():
-            if line.strip():
-                prereg = json.loads(line).get("prereg", "")
-                if not committed_clean(f"prereg/{prereg}.json"):
-                    problems.append(f"test access for {prereg!r} without a committed prereg file")
-    head_ledger = git("show", "HEAD:results/ledger.jsonl")
-    if head_ledger.returncode == 0 and LEDGER.exists():
-        if not LEDGER.read_text().startswith(head_ledger.stdout):
-            problems.append("results/ledger.jsonl lost or changed rows since the last commit")
-    rel_lock = str(LOCK.relative_to(ROOT))
-    if not LOCK.exists() or not committed_clean(rel_lock):
-        problems.append("prereg/e0_lock.json is missing or not committed unchanged")
-    else:
-        history = [h for h in git("log", "--format=%H", "--", rel_lock).stdout.split() if h]
-        if len(history) != 1:
-            problems.append(f"prereg/e0_lock.json was changed after it was written ({len(history)} commits)")
-        lock = json.loads(LOCK.read_text())["files"]
-        changed = [f for f in LOCKED_FILES if f not in lock or sha(ROOT / f) != lock[f]]
-        if changed:
-            problems.append("changed since the E0 lock: " + ", ".join(changed))
-    return (not problems), ("; ".join(problems) if problems else "test access only through committed preregs; ledger append-only; locked files unchanged")
+    from leaguetst.eval.integrity import g3_problems
+
+    problems, note = g3_problems(ROOT)
+    detail = "; ".join(problems) if problems else "test access only through committed preregs; ledger and log append-only; locked files unchanged"
+    return (not problems), f"{detail} ({note})" if note else detail
 
 
 def g4(item: str) -> tuple[bool, str]:
     from leaguetst.eval.stats import holm, permutation_test
+    from leaguetst.search.replay import Table, claim_values
 
     path = ROOT / "docs" / "claims" / f"{item}.json"
     if not path.exists():
         return (item not in CLAIM_ITEMS), (f"docs/claims/{item}.json is missing" if item in CLAIM_ITEMS else "item makes no claims")
     claims = json.loads(path.read_text())["claims"]
     if not claims:
-        return True, "claims file lists no claimed win"
-    problems, p_values = [], {}
+        return False, "claims file holds no comparisons"
+    problems, p_values, tables = [], {}, {}
     for claim in claims:
-        a, b = claim["a_values"], claim["b_values"]
+        source = claim.get("source")
+        if not source:
+            problems.append(f"{claim['name']}: no source to recompute from")
+            continue
+        key = (source["table_item"], source["dataset"], int(source["horizon"]))
+        if key not in tables:
+            tables[key] = Table([r for r in read_rows(LEDGER) if r["item"] == key[0] and r["dataset"] == key[1]
+                                 and int(r["horizon"]) == key[2]])
+        try:
+            a, b = claim_values(tables[key], ROOT / source["runs_dir"], source["method"], source["baseline"], int(source["budget"]))
+        except (KeyError, ValueError, FileNotFoundError) as error:
+            problems.append(f"{claim['name']}: cannot recompute ({error})")
+            continue
+        if len(a) != len(claim["a_values"]) or len(b) != len(claim["b_values"]) or \
+                not (np.allclose(a, claim["a_values"]) and np.allclose(b, claim["b_values"])):
+            problems.append(f"{claim['name']}: values differ from the recomputation")
         if min(len(a), len(b)) < 5:
             problems.append(f"{claim['name']}: fewer than 5 values per arm")
+            continue
         p_values[claim["name"]] = permutation_test(a, b)["p"]
-    rejected = holm(p_values)
+        claim["_diff"] = float(np.mean(a) - np.mean(b))
+    rejected = holm(p_values) if p_values else {}
     for claim in claims:
-        if claim.get("claims_win"):
-            diff = sum(claim["a_values"]) / len(claim["a_values"]) - sum(claim["b_values"]) / len(claim["b_values"])
-            if not rejected[claim["name"]] or diff >= 0:
-                problems.append(f"{claim['name']}: win not supported (diff {diff:+.4g}, p {p_values[claim['name']]:.3g})")
-    return (not problems), ("; ".join(problems) if problems else f"{len(claims)} claims recomputed; every claimed win holds after Holm")
+        if claim.get("claims_win") and claim["name"] in p_values:
+            better = claim["_diff"] < 0 if claim.get("lower_is_better", True) else claim["_diff"] > 0
+            if not (rejected[claim["name"]] and better):
+                problems.append(f"{claim['name']}: win not supported (diff {claim['_diff']:+.4g}, p {p_values[claim['name']]:.3g})")
+    wins = sum(bool(c.get("claims_win")) for c in claims)
+    return (not problems), ("; ".join(problems[:5]) if problems else f"{len(claims)} comparisons recomputed from source; {wins} claimed wins hold after Holm")
 
 
 def g5(item: str) -> tuple[bool, str]:
@@ -184,21 +166,26 @@ def g5(item: str) -> tuple[bool, str]:
 
 def g5_one(path: Path) -> tuple[bool, str]:
     log = json.loads(path.read_text())
+    if not log.get("runs"):
+        return False, f"{path.parent.name}: budget log has no runs"
     runs_by_key = {(r["config_id"], int(r["seed"])): int(r["epochs_charged"]) for r in read_rows(LEDGER)
                    if r["item"] == log["table_item"] and r["dataset"] == log["dataset"] and int(r["horizon"]) == int(log["horizon"])}
     problems = []
     for run in log["runs"]:
         totals: dict[tuple, int] = defaultdict(int)
-        kinds: dict[tuple, list] = defaultdict(list)
-        for cid, seed, epochs, kind in run["charges"]:
-            totals[(cid, int(seed))] += int(epochs)
-            kinds[(cid, int(seed))].append(kind)
         label = f"{run['method']} seed {run['seed']}"
-        for key, total in totals.items():
+        if not run["charges"]:
+            problems.append(f"{label}: charged nothing")
+        for cid, seed, epochs, kind, read_epoch in run["charges"]:
+            key = (cid, int(seed))
+            totals[key] += int(epochs)
             if key not in runs_by_key:
                 problems.append(f"{label}: {key} is not in the table")
-            elif total > runs_by_key[key] or ("full" in kinds[key] and total != runs_by_key[key]):
-                problems.append(f"{label}: {key} charged {total}, table run took {runs_by_key[key]}")
+                continue
+            ran = runs_by_key[key]
+            expected = ran if kind == "full" else min(int(read_epoch), ran)
+            if totals[key] != expected:
+                problems.append(f"{label}: {key} charged {totals[key]} by its {kind} lookup, expected {expected}")
         if len({cid for cid, _ in totals}) != len(totals):
             problems.append(f"{label}: a config was charged under two seeds")
         spent = sum(totals.values())
@@ -225,13 +212,14 @@ def run_gates(item: str) -> bool:
 
 
 def write_lock() -> int:
-    """Record the digests of the locked files, once, at the E0 commit."""
-    if LOCK.exists():
-        print(f"{LOCK} exists; the E0 lock is written once")
+    from leaguetst.eval.integrity import write_lock as write
+
+    try:
+        path = write(ROOT)
+    except FileExistsError as error:
+        print(error)
         return 1
-    LOCK.parent.mkdir(parents=True, exist_ok=True)
-    LOCK.write_text(json.dumps({"files": {f: sha(ROOT / f) for f in LOCKED_FILES}}, indent=2, sort_keys=True) + "\n")
-    print(f"wrote {LOCK}; commit it now")
+    print(f"wrote {path}; commit it now")
     return 0
 
 
