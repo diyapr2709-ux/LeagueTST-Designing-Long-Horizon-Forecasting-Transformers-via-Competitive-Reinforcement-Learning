@@ -127,3 +127,49 @@ Each item is registered by amendment before it runs.
    requires.
 4. The wider design space of A16 (docs/wide_space.md), on a costed subset.
 5. LLM-based optimisers from the literature (WP0) as further baselines.
+
+## Amendment AB1 (2026-11-24 evening, before any ablation result exists)
+
+Anirudh confirms in his first commit after this amendment that no ablation
+result existed before it, or names any that did.
+
+* AB-G reference. E4 completed under A26 on Soumitra's Modal workspace
+  (PR #1, 70461a8). The reference of every Modal AB-G arm, the step trend
+  included, is the J2 league arm; ABL_G_ref is not run on Modal.
+* Retried runs. A29 and its addendum (docs/prereg_E4.md) apply to every
+  ABL_* GPU item on Modal: retried runs are named with dashboard
+  screenshots, the tests keep them, and the A26 worst case
+  (leaguetst/sensitivity.py) treats them as failed. The hand-stop is 2.5
+  hours for ABL_G_steps120 (its batches take about an hour) and one hour
+  elsewhere.
+* Who runs what. AB-L: Soumitra. AB-P ref, anon and repair and the two step
+  arms: Anirudh on Modal. Measured cost ($22.17 for 45 policies, about
+  twice the $11 estimate in docs/HANDOFF_soumitra.md) leaves no room on
+  Anirudh's credit for AB-P scale and the KL arms (beta 0 and 0.1), so they
+  move to Soumitra. He runs each of the two families before 2 Dec 12:00 ET
+  on Modal if his credit shows its estimate plus $5 free, otherwise on his
+  local GPU through scripts/ablate_llm.py (a new launcher on the unchanged
+  runner that imports llm_local.py's executor). Amendment AB2 registers the
+  launcher's sha256, the model revisions, and each family's backend, card
+  and jobs per GPU before the first run. A family on the local GPU reruns
+  its reference on the same card (ABL_G_ref_local, the E4 recipe;
+  ABL_P_ref_local, Qwen2.5-1.5B), and local references serve only local
+  arms. No arm waits for the December credit.
+* Backend switching. An item moves to another backend only if it was never
+  launched; a launched item is never rerun elsewhere.
+* Hardware check, descriptive. ABL_G_ref_local against the J2 league arm
+  and ABL_P_ref_local against ABL_P_ref, on the same seeds, are reported as
+  a hardware check, with no test.
+* Code. The ten files in docs/e4_rerun.sha256 stay unchanged until the last
+  AB-G arm has run; an AB-G arm run under other digests is exploratory.
+* GPU type. Modal serves both A10 and A10G for the A10G request (both occur
+  in the reference arm). The GPU name is recorded per run and reported per
+  arm; no test conditions on it.
+* Missing arms. An arm with any job unfinished at 2 Dec 12:00 ET counts as
+  not run and is reported so; its family keeps its registered Holm size,
+  the missing test counted as not rejected, and the report's decisions are
+  not revised if the arm lands later.
+* AB-L, descriptive comparison. best_in_history resets every training
+  episode, whose budget (3000) equals a prompted search's, so the
+  comparison uses each policy's final episode against prompted Qwen at the
+  same spend; null rewards are skipped. The tested slope is unchanged.

@@ -2,6 +2,28 @@
 
 Updated by every loop iteration. Newest first.
 
+## 2026-11-24, evening
+
+* E4 rerun complete on Soumitra's Modal workspace and merged (PR #1,
+  70461a8): J2 (ETTh1 to ILI) 20 of 20 policies trained and deployed, J1
+  (ILI to ETTh1) 25 of 25 deployed; no on-policy stop, no error. Modal
+  disabled the workspace at its spend limit during J1, so the driver died
+  and one run was retrained. Retried under A29: grpo_league_ILI_seed109 and
+  grpo_none_ILI_seed108 (the A26 worst case treats them as failed);
+  grpo_none_ILI_seed109 trained once and its training record was lost in
+  the driver. Dashboard screenshots in results/runs/E4/soumitra_*/. No E4
+  endpoint is computed yet.
+* Cost: $22.17 metered for the 45 policies, about twice the estimate; all
+  remaining GPU plans are re-costed from it.
+* Next leg for both teammates: docs/LEG2_soumitra.md (J3 if A17 holds, AB-L,
+  run end to end on Soumitra's side: an independent E4 analysis that also
+  decides J3 under A30, J3 if it holds, AB-L, the model-scale and KL arms
+  on Modal or his RTX by a registered rule, a fresh-clone reproduction
+  audit) and docs/LEG2_anirudh.md (WP3 cut to fit $30, CPU ablations,
+  write-up); amendments A30 (docs/prereg_E4.md) and AB1
+  (docs/prereg_ablations.md), before any E4 endpoint or ablation result.
+  Nothing waits for December credit.
+
 ## 2026-11-24
 
 * Pick reseeds (fresh seeds 4001 and 4002, every E3 method's incumbents at

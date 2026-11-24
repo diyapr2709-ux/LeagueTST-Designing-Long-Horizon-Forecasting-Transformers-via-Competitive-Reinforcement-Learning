@@ -310,3 +310,18 @@ the 8-hour timeout and is then retried; training batches took 12 to 24
 minutes on 23 Nov, so an llm_batch input still running after an hour is
 stopped by hand, and its runs count as retried when relaunched.
 
+## Amendment A30 (2026-11-24 evening, before any E4 endpoint is computed)
+
+From the critic's review of the next leg. A17 runs the ETTh1-source
+uniform arm (J3) only "if league beats no league", but family 2 under A25
+has six tests (league against none and against uniform on ILI AUC; the same
+two at budgets 25 and 50 on the ETTh1 picks), and most do not exist when J3
+must start. The condition is therefore fixed as: J3 runs if, on ILI AUC,
+the league policies' mean is better than the none policies' and the
+registered two-sided permutation test gives p <= 0.05/6. That p rejects
+under Holm whatever the other five p-values are. Otherwise J3 is not run,
+and family 2 keeps size 6 with the ILI league-against-uniform test counted
+as not rejected. The decision, with its p-value, is written in the commit
+that launches or skips J3, which must come before the A26 cut-off
+(26 Nov 18:00 ET); J3 runs on the backend of J1 and J2 (Modal, A25).
+
