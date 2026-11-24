@@ -127,3 +127,11 @@ def test_driver_never_writes_into_adapter_folders(tmp_path):
                 yield [[{"method": j["method"], "seed": j["seeds"][0]}] for j in batch]
     runner.run_plan(plan(tmp_path), tmp_path / "out", execute)
     assert not (tmp_path / "E4" / "adapters").exists()
+
+
+def test_a_finished_plan_never_calls_the_executor(tmp_path):
+    calls = []
+    runner.run_plan(plan(tmp_path), tmp_path / "out", fake_execute(calls))
+    def refuse(kind, batches):
+        raise AssertionError(f"executor called with {kind} {batches}")
+    runner.run_plan(plan(tmp_path), tmp_path / "out", refuse)
