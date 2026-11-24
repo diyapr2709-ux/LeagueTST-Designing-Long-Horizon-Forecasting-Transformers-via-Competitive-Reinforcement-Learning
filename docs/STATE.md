@@ -2,6 +2,25 @@
 
 Updated by every loop iteration. Newest first.
 
+## 2026-11-24
+
+* Pick reseeds (fresh seeds 4001 and 4002, every E3 method's incumbents at
+  budgets 25, 50 and 100): on both tables no method beats random search
+  after Holm, prompted Qwen included; TPE's in-table win on ILI does not
+  replicate. The cross-dataset portfolio is worse than random on both.
+  results/picks/*_analysis.json. RQ1 for the CPU methods is a null result.
+* E4 GRPO training (diyapr, 23 Nov): 34 of 45 runs ran out of GPU memory
+  (three jobs per A10G). All 45 are rerun on Soumitra's workspace, two per
+  GPU, by the owner's decision (docs/HANDOFF_soumitra.md, docs/ISSUES.md);
+  the 11 that finished on diyapr are superseded.
+* Modal outputs on our side are committed under results/runs/ (records,
+  328 E3b and E6 checkpoints, per-window validation errors).
+* The wider design space (A16) is merged as code and a costed page
+  (docs/wide_space.md); it runs after the report.
+* Critic (2026-11-24): workshop-ready no. Blocking: the GRPO rerun, a bound
+  on the smallest detectable effect, E5's headline metric and margin, stale
+  docs. Replay summaries now say when regret is partly in-sample.
+
 ## 2026-11-23, after midnight UTC (19:30 to 20:00 EST)
 
 * E3b ETTh1 (64 live runs, seed 3001): K7 passes. Mean signed gap -0.0017,
@@ -11,13 +30,18 @@ Updated by every loop iteration. Newest first.
   of the best. Pending verifier re-score.
 * E6 ETTh1 PatchTST/42 arm in the ledger (40 runs, 4 horizons x 10 seeds,
   checkpoints and per-window errors downloaded).
-* E3 ETTh1 prompted Qwen (10 seeds, in-sample, no claims): AUC 1.30, next
-  to the controller (1.32); on ILI it was last. Unlike ILI, ETTh1 has one
-  dominant field (RevIN) that a prompt can name.
-* E5 (RQ2) audit built (scripts/e5_referee.py): the E2 referee ranks the
-  prompted architect's proposals at least as well as quality-matched random
-  configs (tau vs final, per-run difference: ILI +0.026 [+0.003, +0.046],
-  ETTh1 +0.019 [+0.004, +0.036]; 10 runs each). GRPO proposals are added
+* E3 ETTh1 prompted Qwen (10 seeds, in-sample, no claims): AUC 1.30 against
+  the controller's 1.32, a gap within in-sample noise; on ILI it was last.
+  Corrected 2026-11-24 (critic): an earlier line here explained the
+  difference by RevIN, which is untested.
+* E5 (RQ2) audit built (scripts/e5_referee.py). Against the multi-seed mean,
+  the referee's tau on the prompted architect's proposals differs from
+  quality-matched random configs by ILI +0.014 [-0.017, +0.043] and ETTh1
+  +0.020 [-0.003, +0.044] (10 runs each): no difference detected. No
+  non-inferiority margin was fixed yet, so this is not a non-inferiority
+  result. Corrected 2026-11-24 (critic): the first version quoted tau
+  against the seed-2021 final value, the seed the referee's features use.
+  PLAN specified plain random configs; quality matching is a deviation. GRPO proposals are added
   when the E4 deployments land. Pending verifier and critic.
 * Credit arena (docs/verdicts/arena_credit_2026-11-23.md): transfer
   deployments, then pick reseeds (ILI launched as a smoke test, ETTh1
@@ -83,13 +107,16 @@ Updated by every loop iteration. Newest first.
   0.58 (ceiling for one full seed: 0.68). k = 1. K1 passes; the referee is
   kept (A9).
 * E3b ILI: K7 fails as pre-registered (mean signed gap +0.0042, 95% interval
-  [0.0013, 0.0070]; median |gap| 1.13 SD > 0.95). The 44 stratified configs
+  [0.0013, 0.0070]; median |gap| 1.13 SD > 0.95 in the median-SD unit used
+  then, 0.91 SD in the pooled unit of results/e3b/ILI_T24.json, so K7 fails
+  on the bias criterion alone). The 44 stratified configs
   are unbiased (+0.05 SD, median 0.89 SD); the top 20 are 1.6 SD optimistic,
   a winner's curse that an in-table leave-one-seed-out check reproduces.
   Fallback applied: RQ1 is stated for the table only; picks are scored on
   fresh seeds before any comparison.
 * E3 ILI CPU replay (30 seeds): TPE has the lowest regret (AUC 0.91 SD) and
-  is the only method that beats random search after Holm (budget 50). The
+  is the only method that beats random search after Holm (budget 50), in
+  the table only: on fresh seeds it does not (2026-11-24). The
   factorized controller does no better than random; with league rivals it
   is worse (rivals spend budget). Results: results/search/E3/ILI_T24/.
 * GRPO smoke test: base Qwen proposals were all invalid at step 1 and step 2
