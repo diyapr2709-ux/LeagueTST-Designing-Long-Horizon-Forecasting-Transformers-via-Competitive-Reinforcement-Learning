@@ -259,3 +259,25 @@ The repair ablation registered above (prompted Qwen without constrained
 decoding, 5 ILI seeds) is superseded by AB-P in docs/prereg_ablations.md (30
 seeds per table, rerun under the pinned A25 code with its own reference).
 Nothing else in this file changes.
+
+## Amendment A29 (2026-11-24 14:05 ET, before any E4 rerun result exists)
+
+Found by Soumitra's session before launch. An on-policy stop (A22) is
+returned by the worker as an error record and logged by the driver, so a
+relaunch never retrains it. On Modal the record stays in the container's
+memory until the other job of its batch finishes; if the container fails or
+is preempted in that window, llm_batch's retry (or Modal's rescheduling)
+reruns both jobs from step 1 with the same seeds, and the first stop is
+lost. The code is not changed (its digests are frozen); instead:
+
+* A batch counts as retried if its runs started training more often than
+  the plan launched them (the count of step-1 rows in the launch log, less
+  any runs a manual relaunch retrained) or if the Modal dashboard shows a
+  failed, retried or preempted llm_batch input. Soumitra's commit names
+  every run of a retried batch.
+* The primary tests keep those runs as they finished.
+* The A26 worst-case analysis also treats every run of a retried batch as
+  failed (None in leaguetst/sensitivity.py), whether or not it completed,
+  and the conclusion is reported with and without.
+* If no batch was retried, this amendment changes nothing.
+

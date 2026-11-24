@@ -2,7 +2,7 @@
 
 For Soumitra and the Claude Code session on Soumitra's account. Written
 2026-11-24. Read CLAUDE.md first: every hard rule there applies to you too.
-The registered design is docs/prereg_E4.md, amendments A25 to A27.
+The registered design is docs/prereg_E4.md, amendments A25 to A29.
 
 ## Why this exists
 
@@ -76,9 +76,23 @@ MODAL_PROFILE=soumitra nohup $M run --detach $A::transfer --source ETTh1 --targe
 If the local client loses the network, the job keeps running; check
 `modal app list` and the volume before relaunching. A second launch on the
 same output is refused while a driver.lock file exists; if no app is
-running, remove it (`modal volume rm leaguetst-runs /E4/<target>/driver.lock`,
-or delete the file locally) and relaunch. A relaunch of the same
-command keeps finished adapters and deployed seeds.
+running, remove it (`MODAL_PROFILE=soumitra $M volume rm leaguetst-runs /E4/ETTh1_T336/driver.lock`
+for J1, `/E4/ILI_T24/driver.lock` for J2; locally, the same file under
+results/runs/llm_local/) and relaunch. A relaunch of the same command keeps
+finished adapters and deployed seeds.
+
+Each `modal run --detach` is its own app with up to 10 A10Gs, so J1 and J2
+together can hold up to 20 at once (J1 has 13 training batches, J2 has 10);
+a lower workspace GPU limit only queues the rest. Total GPU hours and cost
+(about $11) do not change.
+
+A22 stops and retries. An on-policy stop is returned as an error record and
+written to errors.jsonl, so a relaunch never retrains it. But the record
+stays in the container's memory until the other job of its batch finishes;
+if the container dies or is preempted in that window, Modal reruns the whole
+batch and the stop is lost. Rare, and the E4 code is frozen, so launch as
+written. Afterwards check for it (below); A29 in docs/prereg_E4.md fixes
+how such runs are analysed.
 
 Local (one after the other on the one GPU; `--per-gpu 1` on a card under 16 GB).
 First J0, prompted Qwen on the same card, which K4 and family 3 then use as
@@ -99,6 +113,7 @@ adapters and deployed seeds are kept.
 Modal:
 
 ```
+M=.venv/bin/modal
 for t in ETTh1_T336 ILI_T24; do
   S=$(mktemp -d); MODAL_PROFILE=soumitra $M volume get leaguetst-runs /E4/$t $S
   mkdir -p results/search/E4/$t results/runs/E4/soumitra_$t
@@ -122,6 +137,13 @@ Check before committing:
 * Each grpo_<arm>_from_<source>_runs.jsonl has one line per finished
   policy, and every line has a seed, a trace, charges and an env block whose
   backend, versions and model_revision match A25.
+* Retried batches (A29). Count training starts in each launch log:
+  `grep -c "'step': 1," results/logs/soumitra_e4_*.log`. J1 starts 25
+  runs and J2 20; a higher count means a batch ran twice (also check the
+  llm_batch inputs in the Modal dashboard for failed, retried or preempted
+  containers). Name every run of such a batch in the commit message. A
+  manual relaunch adds the runs it retrains (say so); a lower count only
+  means the local client lost the log stream.
 * errors.jsonl: an out-of-memory error means the card is too small for
   the chosen --per-gpu; stop and report it. An on-policy stop ("log-
   probabilities differ") is a valid outcome: report it; it is never
@@ -179,7 +201,7 @@ committed on soumitra-e4.
 
 ## First message for Soumitra's Claude
 
-> Read CLAUDE.md, docs/STATE.md, docs/prereg_E4.md (A25 to A27) and
+> Read CLAUDE.md, docs/STATE.md, docs/prereg_E4.md (A25 to A29) and
 > docs/HANDOFF_soumitra.md. Check the code digests. Using the backend
 > Soumitra chose (Modal profile soumitra, or the local GPU: J0 first), run J1 and J2
 > exactly as written, poll until both finish, bring the outputs back, run
