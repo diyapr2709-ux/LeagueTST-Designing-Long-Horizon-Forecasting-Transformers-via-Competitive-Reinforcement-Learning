@@ -1,0 +1,30 @@
+{
+  "dataset": "ILI",
+  "epochs": 100,
+  "patience": 100,
+  "note": "A23: ILI table-best raised from 5 to 10 seeds.",
+  "arms": [
+    {
+      "name": "table_best",
+      "config_id": "p24s12l4h4d16f1r3n1i",
+      "model_config": {
+        "channel_mode": "independent",
+        "d_model": 16,
+        "dropout": 0.3,
+        "ff_ratio": 1,
+        "instance_norm": true,
+        "n_heads": 4,
+        "n_layers": 4,
+        "patch_len": 24,
+        "stride": 12
+      },
+      "seeds": [
+        2026,
+        2027,
+        2028,
+        2029,
+        2030
+      ]
+    }
+  ]
+}

@@ -196,3 +196,38 @@ review. Each names the weakness it answers.
   uniform-rival control and no rivals. Within-table GRPO is dropped (A17's
   first cut after the second ETTh1 seed). The full LLM pre-registration is
   docs/prereg_E4.md.
+
+## Amendment A23, 23 Nov (fourth review), before any test evaluation
+
+* E6 is framed as "the space's best config against PatchTST/42", not as
+  LeagueTST's winner: on both tables the evidence so far gives no reason to
+  prefer a learned search's pick. The primary comparison per dataset is the
+  table's best config by multi-seed mean (table_best) against PatchTST/42,
+  10 seeds each, Holm over the two datasets. The ILI table-best arm is
+  raised from 5 to 10 seeds. A LeagueTST-winner arm is run only if credit
+  remains after the items below. The ILI E6 validation wins are not cited
+  as evidence (all horizons share the validation weeks used to select).
+* RevIN study (ETTh1). RevIN-off configs beat their RevIN-on twins in 1,183
+  of 1,184 pairs at 30 epochs, but 64% of RevIN-on configs peak at the cap.
+  1. Validation only: 20 twin pairs spread evenly over the RevIN-off ranking
+     (results/e3b/ETTh1_T336_revin_pairs.txt) are retrained at 100 epochs,
+     patience 100, seed 2021 (item REVIN). If the off-advantage shrinks, the
+     cap explains part of it.
+  2. E6 adds the table-best's RevIN-on twin at 10 seeds. Secondary test,
+     computed from the saved test runs after the evaluation: the twin beats
+     the table-best on the 4-horizon test mean (one-sided seed permutation).
+     Whichever arm wins is reported; there is no swap after the test.
+  3. A prediction is committed before the test: the RevIN-off advantage by
+     validation month, from the saved per-window validation errors.
+* Every E6 arm reports its epoch-30 validation MSE beside its final value
+  (selection used 30 epochs and patience 10; E6 trains 100 epochs).
+* The league arm of A19 draws snapshot-weighted rivals from a window of 32
+  recent configs, which may make it close to uniform rivals; a tie is
+  reported as such and "competitive" is not claimed.
+* The prompt still says over-cap configs are "replaced by the nearest one
+  that fits"; under trie decoding none can occur. Its digest is registered,
+  so it stays and is disclosed.
+* Optional for the owner on 30 Nov: score every E1 checkpoint on test once
+  under an extended prereg (validation-to-test agreement over the whole
+  tables). It needs every checkpoint downloaded (about 3.4 GB) and several
+  hours of CPU with the NumPy model.
