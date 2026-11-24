@@ -1,9 +1,11 @@
-# Leg 2 for Anirudh: 25 Nov to 2 Dec
+# Leg 2 for Anirudh: 25 to 28 Nov
 
 For Anirudh and the Claude Code session on Anirudh's account. Written
 2026-11-24 evening. It changes docs/HANDOFF_anirudh.md where it says so;
 everything else there, docs/prereg_ablations.md and CLAUDE.md still apply.
 Amendment AB1 at the end of docs/prereg_ablations.md registers the changes.
+Every deadline in docs/HANDOFF_anirudh.md moves to 28 Nov 23:59 ET at the
+latest, before Diya's pre-registration (29 Nov) and test (30 Nov).
 
 ## What changed
 
@@ -32,7 +34,7 @@ Amendment AB1 at the end of docs/prereg_ablations.md registers the changes.
    power.py and report.py read results/ablations/AB-L.json from
    origin/soumitra-leg2; merge that branch into yours yourself.
 6. The ten files in docs/e4_rerun.sha256 stay frozen until the last AB-G
-   arm has run (2 Dec at the latest), because every AB-G arm runs under the
+   arm has run (28 Nov at the latest), because every AB-G arm runs under the
    reference's digests. New code goes in new files only. Soumitra writes
    scripts/ablate_llm.py (a local launcher with the flags llm_local.py
    lacks); you no longer write it.
@@ -87,7 +89,7 @@ The step trend this month has levels 0 (ABL_P_ref on ILI), 30, 60 (the
 reference) and 120, as registered. Bring-back, checks and llm_tests.py as
 in the handoff, plus the A29 screenshots under results/runs/ABL_*/.
 
-## Moved to Soumitra (Modal or RTX, before 2 Dec)
+## Moved to Soumitra (Modal or RTX, by 28 Nov)
 
 * The KL trend (beta 0, 0.04, 0.1) and model scale (Qwen2.5-0.5B, 1.5B,
   3B) are Soumitra's (docs/LEG2_soumitra.md, L4). His Claude picks Modal or
@@ -98,7 +100,7 @@ in the handoff, plus the A29 screenshots under results/runs/ABL_*/.
 * If you cannot run WP3 on Modal at all, tell Soumitra on 25 Nov: the same
   items then join his RTX queue after the KL arms, with the local
   references. A WP3 item you have launched is never rerun elsewhere.
-* Anything not run by 2 Dec 12:00 ET is reported as not run and its family
+* Anything not run by 28 Nov 23:59 ET is reported as not run and its family
   keeps its registered Holm size (AB1).
 
 ## CPU work, unchanged in content
@@ -119,14 +121,12 @@ in the handoff, plus the A29 screenshots under results/runs/ABL_*/.
 | Date | Anirudh | Soumitra |
 |---|---|---|
 | 25 Nov | step 0; WP3 wave 1; WP1, WP2 | E4 analysis and J3 decision; AB-L; launcher |
-| 26 Nov | WP3 wave 2 and bring-back; llm_tests.py; WP2 | J3 if A30 says so; AB-L pushed |
-| 27 Nov | WP5 CPU with Soumitra's E4 analysis | launcher reviewed (AB2) |
-| 28 to 30 Nov | WP6 | scale, then KL (Modal or RTX); reproduction audit |
-| 1 Dec | llm_tests.py on Soumitra's scale and KL results | bring-back, commit |
-| 2 Dec | push by 12:00 ET | push by 12:00 ET |
+| 26 Nov | WP3 wave 2 and bring-back; llm_tests.py on WP3; WP1, WP2 done | J3 if A30 says so; AB-L pushed; AB2; RTX runs start |
+| 27 Nov | WP5 CPU with Soumitra's E4 analysis; WP6 starts | RTX runs (KL); reproduction audit |
+| 28 Nov | llm_tests.py on Soumitra's scale and KL results; WP6 done; push by 23:59 ET | bring-back; push by 23:59 ET |
 
-Diya's only fixed point is the single test evaluation on 30 Nov. Anything
-pushed after 2 Dec 12:00 ET reaches the paper, not the report (due 3 Dec).
+Anything pushed after 28 Nov 23:59 ET reaches the paper, not the report
+(due 3 Dec).
 
 WP7 (Phase B) is paper work after the report and is not part of this leg:
 its first items need the data files, which only Diya's workspaces hold.

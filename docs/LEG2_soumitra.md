@@ -1,4 +1,4 @@
-# Leg 2 for Soumitra: 25 Nov to 2 Dec
+# Leg 2 for Soumitra: 25 to 28 Nov
 
 For Soumitra and the Claude Code session on Soumitra's account. Written
 2026-11-24 evening. The E4 rerun (J1 and J2) is merged into main (PR #1,
@@ -7,7 +7,8 @@ For Soumitra and the Claude Code session on Soumitra's account. Written
 This leg runs end to end on Soumitra's side. Soumitra's Claude makes every
 call in this file by the rules written here, including whether J3 runs and
 whether each GPU family runs on Modal or on the local RTX, without waiting
-on Diya. Diya's only fixed point is the single test evaluation on 30 Nov.
+on Diya. Everything is done and pushed by 28 Nov 23:59 ET, before Diya's
+pre-registration (29 Nov) and single test evaluation (30 Nov).
 Every rule of CLAUDE.md and docs/HANDOFF_soumitra.md still applies. Work on
 a new branch, soumitra-leg2, from origin/main at the commit that adds this
 file. Coordinate directly with Anirudh where noted.
@@ -60,7 +61,7 @@ file. Coordinate directly with Anirudh where noted.
    is written up with both values and a guess at the cause.
 4. The ETTh1-target tests need pick batch 2, which trains forecasters on
    the data only Diya's workspace holds. Add them if it is on origin/main
-   by 29 Nov; otherwise say they are pending.
+   by 28 Nov 12:00 ET; otherwise say they are pending.
 
 Outputs: results/independent/E4_soumitra.json and
 docs/verdicts/E4_independent_soumitra.md, with a verifier and a critic
@@ -108,7 +109,7 @@ Outputs results/ablations/AB-L.json and AB-L.md, verifier and critic before
 the commit, the critic's verdict in docs/verdicts/AB-L.md. Tell Anirudh when
 it is pushed.
 
-## L4: GPU ablation arms, Modal or RTX (25 Nov to 1 Dec)
+## L4: GPU ablation arms, Modal or RTX (25 to 28 Nov)
 
 Two families moved to you: AB-P model scale (Qwen2.5-0.5B and 3B around
 the 1.5B reference) and the AB-G KL trend (beta 0 and 0.1 around 0.04).
@@ -133,7 +134,7 @@ Anirudh says on 25 Nov that he cannot run his WP3 on Modal, his WP3 items
 (docs/LEG2_anirudh.md) join the RTX queue after the KL arms, with the
 local references, and the same AB2 covers them.
 
-Step 1, the launcher (25 to 27 Nov). scripts/llm_local.py is frozen (one of
+Step 1, the launcher (25 to 26 Nov). scripts/llm_local.py is frozen (one of
 the ten files) and has no --beta, --steps, --anonymous or model flags.
 Write scripts/ablate_llm.py, a new file that builds plans with
 leaguetst.architect.runner (unchanged) and imports llm_local.py's executor
@@ -154,7 +155,7 @@ the end of docs/prereg_ablations.md, before any run: the script's sha256,
 the revisions, the item names, each family's backend, and on the RTX the
 card and --per-gpu. Verifier and critic before the commit.
 
-Step 2, the runs (28 Nov to 1 Dec; overnight is fine). First
+Step 2, the runs (26 Nov evening to 28 Nov; overnight is fine). First
 `shasum -a 256 -c docs/e4_rerun.sha256` must pass. On the RTX, one after
 the other (24 GB at --per-gpu 2; 12 to 16 GB at 1, in about 1 to 1.5 times
 the total time):
@@ -180,9 +181,9 @@ out-of-memory, on-policy stops reported and never retrained). Commit, push,
 and tell Anirudh, whose scripts/ablations/llm_tests.py computes the trends
 from origin/soumitra-leg2.
 
-## L5: fresh-clone reproduction audit (CPU, 28 to 29 Nov)
+## L5: fresh-clone reproduction audit (CPU, 27 to 28 Nov)
 
-1. Clone origin/main at its newest commit on 28 Nov into a new folder. Set
+1. Clone origin/main at its newest commit on 27 Nov into a new folder. Set
    up from README.md and the requirements files only; note every step that
    is missing or wrong.
 2. Run the test suite. Regenerate every CPU-derived output in that clone:
@@ -200,14 +201,14 @@ and needs none: the tables are in the ledger. Never fetch data.
 
 | Date | Soumitra |
 |---|---|
-| 25 Nov | L0; L1 and the J3 decision; L3 starts; L4 step 1 starts |
-| 26 Nov | L2 if A30 says so, done by 18:00 ET; L3 done |
-| 27 Nov | L1 step 3; L4 step 1 reviewed, AB2 committed |
-| 28 to 30 Nov | L4 step 2 (scale, then KL); L5; push docs by 29 Nov 18:00 ET |
-| 1 Dec | L4 bring-back and commit |
-| 2 Dec | push everything by 12:00 ET |
+| 25 Nov | L0; L1 and the J3 decision; L3; L4 step 1 |
+| 26 Nov | L2 if A30 says so, done by 18:00 ET; L3 pushed; AB2 reviewed and committed; L4 step 2 starts in the evening (scale) |
+| 27 Nov | L4 step 2 (KL arms); L1 step 3; L5 starts |
+| 28 Nov | L4 bring-back; L5 and docs/REPRODUCE.md; push everything by 23:59 ET |
 
-Anything pushed after 2 Dec 12:00 ET reaches the paper, not the report.
+About 12 hours of RTX time (scale about 4, KL about 7.5) fit between
+26 Nov evening and 28 Nov, with room for Anirudh's WP3 items if they come.
+Anything pushed after 28 Nov 23:59 ET reaches the paper, not the report.
 
 ## Rules for this leg
 

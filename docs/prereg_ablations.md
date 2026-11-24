@@ -146,7 +146,7 @@ result existed before it, or names any that did.
   arms: Anirudh on Modal. Measured cost ($22.17 for 45 policies, about
   twice the $11 estimate in docs/HANDOFF_soumitra.md) leaves no room on
   Anirudh's credit for AB-P scale and the KL arms (beta 0 and 0.1), so they
-  move to Soumitra. He runs each of the two families before 2 Dec 12:00 ET
+  move to Soumitra. He runs each of the two families by 28 Nov 23:59 ET
   on Modal if his credit shows its estimate plus $5 free, otherwise on his
   local GPU through scripts/ablate_llm.py (a new launcher on the unchanged
   runner that imports llm_local.py's executor). Amendment AB2 registers the
@@ -165,8 +165,9 @@ result existed before it, or names any that did.
 * GPU type. Modal serves both A10 and A10G for the A10G request (both occur
   in the reference arm). The GPU name is recorded per run and reported per
   arm; no test conditions on it.
-* Missing arms. An arm with any job unfinished at 2 Dec 12:00 ET counts as
-  not run and is reported so; its family keeps its registered Holm size,
+* Missing arms. An arm with any job unfinished at 28 Nov 23:59 ET counts
+  as not run and is reported so (the owner moved this deadline from 2 Dec
+  on 24 Nov, before any result); its family keeps its registered Holm size,
   the missing test counted as not rejected, and the report's decisions are
   not revised if the arm lands later.
 * AB-L, descriptive comparison. best_in_history resets every training

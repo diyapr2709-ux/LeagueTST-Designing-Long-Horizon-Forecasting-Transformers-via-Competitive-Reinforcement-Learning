@@ -22,7 +22,8 @@ Updated by every loop iteration. Newest first.
   audit) and docs/LEG2_anirudh.md (WP3 cut to fit $30, CPU ablations,
   write-up); amendments A30 (docs/prereg_E4.md) and AB1
   (docs/prereg_ablations.md), before any E4 endpoint or ablation result.
-  Nothing waits for December credit.
+  Nothing waits for December credit; all teammate work is due by
+  28 Nov 23:59 ET (owner's decision, 24 Nov).
 
 ## 2026-11-24
 
