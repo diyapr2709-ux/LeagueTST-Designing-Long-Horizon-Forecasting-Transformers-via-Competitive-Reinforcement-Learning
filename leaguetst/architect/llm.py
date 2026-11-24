@@ -283,11 +283,11 @@ def run_job(kind: str, job: dict[str, Any]) -> Any:
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     try:
         result = train(job) if kind == "train" else search(job)
+        env = environment(job)
+        for record in [result] if isinstance(result, dict) else result:
+            record["env"] = env
     except Exception as error:  # reported back to the driver, which logs it
         return {"error": repr(error), "kind": kind, "job": {k: v for k, v in job.items() if k != "rows"}}
-    env = environment(job)
-    for record in [result] if isinstance(result, dict) else result:
-        record["env"] = env
     return result
 
 

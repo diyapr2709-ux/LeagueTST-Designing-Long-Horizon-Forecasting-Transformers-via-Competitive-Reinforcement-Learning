@@ -12,6 +12,7 @@ retrained, and every error names its runs.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -127,17 +128,44 @@ def deployed(out: Path) -> set[tuple[str, int]]:
     return {(r["method"], int(r["seed"])) for path in out.glob("*_runs.jsonl") for r in _read(path)}
 
 
+def provenance(job: dict[str, Any]) -> dict[str, Any]:
+    """What an adapter must match to be reused: the backend and the model snapshot it was trained with."""
+    return {"backend": job.get("backend"), "revision": job.get("revision")}
+
+
+def reusable(job: dict[str, Any]) -> bool:
+    saved = Path(job["out_dir"])
+    if not (saved / "adapter" / "adapter_config.json").exists() or not (saved / "provenance.json").exists():
+        return False
+    return json.loads((saved / "provenance.json").read_text()) == provenance(job)
+
+
 def run_plan(plan: dict, out: Path, execute: Executor, commit: Callable[[], None] = lambda: None) -> Path:
-    """Training (if any), then search, with every result appended under ``out`` as it arrives."""
+    """Run a plan under a lock, so two launches on the same output cannot deploy a run twice."""
     out.mkdir(parents=True, exist_ok=True)
+    lock = out / "driver.lock"
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        raise SystemExit(f"{lock} exists: another launch is running on this output. If none is (check "
+                         "`modal app list` or the local processes), delete the lock and relaunch.") from None
+    os.close(fd)
+    commit()
+    try:
+        return _run(plan, out, execute, commit)
+    finally:
+        lock.unlink()
+        commit()
+
+
+def _run(plan: dict, out: Path, execute: Executor, commit: Callable[[], None]) -> Path:
     errors = out / "errors.jsonl"
     stopped = stopped_runs(out)
     adapters: dict[str, str] = {}
     pending = []
     for job in plan.get("train_jobs", []):
-        saved = Path(job["out_dir"]) / "adapter"
-        if (saved / "adapter_config.json").exists():
-            adapters[job["run_name"]] = str(saved)
+        if reusable(job):
+            adapters[job["run_name"]] = str(Path(job["out_dir"]) / "adapter")
         elif plan.get("train", True) and job["run_name"] not in stopped:
             pending.append(job)
     batches = chunks(pending, plan["per_gpu"])
@@ -151,6 +179,7 @@ def run_plan(plan: dict, out: Path, execute: Executor, commit: Callable[[], None
             else:
                 _append(out / "training.jsonl", [record])
                 adapters[record["job"]["run_name"]] = record["adapter"]
+                Path(record["job"]["out_dir"], "provenance.json").write_text(json.dumps(provenance(record["job"])))
         commit()
 
     done = deployed(out)
@@ -160,6 +189,8 @@ def run_plan(plan: dict, out: Path, execute: Executor, commit: Callable[[], None
             continue
         if job.get("needs_adapter"):
             if job["needs_adapter"] not in adapters:
+                _append(errors, [{"phase": "search", "error": "no adapter to deploy",
+                                  "run_names": [f"{job['method']}:{job['seeds'][0]}"]}])
                 continue
             job = {**job, "adapter": adapters[job["needs_adapter"]]}
         search_jobs.append(job)

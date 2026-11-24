@@ -53,6 +53,7 @@ def test_relaunch_keeps_adapters_and_deployed_seeds(tmp_path):
     saved = tmp_path / "E4" / "adapters" / "grpo_league_ILI_seed100" / "adapter"
     saved.mkdir(parents=True)
     (saved / "adapter_config.json").write_text("{}")
+    (saved.parent / "provenance.json").write_text(json.dumps({"backend": "test", "revision": runner.REVISION}))
     out = tmp_path / "out"
     out.mkdir()
     (out / "grpo_none_from_ILI_runs.jsonl").write_text(json.dumps({"method": "grpo_none_from_ILI", "seed": 0}) + "\n")
@@ -83,3 +84,33 @@ def test_batch_errors_name_their_runs(tmp_path):
     runner.run_plan(plan(tmp_path, arms="league:1,none:1"), out, execute)
     errors = [json.loads(line) for line in (out / "errors.jsonl").read_text().splitlines()]
     assert errors[0]["run_names"] == ["grpo_league_ILI_seed100", "grpo_none_ILI_seed100"]
+
+
+def test_adapters_from_another_backend_are_retrained(tmp_path):
+    saved = tmp_path / "E4" / "adapters" / "grpo_league_ILI_seed100" / "adapter"
+    saved.mkdir(parents=True)
+    (saved / "adapter_config.json").write_text("{}")
+    (saved.parent / "provenance.json").write_text(json.dumps({"backend": "modal", "revision": runner.REVISION}))
+    calls = []
+    runner.run_plan(plan(tmp_path), tmp_path / "out", fake_execute(calls))
+    assert "grpo_league_ILI_seed100" in [n for kind, names in calls if kind == "train" for n in names]
+
+
+def test_a_second_launch_on_the_same_output_is_refused(tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "driver.lock").write_text("")
+    try:
+        runner.run_plan(plan(tmp_path), out, fake_execute([]))
+    except SystemExit as stop:
+        assert "another launch" in str(stop)
+    else:
+        raise AssertionError("second launch was not refused")
+
+
+def test_lock_is_released_and_missing_adapters_are_logged(tmp_path):
+    out = tmp_path / "out"
+    runner.run_plan(plan(tmp_path, arms="league:1"), out, fake_execute([], fail_train={"grpo_league_ILI_seed100"}))
+    assert not (out / "driver.lock").exists()
+    errors = [json.loads(line) for line in (out / "errors.jsonl").read_text().splitlines()]
+    assert {"phase": "search", "error": "no adapter to deploy", "run_names": ["grpo_league_from_ILI:0"]} in errors

@@ -106,16 +106,20 @@ def main() -> int:
         return 0
 
     values: dict[tuple[str, int], list[float]] = defaultdict(list)
-    missing = set()
+    incomplete: dict[tuple[str, int], int] = defaultdict(int)
     for method, _, b, cid in sorted(picks):
         if cid is None:
             continue
         if cid not in fresh:
-            missing.add(cid)
+            incomplete[(method, b)] += 1
             continue
         values[(method, b)].append(fresh[cid])
-    if missing:
-        print(f"warning: {len(missing)} picks have no fresh-seed runs yet")
+    # A (method, budget) cell with any pick not yet reseeded is left out of the summary and of Holm:
+    # the reseeded part would be a selected subset.
+    for cell in incomplete:
+        values.pop(cell, None)
+    if incomplete:
+        print("left out, picks without fresh seeds: " + ", ".join(f"{m} @{b} ({n})" for (m, b), n in sorted(incomplete.items())))
     rng = np.random.default_rng(0)
     summary = defaultdict(dict)
     p_values = {}
@@ -128,6 +132,7 @@ def main() -> int:
             p_values[f"{method} vs random @{b}"] = permutation_test(arr, np.array(values[("random", b)]))["p"]
     rejected = holm(p_values) if p_values else {}
     result = {"dataset": args.dataset, "horizon": args.horizon, "fresh_seeds": FRESH_SEEDS, "methods": summary,
+              "left_out": {f"{m} @{b}": n for (m, b), n in sorted(incomplete.items())},
               "vs_random": {k: {"p": p, "significant_after_holm": rejected[k]} for k, p in p_values.items()}}
     (OUT / f"{args.dataset}_T{args.horizon}_analysis.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     for method, by_b in sorted(summary.items(), key=lambda kv: kv[1].get("50", {}).get("mean", 9)):
