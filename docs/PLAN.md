@@ -231,3 +231,25 @@ review. Each names the weakness it answers.
   under an extended prereg (validation-to-test agreement over the whole
   tables). It needs every checkpoint downloaded (about 3.4 GB) and several
   hours of CPU with the NumPy model.
+
+## Amendment A24, 24 Nov, before any GRPO proposal is scored (E5)
+
+* Headline metric: Kendall tau between the referee's prediction and the
+  multi-seed mean (tau_true). Tau against the seed-2021 final value is
+  secondary, because the referee's features come from that seed.
+* Comparison sets per LLM search run: (a) quality-matched random configs,
+  for each proposal a random pick among the 5 unproposed configs with the
+  same instance_norm value whose multi-seed mean is nearest; (b) plain
+  random configs of the same size, as PLAN first specified. Matching is a
+  deviation from PLAN and is disclosed; (b) is reported beside it.
+* Non-inferiority: for each architect method and dataset, the referee is
+  non-inferior on the method's proposals when the lower end of the
+  bootstrap interval (over runs) of tau_true(proposals) minus
+  tau_true(matched) is above -0.05. The interval is two-sided at level
+  1 - 0.05/k, with k the number of methods scored on that dataset
+  (Bonferroni). Margin rationale: 0.05 is below one eighth of the
+  referee's advantage over epoch-k ranking on either table (0.40 on ILI,
+  0.57 on ETTh1), so a smaller drop would not change the decision to keep
+  the referee. Top-2 regret is secondary.
+* Methods: prompted Qwen (scored before this amendment, reported under it)
+  and every GRPO deployment arm of the E4 rerun.
