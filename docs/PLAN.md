@@ -253,3 +253,12 @@ review. Each names the weakness it answers.
   the referee. Top-2 regret is secondary.
 * Methods: prompted Qwen (scored before this amendment, reported under it)
   and every GRPO deployment arm of the E4 rerun.
+
+## Amendment A24, addendum (24 Nov, before any GRPO proposal is scored)
+
+* The 0.05 margin was set after prompted Qwen's E5 intervals had been seen
+  (lower ends -0.017 on ILI and -0.003 on ETTh1), so prompted Qwen passing it
+  is not confirmatory. The GRPO arms are the confirmatory tests.
+* The interval is a t interval over runs at level 1 - 0.05/k, in place of
+  the percentile bootstrap: about 10 runs give a bootstrap interval that is
+  too narrow.

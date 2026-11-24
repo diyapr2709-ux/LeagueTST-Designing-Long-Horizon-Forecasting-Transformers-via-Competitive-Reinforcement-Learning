@@ -2,7 +2,7 @@
 
 For Soumitra and the Claude Code session on Soumitra's account. Written
 2026-11-24. Read CLAUDE.md first: every hard rule there applies to you too.
-The registered design is docs/prereg_E4.md, amendment A25.
+The registered design is docs/prereg_E4.md, amendments A25 and A26.
 
 ## Why this exists
 
@@ -77,10 +77,13 @@ If the local client loses the network, the job keeps running; check
 `modal app list` and the volume before relaunching. A relaunch of the same
 command keeps finished adapters and deployed seeds.
 
-Local (one after the other on the one GPU; `--per-gpu 1` on a card under 16 GB):
+Local (one after the other on the one GPU; `--per-gpu 1` on a card under 16 GB).
+First J0, prompted Qwen on the same card, which K4 and family 3 then use as
+the baseline (A26; about 20 minutes):
 
 ```
 mkdir -p results/logs
+for d in ILI ETTh1; do .venv/bin/python scripts/llm_local.py prompted --dataset $d --seeds 10 --per-gpu 2; done > results/logs/soumitra_e3_prompted_local.log 2>&1
 nohup .venv/bin/python scripts/llm_local.py transfer --source ILI --target ETTh1 --arms league:10,none:10,uniform:5 --per-gpu 2 > results/logs/soumitra_e4_ili_to_etth1.log 2>&1 && \
 nohup .venv/bin/python scripts/llm_local.py transfer --source ETTh1 --target ILI --arms league:10,none:10 --per-gpu 2 > results/logs/soumitra_e4_etth1_to_ili.log 2>&1 &
 ```
@@ -101,8 +104,13 @@ for t in ETTh1_T336 ILI_T24; do
 done
 ```
 
-Local: the same copies from `results/runs/llm_local/E4/$t/` instead of `$S/$t/`.
+Local: the same copies from `results/runs/llm_local/E4/$t/` instead of `$S/$t/`,
+plus J0: `cp results/runs/llm_local/E3/$t/qwen_prompted_local_runs.jsonl results/search/E3/$t/`.
 Adapters stay where they are (git ignores them).
+
+Cut-off (A26): if J1 and J2 are not complete (every job finished or failed)
+by 26 Nov 18:00 ET, commit what exists, say so in the message, and stop.
+E4 is then reported as incomplete; nothing is tested on a partial set.
 
 Check before committing:
 
@@ -158,9 +166,9 @@ MODAL_PROFILE=soumitra nohup $M run --detach $A::transfer --source ETTh1 --targe
 
 ## First message for Soumitra's Claude
 
-> Read CLAUDE.md, docs/STATE.md, docs/prereg_E4.md (A25) and
+> Read CLAUDE.md, docs/STATE.md, docs/prereg_E4.md (A25, A26) and
 > docs/HANDOFF_soumitra.md. Check the code digests. Using the backend
-> Soumitra chose (Modal profile soumitra, or the local GPU), run J1 and J2
+> Soumitra chose (Modal profile soumitra, or the local GPU: J0 first), run J1 and J2
 > exactly as written, poll until both finish, bring the outputs back, run
 > the checks, and commit on branch soumitra-e4. Do not push. Run nothing
 > else.

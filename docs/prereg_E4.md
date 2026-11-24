@@ -164,3 +164,42 @@ scripts/modal_llm.py: e8aa3043afe6688ad6f72911f7208909f3cc746a79edad8a216d856785
 scripts/llm_local.py: 7adbbc68f6849997196dbd06eb39bdc52db7765b3ab3aa620900f6497e2cfdfe
 scripts/picks.py: 8a77ec0194390944b5bfdd312972258bb0c11fcf2b1dcde43f3894eadc1e759a
 ```
+
+## Amendment A26 (2026-11-24, before any E4 rerun result exists)
+
+From the critic's review of A25.
+
+* Backend and the prompted baseline. K4 and family 3 compare GRPO with
+  prompted Qwen. If the rerun uses a local GPU, prompted Qwen is rerun on
+  the same card first (10 seeds per table, method qwen_prompted_local,
+  `scripts/llm_local.py prompted`), K4 and family 3 use those runs, and the
+  A10G prompted runs serve as a reproducibility check. On Modal the A10G
+  prompted runs stay the baseline. Families 1 and 2 need nothing extra:
+  their controls run on CPU and every GRPO arm uses one backend.
+* Failed runs. Tests use the seeds that completed; failures (on-policy
+  stops, errors) are reported per arm. A worst-case sensitivity analysis
+  goes beside each test: every failed seed of the arm under test takes the
+  worst value observed in either arm of that test, every failed seed of the
+  comparator the best, and the conclusion is reported with and without.
+* Cut-off. If the rerun is not complete (every job finished or failed) by
+  26 Nov 18:00 ET, E4 is reported as incomplete and is not tested on a
+  partial set.
+* Version evidence. The pinned versions were read on 24 Nov from diyapr's
+  cached image of the unpinned definition, unchanged since the 23 Nov LLM
+  runs; records from before A25 carry no versions, so this rests on the
+  image cache, not on the records.
+* Records also carry the CUDA runtime, cuDNN version and compute capability.
+* Code digests replace those of A25 (docs/e4_rerun.sha256):
+
+```
+leaguetst/architect/prompt.py: c4297c7aabd47db3379c18f91dd53cf84bcaae14e9a35f3032ea2f6c026beca3
+leaguetst/architect/constrained.py: 37ddedaf91b98bf3d5aad3712e9df0d04a1a1eda1f2cd2b55bdeae3ae923cb9a
+leaguetst/architect/episode.py: c387b058dfeb9f3238c2c3d96c06cc42cdeadc7960e8eed2c9558fb7798832b2
+leaguetst/architect/llm.py: 146a7e43cda82314fcd2a371a667aa366c72abb6a73d942912458d60babf28e2
+leaguetst/architect/runner.py: 2dd62ad3eae4f45cd5d084a0de5468b019c5282f3d3169ccc8f19552bc324d45
+leaguetst/search/replay.py: 9601281c9a6b402ba1620a8cdd4976aeb4ba1112e4587288b869e6f528ec5440
+scripts/replay.py: f4b5a16f9077a98e04729f73010e4a8f11da85ed97ff68bedd34f205380c2eaa
+scripts/modal_llm.py: e8aa3043afe6688ad6f72911f7208909f3cc746a79edad8a216d856785343a6d
+scripts/llm_local.py: e7518498f9a6feac18841e1c2ed68a539ce052cbb891317d019bd8282c908170
+scripts/picks.py: 8a77ec0194390944b5bfdd312972258bb0c11fcf2b1dcde43f3894eadc1e759a
+```
