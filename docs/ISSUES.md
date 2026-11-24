@@ -29,3 +29,6 @@ rows, and to use the synthetic fixtures to demonstrate bypasses. The test
 door now requires a committed prereg file and always logs to
 results/test_access.log. The remaining protection is the owner's vault
 step: moving and encrypting the full CSVs.
+| 2026-11-24 | E4 GRPO training (diyapr, 23 Nov): 34 of 45 runs failed with CUDA out of memory, because three processes of about 7.6 GB shared a 22 GB A10G. Finished: 6 of 25 ILI-source runs (league 102, 105; none 101; uniform 101, 103, 104) and 5 of 20 ETTh1-source runs (league 100, 104, 108; none 108, 109). scripts/modal_llm.py now puts two jobs on a GPU and skips adapters that already exist. The reruns go to a teammate's Modal workspace (docs/HANDOFF_soumitra.md) because diyapr has about $5 left, most of it the E6 reserve. | open, rerun planned |
+| 2026-11-24 | One ILI-source GRPO run stopped on the on-policy check (sampled and scored log-probabilities differ by 0.250, above A22's 0.05 mean-gap limit). The check is kept as is; a run that fails it again is reported as failed, not rerun with a looser limit. | noted |
+| 2026-11-24 | Dead code in locked files stays (editing would break the E0 lock): trainval.scaled_values, datasets.SPLITS, test_split.PREREG_DIR. | by design |

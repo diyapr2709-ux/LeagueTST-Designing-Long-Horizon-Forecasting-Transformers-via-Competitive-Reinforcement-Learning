@@ -28,7 +28,9 @@ if str(ROOT) not in sys.path:
 
 MODEL = os.environ.get("LEAGUETST_LLM", "Qwen/Qwen2.5-1.5B-Instruct")
 GPU = os.environ.get("LEAGUETST_GPU", "A10G")
-PER_GPU = int(os.environ.get("LEAGUETST_PER_GPU", "3"))
+# Each GRPO process peaks near 7.6 GB; three on a 22 GB A10G ran out of memory
+# on 2026-11-23 (docs/ISSUES.md), so two share a GPU.
+PER_GPU = int(os.environ.get("LEAGUETST_PER_GPU", "2"))
 HF, RUNS = "/hf", "/runs"
 
 image = (
@@ -84,7 +86,14 @@ def driver(plan: dict) -> str:
     out = Path(RUNS) / plan["item"] / plan["name"]
     out.mkdir(parents=True, exist_ok=True)
     adapters: dict[str, str] = {}
-    train_jobs = plan.get("train_jobs", [])
+    train_jobs = []
+    for job in plan.get("train_jobs", []):
+        # A rerun keeps adapters that already finished and trains only the rest.
+        saved = Path(job["out_dir"]) / "adapter"
+        if (saved / "adapter_config.json").exists():
+            adapters[job["run_name"]] = str(saved)
+        else:
+            train_jobs.append(job)
     if train_jobs:
         batches = _chunks(train_jobs, PER_GPU)
         for batch in llm_batch.starmap([("train", b) for b in batches], return_exceptions=True):
