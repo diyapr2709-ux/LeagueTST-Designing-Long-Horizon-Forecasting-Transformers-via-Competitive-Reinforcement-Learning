@@ -34,15 +34,15 @@ END_TOKEN = "<|im_end|>"
 RIVAL_POOL = 32
 
 
-def load(model_name: str):
+def load(model_name: str, revision: str | None = None):
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(model_name)
+    tok = AutoTokenizer.from_pretrained(model_name, revision=revision)
     tok.padding_side = "left"
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16).to("cuda")
+    model = AutoModelForCausalLM.from_pretrained(model_name, revision=revision, torch_dtype=torch.bfloat16).to("cuda")
     return tok, model
 
 
@@ -121,7 +121,7 @@ def search(job: dict[str, Any]) -> list[dict[str, Any]]:
     """Search episodes with the base model or a saved adapter, one per seed."""
     import torch
 
-    tok, model = load(job["model"])
+    tok, model = load(job["model"], job.get("revision"))
     if job.get("adapter"):
         from peft import PeftModel
 
@@ -155,7 +155,7 @@ def train(job: dict[str, Any]) -> dict[str, Any]:
     seed = int(job["seed"])
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    tok, base = load(job["model"])
+    tok, base = load(job["model"], job.get("revision"))
     base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     base.enable_input_require_grads()
     base.config.use_cache = False
@@ -282,6 +282,24 @@ def run_job(kind: str, job: dict[str, Any]) -> Any:
 
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     try:
-        return train(job) if kind == "train" else search(job)
+        result = train(job) if kind == "train" else search(job)
     except Exception as error:  # reported back to the driver, which logs it
         return {"error": repr(error), "kind": kind, "job": {k: v for k, v in job.items() if k != "rows"}}
+    env = environment(job)
+    for record in [result] if isinstance(result, dict) else result:
+        record["env"] = env
+    return result
+
+
+PACKAGES = ("torch", "transformers", "peft", "accelerate", "huggingface_hub", "numpy", "scipy", "scikit-learn")
+
+
+def environment(job: dict[str, Any]) -> dict[str, Any]:
+    """Code, packages, model snapshot and GPU sharing behind a record (CLAUDE.md rule 7)."""
+    from importlib.metadata import version
+
+    import torch
+
+    return {"git_hash": job.get("git_hash"), "model_revision": job.get("revision"), "per_gpu": job.get("per_gpu"),
+            "backend": job.get("backend"), "gpu_name": torch.cuda.get_device_name(0),
+            "versions": {name: version(name) for name in PACKAGES}}

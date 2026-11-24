@@ -1,18 +1,20 @@
 """E5 (RQ2): does the referee's ranking hold on the architect's own proposals?
 
-The referee is the E2 model: gradient-boosted trees on the config fields and
-the seed-2021 curves up to the chosen k, fitted on the same 300 random configs
-as scripts/fidelity.py. It then ranks the distinct configs each LLM search run
-proposed (training configs left out). Each run's proposals are compared with
-quality-matched random sets: for every proposal, a random pick among the 5
-unproposed configs whose multi-seed mean is nearest, so a drop in tau that only
-reflects a narrower range of quality does not count against the referee.
+Amendment A24. The referee is the E2 model: gradient-boosted trees on the
+config fields and the seed-2021 curves up to the chosen k, fitted on the same
+300 random configs as scripts/fidelity.py. It ranks the distinct configs each
+LLM search run proposed (training configs left out). Each run's proposals are
+compared with (a) quality-matched random sets: for every proposal, a random
+pick among the 5 unproposed configs with the same instance_norm value whose
+multi-seed mean is nearest; and (b) plain random sets of the same size.
 
-Per run: Kendall tau of the referee's prediction against the final seed-2021
-value and against the multi-seed mean, and the top-2 regret (best multi-seed
-mean among the referee's top 2 minus the best in the set, in pooled seed-SD
-units). Runs are the unit: the mean over runs of proposals minus matched
-random, with a bootstrap interval over runs.
+Per run: Kendall tau of the referee's prediction against the multi-seed mean
+(headline) and against the seed-2021 final value, and the top-2 regret (best
+multi-seed mean among the referee's top 2 minus the best in the set, in
+pooled seed-SD units). Runs are the unit: the mean over runs of proposals
+minus each comparison, with a bootstrap interval at level 1 - 0.05/k (k
+methods on the dataset). The referee is non-inferior on a method's proposals
+when that interval for tau_true against matched sets lies above -0.05.
 
 Example:
     python scripts/e5_referee.py --dataset ILI --horizon 24
@@ -37,7 +39,8 @@ from leaguetst.ledger import read_rows  # noqa: E402
 from leaguetst.search.replay import Space, Table, _features  # noqa: E402
 
 SEED = 2021
-N_MATCHED, NEAREST = 200, 5
+N_MATCHED, NEAREST, MARGIN = 200, 5, 0.05
+METRICS = ("tau_true", "tau_final", "top2_regret_sd")
 CPU_FILES = ("cpu_runs.jsonl",)
 
 
@@ -77,8 +80,23 @@ def main() -> int:
     model.fit(np.array([feats(c) for c in fit_ids]), np.log([table.obs[c][SEED].best for c in fit_ids]))
     pool = [c for c in ids if c not in train]
     predicted = dict(zip(pool, model.predict(np.array([feats(c) for c in pool]))))
-    by_value = sorted(pool, key=table.true_value)
-    rank = {c: i for i, c in enumerate(by_value)}
+    groups: dict = {}
+    for c in pool:
+        groups.setdefault(space.choices[c]["instance_norm"], []).append(c)
+    for members in groups.values():
+        members.sort(key=table.true_value)
+    pos = {c: i for members in groups.values() for i, c in enumerate(members)}
+
+    def matched_set(proposed: list[str]) -> list[str]:
+        taken, pick = set(proposed), set()
+        for c in proposed:
+            members, i = groups[space.choices[c]["instance_norm"]], pos[c]
+            near = [x for x in members[max(0, i - 3 * NEAREST): i + 3 * NEAREST + 1] if x not in taken and x not in pick]
+            if not near:  # every neighbour is taken: widen to the whole group
+                near = [x for x in members if x not in taken and x not in pick]
+            near.sort(key=lambda x: abs(pos[x] - i))
+            pick.add(near[int(rng.integers(min(NEAREST, len(near))))])
+        return sorted(pick)
 
     runs = []
     for item_dir in sorted((ROOT / "results" / "search").glob("*")):
@@ -93,28 +111,27 @@ def main() -> int:
         if len(proposed) < 5:
             continue
         own = metrics(proposed, predicted, table, sd)
-        taken = set(proposed)
-        matched = []
-        for _ in range(N_MATCHED):
-            pick = set()
-            for c in proposed:
-                i = rank[c]
-                near = [x for x in by_value[max(0, i - 3 * NEAREST): i + 3 * NEAREST] if x not in taken and x not in pick]
-                near.sort(key=lambda x: abs(rank[x] - i))
-                pick.add(near[int(rng.integers(min(NEAREST, len(near))))])
-            matched.append(metrics(sorted(pick), predicted, table, sd))
+        others = [c for c in pool if c not in set(proposed)]
+        matched = [metrics(matched_set(proposed), predicted, table, sd) for _ in range(N_MATCHED)]
+        plain = [metrics(sorted(rng.choice(others, len(proposed), replace=False)), predicted, table, sd)
+                 for _ in range(N_MATCHED)]
         by_method.setdefault(run["method"], []).append(
             {"seed": run["seed"], "n": len(proposed), "proposals": own,
-             "matched": {m: float(np.mean([x[m] for x in matched])) for m in own}})
+             "matched": {m: float(np.mean([x[m] for x in matched])) for m in METRICS},
+             "plain": {m: float(np.mean([x[m] for x in plain])) for m in METRICS}})
+    alpha = 0.05 / max(1, len(by_method))
+    result.update({"margin": MARGIN, "interval_level": 1 - alpha})
     for method, entries in sorted(by_method.items()):
         summary = {"runs": len(entries), "mean_proposals": float(np.mean([e["n"] for e in entries]))}
-        for m in ("tau_final", "tau_true", "top2_regret_sd"):
+        for m in METRICS:
             own = np.array([e["proposals"][m] for e in entries])
-            ref = np.array([e["matched"][m] for e in entries])
-            diff = own - ref
-            boots = diff[rng.integers(0, len(diff), (4000, len(diff)))].mean(axis=1)
-            summary[m] = {"proposals": float(own.mean()), "matched_random": float(ref.mean()), "diff": float(diff.mean()),
-                          "diff_low": float(np.quantile(boots, 0.025)), "diff_high": float(np.quantile(boots, 0.975))}
+            summary[m] = {"proposals": float(own.mean())}
+            for kind in ("matched", "plain"):
+                diff = own - np.array([e[kind][m] for e in entries])
+                boots = diff[rng.integers(0, len(diff), (4000, len(diff)))].mean(axis=1)
+                summary[m][kind] = {"mean": float(np.mean([e[kind][m] for e in entries])), "diff": float(diff.mean()),
+                                    "low": float(np.quantile(boots, alpha / 2)), "high": float(np.quantile(boots, 1 - alpha / 2))}
+        summary["non_inferior"] = summary["tau_true"]["matched"]["low"] > -MARGIN
         result["methods"][method] = {"summary": summary, "runs": entries}
     out = ROOT / "results" / "e5" / f"{setting}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -122,10 +139,12 @@ def main() -> int:
     for method, block in result["methods"].items():
         s = block["summary"]
         print(f"{setting} {method}: {s['runs']} runs, {s['mean_proposals']:.0f} proposals each")
-        for m in ("tau_final", "tau_true", "top2_regret_sd"):
+        for m in METRICS:
             v = s[m]
-            print(f"  {m:15s} proposals {v['proposals']:.3f}  matched {v['matched_random']:.3f}  "
-                  f"diff {v['diff']:+.3f} [{v['diff_low']:+.3f}, {v['diff_high']:+.3f}]")
+            print(f"  {m:15s} proposals {v['proposals']:.3f}  " + "  ".join(
+                f"{k} {v[k]['mean']:.3f} diff {v[k]['diff']:+.3f} [{v[k]['low']:+.3f}, {v[k]['high']:+.3f}]"
+                for k in ("matched", "plain")))
+        print(f"  non-inferior at margin {MARGIN} (tau_true vs matched): {s['non_inferior']}")
     return 0
 
 
