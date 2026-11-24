@@ -169,7 +169,9 @@ def _run(plan: dict, out: Path, execute: Executor, commit: Callable[[], None]) -
         elif plan.get("train", True) and job["run_name"] not in stopped:
             pending.append(job)
     batches = chunks(pending, plan["per_gpu"])
-    for batch, result in zip(batches, execute("train", batches)):
+    # Iterate the executor's results to their end (no zip): Modal raises if its stream is closed early.
+    for i, result in enumerate(execute("train", batches)):
+        batch = batches[i]
         if isinstance(result, BaseException):
             _append(errors, [{"phase": "train", "error": repr(result), "run_names": [j["run_name"] for j in batch]}])
             continue
@@ -194,7 +196,8 @@ def _run(plan: dict, out: Path, execute: Executor, commit: Callable[[], None]) -
             job = {**job, "adapter": adapters[job["needs_adapter"]]}
         search_jobs.append(job)
     batches = chunks(search_jobs, plan["per_gpu"])
-    for batch, result in zip(batches, execute("search", batches)):
+    for i, result in enumerate(execute("search", batches)):
+        batch = batches[i]
         names = [f"{j['method']}:{j['seeds'][0]}" for j in batch]
         if isinstance(result, BaseException):
             _append(errors, [{"phase": "search", "error": repr(result), "run_names": names}])
