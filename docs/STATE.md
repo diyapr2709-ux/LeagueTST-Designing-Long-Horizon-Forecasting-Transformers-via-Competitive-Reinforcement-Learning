@@ -17,6 +17,21 @@ Updated by every loop iteration. Newest first.
   328 E3b and E6 checkpoints, per-window validation errors).
 * The wider design space (A16) is merged as code and a costed page
   (docs/wide_space.md); it runs after the report.
+* E4 rerun registered before any result (docs/prereg_E4.md A25, A26): one
+  backend for all 45 policies, Soumitra's Modal workspace or a local RTX
+  (scripts/llm_local.py on the same runner as Modal); pinned packages and
+  Qwen revision; code digests in docs/e4_rerun.sha256; a local backend
+  reruns prompted Qwen on the same card; failed-run rule; cut-off 26 Nov
+  18:00 ET. Plan: docs/HANDOFF_soumitra.md.
+* E5 under A24 (t interval, Bonferroni): the referee's tau on prompted-Qwen
+  proposals against quality-matched random sets is ILI +0.009 [-0.029,
+  +0.048], ETTh1 +0.020 [-0.009, +0.049], non-inferior at 0.05, which is
+  not confirmatory (margin set after these were seen). Against plain random
+  sets ETTh1 drops by 0.095 [-0.129, -0.062]: proposals sit in a narrow
+  band of quality that is harder to rank.
+* Stage-1 pipeline retired (tag stage1-baselines). A test had loaded the
+  full CSVs, test rows included, for a shape check on every pytest run;
+  removed and disclosed in docs/ISSUES.md.
 * Critic (2026-11-24): workshop-ready no. Blocking: the GRPO rerun, a bound
   on the smallest detectable effect, E5's headline metric and margin, stale
   docs. Replay summaries now say when regret is partly in-sample.
