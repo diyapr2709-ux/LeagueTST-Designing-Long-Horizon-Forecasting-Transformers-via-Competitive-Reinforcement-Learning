@@ -228,3 +228,27 @@ scripts/modal_llm.py: e8aa3043afe6688ad6f72911f7208909f3cc746a79edad8a216d856785
 scripts/llm_local.py: e7518498f9a6feac18841e1c2ed68a539ce052cbb891317d019bd8282c908170
 scripts/picks.py: f2145f0c6fcb0331954d9e5a9c5c084ae3df7a0cce4353112bb662d98e484f46
 ```
+
+## Amendment A27, addendum (2026-11-24, before any E4 rerun result exists)
+
+Three smoke runs on diyapr (item SMOKE and SMOKE2: one league policy, 2
+GRPO steps, budget 2; not E4 data) found two faults that only Modal shows,
+both fixed: the runner closed Modal's result stream early, and a relaunch
+with nothing left to run hung on an empty dispatch. A fresh run then
+trained, deployed and stamped its records cleanly; a relaunch of a finished
+run did nothing, kept exactly one deployment and released its lock. Also,
+provenance.json is written by the worker that saved the adapter. Code
+digests replace those of A27 (docs/e4_rerun.sha256):
+
+```
+leaguetst/architect/prompt.py: c4297c7aabd47db3379c18f91dd53cf84bcaae14e9a35f3032ea2f6c026beca3
+leaguetst/architect/constrained.py: 37ddedaf91b98bf3d5aad3712e9df0d04a1a1eda1f2cd2b55bdeae3ae923cb9a
+leaguetst/architect/episode.py: c387b058dfeb9f3238c2c3d96c06cc42cdeadc7960e8eed2c9558fb7798832b2
+leaguetst/architect/llm.py: 7a983eff5813e4abbdbed784719acb3f9058bc9cf71bbd53688d737fbb648ef4
+leaguetst/architect/runner.py: e9aae2c4a1b86df966108e21fdbd0d14d8a0b9b5e1f85e6200a52ab4032c96f3
+leaguetst/search/replay.py: 9601281c9a6b402ba1620a8cdd4976aeb4ba1112e4587288b869e6f528ec5440
+scripts/replay.py: f4b5a16f9077a98e04729f73010e4a8f11da85ed97ff68bedd34f205380c2eaa
+scripts/modal_llm.py: 7e9b6d2bb384f9bce3c08db58941d1c5acc47082818589d5eea0b26067e98a8b
+scripts/llm_local.py: e7518498f9a6feac18841e1c2ed68a539ce052cbb891317d019bd8282c908170
+scripts/picks.py: f2145f0c6fcb0331954d9e5a9c5c084ae3df7a0cce4353112bb662d98e484f46
+```
