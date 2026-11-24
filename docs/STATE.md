@@ -2,6 +2,32 @@
 
 Updated by every loop iteration. Newest first.
 
+## 2026-11-23, after midnight UTC (19:30 to 20:00 EST)
+
+* E3b ETTh1 (64 live runs, seed 3001): K7 passes. Mean signed gap -0.0017,
+  95% interval [-0.0042, 0.0009]; median |gap| 0.43 seed SD (threshold
+  1.15). Spearman over all 64 is 0.93 but 0.08 within the top 20: the
+  table cannot order its leaders, consistent with 50 configs within one SD
+  of the best. Pending verifier re-score.
+* E6 ETTh1 PatchTST/42 arm in the ledger (40 runs, 4 horizons x 10 seeds,
+  checkpoints and per-window errors downloaded).
+* E3 ETTh1 prompted Qwen (10 seeds, in-sample, no claims): AUC 1.30, next
+  to the controller (1.32); on ILI it was last. Unlike ILI, ETTh1 has one
+  dominant field (RevIN) that a prompt can name.
+* E5 (RQ2) audit built (scripts/e5_referee.py): the E2 referee ranks the
+  prompted architect's proposals at least as well as quality-matched random
+  configs (tau vs final, per-run difference: ILI +0.026 [+0.003, +0.046],
+  ETTh1 +0.019 [+0.004, +0.036]; 10 runs each). GRPO proposals are added
+  when the E4 deployments land. Pending verifier and critic.
+* Credit arena (docs/verdicts/arena_credit_2026-11-23.md): transfer
+  deployments, then pick reseeds (ILI launched as a smoke test, ETTh1
+  next), a $3.5 reserve on diyapr for E6 reruns, the uniform-rival arm only
+  under A17's condition, the extended test prereg committed by 28 Nov.
+  Nothing beyond free credit; no new GPU work on diya-027.
+* Dead code: regret_at and regret_curve removed. The stage-1 baseline
+  pipeline (scripts that score the test split, unreachable from the E0 to
+  E8 pipeline) is being retired; tag stage1-baselines keeps it.
+
 ## 2026-11-23, night
 
 * ETTh1 top-100 reseeds done: pooled SD 0.0132 (seed 2021, used to select
