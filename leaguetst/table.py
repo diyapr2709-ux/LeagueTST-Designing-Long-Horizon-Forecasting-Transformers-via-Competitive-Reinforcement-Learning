@@ -23,8 +23,7 @@ import numpy as np
 import torch
 
 from leaguetst.data.device_loader import build_trainval_loaders
-from leaguetst.experiment import build_model
-from leaguetst.models import count_parameters
+from leaguetst.models import ForecasterConfig, PatchTST, count_parameters
 from leaguetst.search.feasible import BUDGETS, INPUT_LEN
 from leaguetst.training import Trainer, TrainingConfig
 from leaguetst.utils import load_yaml, save_json, save_state_dict, set_seed, sha256_file
@@ -95,7 +94,7 @@ def run_entry(
     config = TrainingConfig(**training)
     set_seed(seed)
     loaders, _ = build_trainval_loaders(trainval_dir, dataset, input_len, horizon, config.batch_size, seed, device)
-    model = build_model("patchtst", model_config, loaders["train"].dataset.n_vars, input_len, horizon)
+    model = PatchTST(ForecasterConfig.from_dict(model_config), loaders["train"].dataset.n_vars, input_len, horizon)
     n_params = count_parameters(model)
     trainer = Trainer(model, loaders, config, device)
     fit = trainer.fit()

@@ -1,11 +1,11 @@
-"""Shapes, parameter counts and config validation of the forecasters."""
+"""Shapes, parameter counts and config validation of the forecaster."""
 
 from __future__ import annotations
 
 import pytest
 import torch
 
-from leaguetst.models import DLinear, ForecasterConfig, PatchTST, RevIN, count_parameters
+from leaguetst.models import ForecasterConfig, PatchTST, RevIN, count_parameters
 
 PATCHTST_42 = ForecasterConfig(
     patch_len=16, stride=8, n_layers=3, n_heads=4, d_model=16, ff_ratio=8,
@@ -93,22 +93,3 @@ def test_config_round_trips_through_dict():
     config = ForecasterConfig(patch_len=24, stride=12, instance_norm=False)
     assert ForecasterConfig.from_dict(config.to_dict()) == config
     assert config.d_ff == config.ff_ratio * config.d_model
-
-
-def test_dlinear_shape_and_parameter_count():
-    model = DLinear(n_vars=7, input_len=336, horizon=96)
-    y = model(torch.randn(3, 336, 7))
-    assert y.shape == (3, 96, 7)
-    assert count_parameters(model) == 2 * (336 * 96 + 96)
-    with pytest.raises(ValueError):
-        DLinear(n_vars=7, input_len=336, horizon=96, kernel_size=24)
-
-
-def test_dlinear_decomposition_sums_to_input():
-    model = DLinear(n_vars=2, input_len=60, horizon=10)
-    x = torch.randn(2, 60, 2)
-    seasonal, trend = model.decompose(x)
-    assert torch.allclose(seasonal + trend, x, atol=1e-6)
-    flat = torch.ones(1, 60, 2)
-    _, flat_trend = model.decompose(flat)
-    assert torch.allclose(flat_trend, flat, atol=1e-6)

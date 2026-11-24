@@ -67,20 +67,3 @@ def save_state_dict(state: dict[str, torch.Tensor], path: str | Path) -> str:
     """Save model weights atomically and return the file's SHA-256 digest."""
     atomic_write(path, lambda target: torch.save(state, target))
     return sha256_file(path)
-
-
-def load_state_dict(path: str | Path, expected_sha256: str | None = None) -> dict[str, torch.Tensor]:
-    """Read model weights saved by ``run_experiment``.
-
-    Only tensors and plain containers are unpickled, so a tampered file
-    cannot run code on load. When ``expected_sha256`` is given the file must
-    match it, which ties the weights to the record that names them.
-    """
-    if expected_sha256 is not None:
-        actual = sha256_file(path)
-        if actual != expected_sha256:
-            raise ValueError(f"{path}: SHA-256 {actual[:12]} does not match the record's {expected_sha256[:12]}")
-    state = torch.load(path, map_location="cpu", weights_only=True)
-    if not isinstance(state, dict) or not all(isinstance(v, torch.Tensor) for v in state.values()):
-        raise ValueError(f"{path} does not hold a state dict of tensors")
-    return state

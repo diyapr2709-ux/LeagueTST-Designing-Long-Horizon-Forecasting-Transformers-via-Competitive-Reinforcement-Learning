@@ -292,3 +292,19 @@ scripts/wide_space.py and tests/test_wide_space.py.
   the same ledger rows.
 * No em dashes, TODO markers, unused imports, unused names or unread
   parameters in the new files.
+
+## Stage-1 probes retired (2026-11-24)
+
+The stage-1 reproduction code and its probes are removed from the working
+tree: `scripts/train.py`, `reproduce_baselines.py`, `summarize_results.py`,
+`revalidate.py`, `scripts/validation/` (system test, penetration probes,
+data checks), `leaguetst/experiment.py`, `analysis.py` and `published.py`,
+DLinear with its configs, and the helpers only they used. Every entry point
+among them scored the test split, which hard rule 1 of CLAUDE.md now
+forbids, and the E0 to E8 pipeline reaches none of them. The code that
+produced the records above and the progress-report numbers stays at tag
+`stage1-baselines`; the records stay in `results/`. Probe findings that
+still apply to live code keep their regression tests in
+`tests/test_hardening.py` and `tests/test_trainer.py`, which now go through
+the table path (`leaguetst.table.run_entries`) and the checkpoint loader of
+the NumPy re-scorer.
