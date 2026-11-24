@@ -1,120 +1,129 @@
 # Pre-registration: ablations, robustness and external validity (Anirudh's workstream)
 
-Registered 2026-11-24, before any ablation result exists. Every result here
-is secondary to the registered primary endpoints (docs/prereg_E4.md, E6):
+Registered 2026-11-24 and revised the same day after the critic's and the
+verifier's reviews, before any ablation result exists. Every result here is
+secondary to the registered primary endpoints (docs/prereg_E4.md, E6):
 nothing in this file changes a primary test, its family or its data. A new
 ablation is added only by a dated amendment at the end of this file,
 committed before its first run. Plan and handoff: docs/HANDOFF_anirudh.md.
 
 ## Shared rules
 
-* Seeds: at least 10 search or training seeds per GPU arm and 30 per CPU
-  arm, fixed in the command; every record carries the git hash, packages,
-  model revision, GPU and backend (leaguetst/architect/llm.py environment).
+* Every record carries the git hash, packages, model revision, GPU and
+  backend (leaguetst/architect/llm.py environment). Seeds are fixed in the
+  command.
 * Endpoint on ILI: held-out AUC regret over budgets 1 to 100 (as E3), in
   pooled seed-SD units and in raw MSE. ETTh1 has one seed per config, so
-  ETTh1 replays are descriptive only (A18) unless fresh-seed picks exist.
-* Tests: two-sample seed-level permutation test of each arm against its
-  reference (exact up to 250k relabellings), Holm within each family below.
-  Every test also reports the difference in means with a t interval and the
-  smallest difference the design could detect at 80% power (simulated from
-  the observed variances), so a null result is read with its resolution.
-* A GPU arm and its reference run on the same backend. If Anirudh and
-  Soumitra both use Modal (A10G, same code digests), the reference for AB-G
-  is Soumitra's E4 J2 league arm; otherwise Anirudh runs it.
+  ETTh1 replays are descriptive only (A18).
+* Tests: seed-level permutation tests (exact up to 250k relabellings), Holm
+  within each family below. Every test also reports the difference with a t
+  interval and the smallest difference it could detect at 80% power.
+  Planning estimate (critic, from E3): the per-seed SD of ILI AUC is about
+  0.5 SD units, so 30 against 30 seeds with Holm over 3 detects about 0.42,
+  and 100 against 100 about 0.23. Families are sized to that: few tests,
+  more seeds, trends instead of pairwise sweeps.
+* A GPU arm and its reference run on the same backend and code digests.
 * Each GPU arm has its own Modal item (ABL_G_<arm>, ABL_P_<arm>), never
   reused for another configuration, so adapters, runs and launch locks
   cannot mix.
+* Forking paths closed in advance: no AB-R variant replaces the E2 referee
+  or feeds E5; anything run after the E4 code unfreezes (LoRA rank, rival
+  pool size, sampling temperature, all constants in registered E4 code) is
+  exploratory and gets no test; the A26 worst-case analysis is
+  leaguetst/sensitivity.py, sha256
+  e9ff5fe587b637cfc4d5bc7755e90be921d0a097347acbd9a88ed5ecc328c59b,
+  committed (c3f69d1) before any E4 result.
 
-## AB-G: GRPO ablations (GPU, Phase 1 now, Phase 2 after E4)
+## Tested families
 
-Source ETTh1, target ILI (the direction whose target AUC is held out), 10
-seeds per arm (100 to 109), league rivals, deployed at budget 100.
-Reference: the E4 recipe (KL beta 0.04, 60 steps, learning rate 1e-4,
-group 8, 4 rivals, snapshot every 5 steps, temperature 1.0, LoRA rank 16).
+### AB-L: did GRPO learn? (CPU, from the E4 training logs)
 
-| Phase | Arm | Change | Runs with |
-|---|---|---|---|
-| 1 | beta0 | no KL term (beta 0) | scripts/modal_llm.py transfer --beta 0 |
-| 1 | beta01 | beta 0.1 | --beta 0.1 |
-| 1 | steps30 | 30 GRPO steps | --steps 30 |
-| 1 | steps120 | 120 GRPO steps | --steps 120 |
-| 2 | group4 | group 4 | new script (job field group) |
-| 2 | rivals8 | 8 rivals | new script (job field n_rivals) |
-| 2 | snap1 | snapshot every step | new script (job field snapshot_every) |
-| 2 | temp07 | sampling temperature 0.7 in training and deployment | new script (job field temperature) |
+For every E4 policy, the Spearman slope of the group's mean reward over the
+60 steps. Test per source table: the league policies' slopes against zero
+(sign-flip permutation test over policies). Holm over 2 (ILI source, ETTh1
+source). Descriptive beside it: the best-in-history of the last 10 steps
+against prompted Qwen's best at the same epoch budget on the source table.
+Without this, "RL did not help" cannot be told from "RL did not learn".
 
-Family AB-G1: the four Phase 1 arms against the reference, Holm over 4.
-Family AB-G2: the four Phase 2 arms, Holm over 4. Phase 2 runs only after
-its script passes review and its digest is added here by amendment.
-LoRA rank and the rival-pool size (32) are constants in registered E4 code;
-they may be ablated only after the E4 rerun is complete, by amendment.
+### AB-G: GRPO dose-response (GPU)
 
-## AB-P: prompted-architect ablations (GPU)
+Source ETTh1, target ILI (held-out target AUC), league rivals, training
+seeds 100 to 109, deployed at budget 100, E4 recipe otherwise.
 
-Prompted Qwen, 10 search seeds per table, Modal item ABL_P_<arm>, against
-qwen_prompted (E3, A10G). Phase 1: anon (field names replaced by neutral
-labels: does the LLM use forecasting knowledge?) and repair (unconstrained
-decoding with nearest-feasible repair: what does constrained decoding buy?).
-Phase 2: model scale, Qwen2.5-0.5B-Instruct and Qwen2.5-3B-Instruct, each
-pinned to the revision resolved before launch and written here by amendment.
-Family AB-P: ILI tests only (2 in Phase 1, 2 in Phase 2), Holm over 4; ETTh1
-descriptive.
+| Trend | Levels (ordinal) | Arms to run |
+|---|---|---|
+| Training steps | 0 (ABL_P_ref on ILI, the untrained model), 30, 60 (reference), 120 | ABL_G_steps30, ABL_G_steps120 |
+| KL weight beta | 0, 0.04 (reference), 0.1 | ABL_G_beta0, ABL_G_beta01 |
 
-## AB-C: factorized-controller ablations (CPU)
+Test per trend: the seed-level Spearman correlation between level rank and
+AUC, permutation test. Holm over 2. Reference: Soumitra's E4 J2 league arm
+if it ran on the same backend and E4 is complete under A26; otherwise
+ABL_G_ref, the same recipe, run by Anirudh.
 
-leaguetst.search.replay.factorized_controller with league rivals, 30 search
-seeds, ILI held-out AUC; reference: its defaults (group 8, 4 rivals,
-learning rate 0.1, snapshot every 2, entropy 0.01). Arms: rivals 1, 2 and 8;
-group 4 and 16; snapshot every 1 and 5; entropy 0 and 0.05; learning rate
-0.03 and 0.3. Family AB-C: Holm over these 11 tests. The same arms on ETTh1
-are reported descriptively.
+### AB-P: prompted-architect ablations (GPU)
 
-## AB-R: referee ablations (CPU)
+Prompted Qwen, 30 search seeds per table, rerun under the pinned A25 code
+as its own reference (ABL_P_ref; the E3 runs predate the pins). Arms:
+anon (field names replaced by neutral labels: does the LLM use forecasting
+knowledge?), repair (unconstrained decoding with nearest-feasible repair:
+what does constrained decoding buy?), and model scale (Qwen2.5-0.5B and
+3B-Instruct around the 1.5B reference, revisions pinned by amendment
+before launch; needs the WP4 script). ILI tests: anon against ref, repair
+against ref, and the scale trend; Holm over 3. ETTh1 descriptive. This
+supersedes the repair ablation of docs/prereg_E4.md (5 ILI seeds).
 
-The E2 setup (scripts/fidelity.py draw: 300 training, 150 evaluation
-configs). Arms: features (config fields only, curves only, both), model
-(gradient-boosted trees, ridge regression, random forest), training size
-(100, 300, 1,000), k in 1 to 3. Endpoint: Kendall tau against the
-multi-seed mean, with a bootstrap interval over evaluation configs, on both
-tables. Descriptive: no family, no claim.
+### AB-C: factorized-controller ablations (CPU)
 
-## AB-N: how much does a one-seed table bias a replay? (CPU)
+leaguetst.search.replay.factorized_controller with league rivals, 100
+search seeds per arm, ILI held-out AUC; reference: its defaults (group 8,
+4 rivals, learning rate 0.1, snapshot every 2, entropy 0.01). Arms: 1
+rival, 8 rivals, snapshot every step. Holm over 3. ETTh1 descriptive.
 
-The ILI table restricted to seed 2021, with ETTh1's observation-noise rule,
-replays every E3 method (30 seeds); its in-sample regret is compared with
-the full table's held-out regret for the same runs. This measures the
-in-sample bias that A18 guards against on ETTh1. Descriptive.
+### AB-X: external HPO baselines (CPU, now)
 
-## ST: statistical robustness (CPU)
+DEHB, SMAC (random-forest Bayesian optimisation) and Hyperband on the same
+oracle, budgets and charging rule as E3, 30 seeds, against E3's random
+search on ILI held-out AUC; Holm over 3; ETTh1 descriptive. They read only
+the validation tables, so nothing is gained by waiting for the test. Package
+versions are pinned by amendment before the first run.
 
-* The smallest detectable effect of every registered comparison (E3 claims,
-  pick reseeds, E4 families) at 80% power, by simulation from the observed
-  per-seed variances.
-* Regret in raw MSE beside SD units; the ETTh1 replay summary recomputed
-  with a robust (median absolute deviation) seed SD as a sensitivity check.
-* Aggregate profiles across both tables: interquartile mean and probability
-  of improvement over random search with stratified bootstrap intervals.
-* The worst-case sensitivity analysis of A26, as a tested function that
-  Diya's side calls on the E4 families.
-* Equivalence margins, if reported, are labelled post hoc: the pick
-  results were seen before this file.
+## Descriptive analyses (no tests)
 
-## RQ3 extras (CPU)
+* AB-R, referee: features (config only, curves only, both), model
+  (gradient-boosted trees, ridge, random forest), training size (100, 300,
+  1,000), k in 1 to 3; Kendall tau against the multi-seed mean with a
+  bootstrap interval, both tables.
+* AB-N, one-seed bias: the ILI table cut to seed 2021 with ETTh1's
+  observation-noise rule; every E3 method (30 seeds); in-sample regret
+  against the full table's held-out regret.
+* AB-Q, noise-free lookups: every E3 method replayed on ILI with 3-seed
+  means as lookups and regret on the same means. If methods separate here
+  but not on fresh seeds, the plateau of near-equal configs explains the
+  null.
+* ST: the detectable-effect table for every registered comparison; regret
+  in raw MSE; the ETTh1 replay with a robust (MAD) seed SD; interquartile
+  mean and probability-of-improvement profiles with stratified bootstrap
+  intervals. Any equivalence margin is labelled post hoc (the pick results
+  were seen before this file).
+* RQ3: ANOVA interactions, cross-table agreement of field shares, and the
+  REVIN validation check against results/revin_prediction.json (the test
+  part stays with Diya's single evaluation on 30 Nov).
+* Exploratory after the E4 code unfreezes: LoRA rank, rival pool size,
+  sampling temperature (a constant in training today).
 
-* Pairwise interactions in the E8 ANOVA, and whether the ranking of design
-  fields agrees between the two tables (Spearman over field shares).
-* The RevIN study's validation part (A23): the 20 REVIN pairs at 100 epochs
-  against their 30-epoch values, checked against results/revin_prediction.json.
-  The test part stays with Diya's single evaluation on 30 Nov.
+## Phase B, after the 30 Nov test (toward the paper), in this order
 
-## Phase B, after the 30 Nov test (toward the paper)
+Each item is registered by amendment before it runs.
 
-Each item is registered here by amendment before it runs.
-
-* External baselines on the same oracle: published LLM-based optimisers
-  and multi-fidelity HPO methods that the lit-scout opens and cites.
-* A third dataset table (for example ETTh2) under its own lock and
-  test-split protocol, prepared by a person, never by Claude.
-* Benchmark release: the tables with a datasheet, licence and loader.
-* The wider design space of A16 (docs/wide_space.md).
+1. ETTh1 seeds 2022 and 2023 for all 2,368 configs, so ETTh1 replays can
+   carry claims (A18).
+2. A third dataset from another domain (not ETTh2, which shares ETTh1's
+   source), 3 seeds (about $42), chosen after checking its licence, under
+   its own lock and test protocol, prepared by a person, never by Claude.
+3. Benchmark release: the result tables, a loader that downloads and splits
+   the original data itself (ETDataset is CC BY-ND 4.0, so the split CSVs
+   are never redistributed), Croissant metadata, hosting on an ML dataset
+   site and executable code, as the NeurIPS Datasets and Benchmarks call
+   requires.
+4. The wider design space of A16 (docs/wide_space.md), on a costed subset.
+5. LLM-based optimisers from the literature (WP0) as further baselines.

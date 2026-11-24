@@ -252,3 +252,10 @@ scripts/modal_llm.py: 7e9b6d2bb384f9bce3c08db58941d1c5acc47082818589d5eea0b26067
 scripts/llm_local.py: e7518498f9a6feac18841e1c2ed68a539ce052cbb891317d019bd8282c908170
 scripts/picks.py: f2145f0c6fcb0331954d9e5a9c5c084ae3df7a0cce4353112bb662d98e484f46
 ```
+
+## Amendment A28 (2026-11-24, before any E4 rerun or ablation result exists)
+
+The repair ablation registered above (prompted Qwen without constrained
+decoding, 5 ILI seeds) is superseded by AB-P in docs/prereg_ablations.md (30
+seeds per table, rerun under the pinned A25 code with its own reference).
+Nothing else in this file changes.
