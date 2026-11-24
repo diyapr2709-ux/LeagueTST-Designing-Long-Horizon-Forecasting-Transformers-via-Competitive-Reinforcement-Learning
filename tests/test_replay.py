@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from leaguetst.search import configs_by_id
-from leaguetst.search.replay import METHODS, Oracle, Space, Table, BudgetExhausted, regret_at, run_method
+from leaguetst.search.replay import METHODS, Oracle, Space, Table, BudgetExhausted, regret_from_trace, run_method
 
 
 @pytest.fixture(scope="module")
@@ -69,7 +69,7 @@ def test_every_method_respects_the_budget_and_recounts(table, space, method):
     assert spends == sorted(spends)
     values = [oracle.full_values[c] for _, c in oracle.trace]
     assert values == sorted(values, reverse=True)
-    assert regret_at(oracle, budget, 1.0) >= 0
+    assert regret_from_trace(oracle.trace, table, budget, 1.0)[0] >= 0
 
 
 def test_runs_are_deterministic(table, space):
@@ -81,7 +81,7 @@ def test_runs_are_deterministic(table, space):
 def test_regret_is_scored_against_the_multi_seed_mean(table):
     oracle = Oracle(table, budget=10_000, seed=0)
     oracle.full(table.best_id)
-    assert regret_at(oracle, 10_000, 1.0) == pytest.approx(0.0)
+    assert regret_from_trace(oracle.trace, table, 10_000, 1.0) == (pytest.approx(0.0), table.best_id)
 
 
 def test_common_random_numbers_across_methods(table, space):

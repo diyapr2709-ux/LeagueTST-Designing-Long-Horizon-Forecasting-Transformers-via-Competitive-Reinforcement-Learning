@@ -575,22 +575,6 @@ def run_method(method: Callable, table: Table, space: Space, budget: int, seed: 
     return oracle
 
 
-def regret_at(oracle: Oracle, budget: int, fallback: float) -> float:
-    """True value of the incumbent at ``budget`` minus the table's best."""
-    incumbent = None
-    for spent, cid in oracle.trace:
-        if spent <= budget:
-            incumbent = cid
-        else:
-            break
-    value = oracle.table.true_value(incumbent) if incumbent else fallback
-    return value - oracle.table.best_true
-
-
-def regret_curve(oracle: Oracle, budgets: Iterable[int], fallback: float) -> list[float]:
-    return [regret_at(oracle, b, fallback) for b in budgets]
-
-
 def regret_from_trace(trace: Iterable, table: Table, budget: int, fallback: float,
                       run_seed: int | None = None) -> tuple[float, str | None]:
     """Regret of the incumbent at ``budget`` and its config id, from a (spent, id) trace.

@@ -83,7 +83,6 @@ def main() -> int:
             groups[space.choices[cid][field]].append(vals.mean())
         means = {str(k): float(np.mean(v)) for k, v in groups.items()}
         weights = {str(k): len(v) for k, v in groups.items()}
-        total_n = sum(weights.values())
         between = sum(weights[k] * n_r * (means[k] - grand) ** 2 for k in means)
         result["main_effects"][field] = {"share": float(between / ss_total), "means": means, "counts": weights}
     best_arch = archs[int(np.argmin(a_mean))]
