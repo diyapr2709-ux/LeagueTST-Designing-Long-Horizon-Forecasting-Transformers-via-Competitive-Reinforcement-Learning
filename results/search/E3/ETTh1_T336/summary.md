@@ -1,7 +1,7 @@
 # E3 replay on E1 ETTh1 T=336
 
 2368 configs, 74 architectures, pooled seed SD 0.0132; 50 configs lie within one SD of the best multi-seed mean.
-Regret of the incumbent, scored on the seeds the search never saw, in pooled seed-SD units: mean over search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. AUC is the mean regret over budgets 1 to 100.
+Regret of the incumbent in pooled seed-SD units, scored on the seeds the search never saw where the incumbent has them and in-sample otherwise (held-out share per budget in summary.json): mean over search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. AUC is the mean regret over budgets 1 to 100.
 
 | method | seeds | @10 | @25 | @50 | @100 | AUC |
 |---|---|---|---|---|---|---|
@@ -16,3 +16,5 @@ Regret of the incumbent, scored on the seeds the search never saw, in pooled see
 | random | 30 | 1.91 [1.60, 2.23] | 1.46 [1.18, 1.75] | 1.53 [1.18, 1.94] | 1.51 [1.26, 1.81] | 1.61 |
 | referee | 30 | 1.42 [1.21, 1.65] | 1.36 [1.14, 1.58] | 1.62 [1.39, 1.91] | 1.44 [1.25, 1.72] | 1.63 |
 | epochk | 30 | 1.42 [1.21, 1.65] | 1.59 [1.25, 2.01] | 1.63 [1.39, 1.92] | 1.41 [1.22, 1.68] | 1.68 |
+
+No claims from this table: incumbents are scored in-sample; see the pick reseeds.

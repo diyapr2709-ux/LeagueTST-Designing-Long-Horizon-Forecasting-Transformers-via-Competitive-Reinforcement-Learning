@@ -136,21 +136,22 @@ def summarize(table: Table, space: Space, out_dir: Path, item: str, table_item: 
         summary["methods"][method] = entry
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
 
+    in_sample = observation_noise(table) > 0 or any(not all(r["heldout"].values()) for r in runs)
     lines = [f"# {item} replay on {table_item} {dataset} T={horizon}", "",
              f"{len(table.ids)} configs, {len(arch_best)} architectures, pooled seed SD {sigma:.4g}; "
              f"{plateau} configs lie within one SD of the best multi-seed mean.",
-             "Regret of the incumbent, scored on the seeds the search never saw, in pooled seed-SD units: mean over "
-             "search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. AUC is the "
-             "mean regret over budgets 1 to 100.", "",
+             ("Regret of the incumbent in pooled seed-SD units, scored on the seeds the search never saw where the "
+              "incumbent has them and in-sample otherwise (held-out share per budget in summary.json)" if in_sample else
+              "Regret of the incumbent, scored on the seeds the search never saw, in pooled seed-SD units") +
+             ": mean over search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. "
+             "AUC is the mean regret over budgets 1 to 100.", "",
              "| method | seeds | " + " | ".join(f"@{b}" for b in BUDGETS) + " | AUC |",
              "|---|---|" + "---|" * (len(BUDGETS) + 1)]
     for method, entry in sorted(summary["methods"].items(), key=lambda kv: kv[1]["auc_sd"]):
         cells = [f"{entry[str(b)]['mean_sd']:.2f} [{entry[str(b)]['low']:.2f}, {entry[str(b)]['high']:.2f}]" for b in BUDGETS]
         lines.append(f"| {method} | {entry['seeds']} | " + " | ".join(cells) + f" | {entry['auc_sd']:.2f} |")
-    (out_dir / "summary.md").write_text("\n".join(lines) + "\n")
 
     claims = []
-    in_sample = observation_noise(table) > 0 or any(not all(r["heldout"].values()) for r in runs)
     if in_sample:
         # ETTh1: regret is in-sample for one-seed configs, so no claim is written here;
         # ETTh1 comparisons come from the pick reseeds only (A18).
@@ -175,6 +176,7 @@ def summarize(table: Table, space: Space, out_dir: Path, item: str, table_item: 
                         if baseline in by_method:
                             claims.append(make_claim(table, out_dir, f"{dataset} T{horizon} {league} vs {baseline} AUC", league,
                                                      baseline, "auc", family, source))
+    (out_dir / "summary.md").write_text("\n".join(lines) + "\n")
     if claims:
         claims_path = ROOT / "docs" / "claims" / f"{item}.json"
         existing = json.loads(claims_path.read_text())["claims"] if claims_path.exists() else []
