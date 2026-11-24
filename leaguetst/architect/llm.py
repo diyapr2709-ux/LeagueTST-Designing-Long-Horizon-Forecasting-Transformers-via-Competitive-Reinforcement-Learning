@@ -302,4 +302,5 @@ def environment(job: dict[str, Any]) -> dict[str, Any]:
 
     return {"git_hash": job.get("git_hash"), "model_revision": job.get("revision"), "per_gpu": job.get("per_gpu"),
             "backend": job.get("backend"), "gpu_name": torch.cuda.get_device_name(0),
-            "versions": {name: version(name) for name in PACKAGES}}
+            "compute_capability": list(torch.cuda.get_device_capability(0)), "cuda_runtime": torch.version.cuda,
+            "cudnn": torch.backends.cudnn.version(), "versions": {name: version(name) for name in PACKAGES}}

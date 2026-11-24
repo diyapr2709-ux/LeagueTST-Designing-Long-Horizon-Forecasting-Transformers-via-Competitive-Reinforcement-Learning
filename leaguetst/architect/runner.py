@@ -92,9 +92,12 @@ def transfer_plan(source: str, target: str, arms: str, *, runs_root: str, per_gp
 
 def prompted_plan(dataset: str, seeds: int, *, per_gpu: int, backend: str, rows: list, noise: float,
                   budget_eq: int = 100, anonymous: bool = False, constrained: bool = True, item: str = "E3",
-                  model: str = MODEL, revision: str = REVISION) -> dict:
-    """Qwen without RL, one search per seed; constrained=False runs the repair ablation."""
-    method = "qwen_prompted" + ("_anon" if anonymous else "") + ("" if constrained else "_repair")
+                  model: str = MODEL, revision: str = REVISION, suffix: str = "") -> dict:
+    """Qwen without RL, one search per seed; constrained=False runs the repair ablation.
+
+    ``suffix`` names runs made on another backend (A26: "_local").
+    """
+    method = "qwen_prompted" + ("_anon" if anonymous else "") + ("" if constrained else "_repair") + suffix
     jobs = [{"model": model, "revision": revision, "git_hash": git_hash(), "per_gpu": per_gpu, "backend": backend,
              "rows": rows, "dataset": dataset, "horizon": HORIZON[dataset], "budget": budget_eq * 30, "method": method,
              "seeds": [s], "anonymous": anonymous, "constrained": constrained, "noise_sd": noise} for s in range(seeds)]

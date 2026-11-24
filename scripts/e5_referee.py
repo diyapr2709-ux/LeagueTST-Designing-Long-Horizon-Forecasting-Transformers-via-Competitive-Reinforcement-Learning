@@ -12,8 +12,8 @@ Per run: Kendall tau of the referee's prediction against the multi-seed mean
 (headline) and against the seed-2021 final value, and the top-2 regret (best
 multi-seed mean among the referee's top 2 minus the best in the set, in
 pooled seed-SD units). Runs are the unit: the mean over runs of proposals
-minus each comparison, with a bootstrap interval at level 1 - 0.05/k (k
-methods on the dataset). The referee is non-inferior on a method's proposals
+minus each comparison, with a t interval at level 1 - 0.05/k (k methods on
+the dataset). The referee is non-inferior on a method's proposals
 when that interval for tau_true against matched sets lies above -0.05.
 
 Example:
@@ -29,6 +29,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.stats import kendalltau
+from scipy.stats import t as student_t
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -128,9 +129,10 @@ def main() -> int:
             summary[m] = {"proposals": float(own.mean())}
             for kind in ("matched", "plain"):
                 diff = own - np.array([e[kind][m] for e in entries])
-                boots = diff[rng.integers(0, len(diff), (4000, len(diff)))].mean(axis=1)
+                # t interval over runs: a percentile bootstrap over about 10 runs is too narrow.
+                half = float(student_t.ppf(1 - alpha / 2, len(diff) - 1) * diff.std(ddof=1) / np.sqrt(len(diff)))
                 summary[m][kind] = {"mean": float(np.mean([e[kind][m] for e in entries])), "diff": float(diff.mean()),
-                                    "low": float(np.quantile(boots, alpha / 2)), "high": float(np.quantile(boots, 1 - alpha / 2))}
+                                    "low": float(diff.mean() - half), "high": float(diff.mean() + half)}
         summary["non_inferior"] = summary["tau_true"]["matched"]["low"] > -MARGIN
         result["methods"][method] = {"summary": summary, "runs": entries}
     out = ROOT / "results" / "e5" / f"{setting}.json"
