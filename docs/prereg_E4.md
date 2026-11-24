@@ -203,3 +203,28 @@ scripts/modal_llm.py: e8aa3043afe6688ad6f72911f7208909f3cc746a79edad8a216d856785
 scripts/llm_local.py: e7518498f9a6feac18841e1c2ed68a539ce052cbb891317d019bd8282c908170
 scripts/picks.py: 8a77ec0194390944b5bfdd312972258bb0c11fcf2b1dcde43f3894eadc1e759a
 ```
+
+## Amendment A27 (2026-11-24, before any E4 rerun result exists)
+
+From the verifier's run_plan scenario tests. A record's environment block
+is written inside the error guard, so a failure there cannot lose a
+training record. An adapter is reused only if its provenance (backend and
+model revision) matches the plan, so "all 45 retrained" (A25) holds even on
+a volume that already holds adapters. A lock file refuses a second launch on
+the same output. A deployment skipped for a missing adapter is logged.
+scripts/picks.py analyze leaves out any (method, budget) cell whose picks
+are not all reseeded (E4 at budget 100 after batch 2), so no selected subset
+enters Holm. Code digests replace those of A26 (docs/e4_rerun.sha256):
+
+```
+leaguetst/architect/prompt.py: c4297c7aabd47db3379c18f91dd53cf84bcaae14e9a35f3032ea2f6c026beca3
+leaguetst/architect/constrained.py: 37ddedaf91b98bf3d5aad3712e9df0d04a1a1eda1f2cd2b55bdeae3ae923cb9a
+leaguetst/architect/episode.py: c387b058dfeb9f3238c2c3d96c06cc42cdeadc7960e8eed2c9558fb7798832b2
+leaguetst/architect/llm.py: 51eca37a89a786180d29038739e970efb6004526f866e69289f2c653780d62ba
+leaguetst/architect/runner.py: a5fb1a59bea7b68925e38f0af7655d75691ae417cdecd9daf661e9bd47093759
+leaguetst/search/replay.py: 9601281c9a6b402ba1620a8cdd4976aeb4ba1112e4587288b869e6f528ec5440
+scripts/replay.py: f4b5a16f9077a98e04729f73010e4a8f11da85ed97ff68bedd34f205380c2eaa
+scripts/modal_llm.py: e8aa3043afe6688ad6f72911f7208909f3cc746a79edad8a216d856785343a6d
+scripts/llm_local.py: e7518498f9a6feac18841e1c2ed68a539ce052cbb891317d019bd8282c908170
+scripts/picks.py: f2145f0c6fcb0331954d9e5a9c5c084ae3df7a0cce4353112bb662d98e484f46
+```

@@ -2,7 +2,7 @@
 
 For Soumitra and the Claude Code session on Soumitra's account. Written
 2026-11-24. Read CLAUDE.md first: every hard rule there applies to you too.
-The registered design is docs/prereg_E4.md, amendments A25 and A26.
+The registered design is docs/prereg_E4.md, amendments A25 to A27.
 
 ## Why this exists
 
@@ -74,7 +74,10 @@ MODAL_PROFILE=soumitra nohup $M run --detach $A::transfer --source ETTh1 --targe
 ```
 
 If the local client loses the network, the job keeps running; check
-`modal app list` and the volume before relaunching. A relaunch of the same
+`modal app list` and the volume before relaunching. A second launch on the
+same output is refused while a driver.lock file exists; if no app is
+running, remove it (`modal volume rm leaguetst-runs /E4/<target>/driver.lock`,
+or delete the file locally) and relaunch. A relaunch of the same
 command keeps finished adapters and deployed seeds.
 
 Local (one after the other on the one GPU; `--per-gpu 1` on a card under 16 GB).
@@ -166,7 +169,7 @@ MODAL_PROFILE=soumitra nohup $M run --detach $A::transfer --source ETTh1 --targe
 
 ## First message for Soumitra's Claude
 
-> Read CLAUDE.md, docs/STATE.md, docs/prereg_E4.md (A25, A26) and
+> Read CLAUDE.md, docs/STATE.md, docs/prereg_E4.md (A25 to A27) and
 > docs/HANDOFF_soumitra.md. Check the code digests. Using the backend
 > Soumitra chose (Modal profile soumitra, or the local GPU: J0 first), run J1 and J2
 > exactly as written, poll until both finish, bring the outputs back, run
