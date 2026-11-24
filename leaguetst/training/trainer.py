@@ -12,8 +12,7 @@ import copy
 import logging
 import math
 import time
-from dataclasses import asdict, dataclass, field
-from typing import Any
+from dataclasses import dataclass, field
 
 import torch
 import torch.nn as nn
@@ -39,8 +38,8 @@ class TrainingConfig:
     the official PatchTST trainer. It builds a OneCycleLR scheduler before
     training even when the schedule is not ``TST``; building it sets Adam's
     first beta to 0.95 for the whole run and the first epoch's rate to
-    ``learning_rate / 25``. The LTSF-Linear trainer behind DLinear builds no
-    such scheduler, so the defaults (0.9 and 1.0) apply there.
+    ``learning_rate / 25``. The defaults (0.9 and 1.0) are plain Adam with
+    no first-epoch change.
     """
 
     epochs: int = 100
@@ -82,9 +81,6 @@ class FitResult:
     train_seconds: float
     history: list[dict[str, float]] = field(default_factory=list)
     diverged: bool = False
-
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
 
 
 def learning_rate_at(base: float, epoch: int, schedule: str, first_epoch_factor: float = 1.0) -> float:

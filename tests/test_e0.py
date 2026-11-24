@@ -15,7 +15,7 @@ from leaguetst.data import build_dataloaders, build_splits
 from leaguetst.data.device_loader import build_trainval_loaders
 from leaguetst.data.test_split import load_test_split
 from leaguetst.data import trainval as trainval_module
-from leaguetst.data.trainval import build_trainval_splits, make_trainval, read_manifest, window_counts
+from leaguetst.data.trainval import build_trainval_splits, read_manifest, window_counts
 from leaguetst.eval.numpy_model import numpy_patchtst_forward
 from leaguetst.eval.rescore import rescore_checkpoint
 from leaguetst.eval.stats import holm, paired_two_level_bootstrap
@@ -27,13 +27,6 @@ from leaguetst.table import recipe, run_entries
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-
-
-@pytest.fixture(scope="module")
-def trainval_dir(synthetic_data_dir, tmp_path_factory):
-    out = tmp_path_factory.mktemp("trainval")
-    make_trainval(synthetic_data_dir, out)
-    return out
 
 
 def test_manifest_borders_come_from_the_full_file(trainval_dir):

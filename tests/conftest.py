@@ -1,4 +1,4 @@
-"""Shared fixtures: a synthetic copy of both benchmark files."""
+"""Shared fixtures: a synthetic copy of both benchmark files and its trainval copy."""
 
 from __future__ import annotations
 
@@ -7,6 +7,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+
+from leaguetst.data.trainval import make_trainval
 
 ETT_COLUMNS = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
 ILI_COLUMNS = [
@@ -35,6 +37,13 @@ def synthetic_data_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     write_synthetic(root / "ETT-small" / "ETTh1.csv", ETT_COLUMNS, 17420, "h", seed=1)
     write_synthetic(root / "illness" / "national_illness.csv", ILI_COLUMNS, 966, "W", seed=2)
     return root
+
+
+@pytest.fixture(scope="session")
+def trainval_dir(synthetic_data_dir: Path, tmp_path_factory: pytest.TempPathFactory) -> Path:
+    out = tmp_path_factory.mktemp("trainval")
+    make_trainval(synthetic_data_dir, out)
+    return out
 
 
 @pytest.fixture(scope="session")
