@@ -2,6 +2,26 @@
 
 Updated by every loop iteration. Newest first.
 
+## 2026-11-23, night
+
+* ETTh1 top-100 reseeds done: pooled SD 0.0132 (seed 2021, used to select
+  the top 100, left out); 50 configs within one SD of the best; the
+  best config by 3-seed mean is p12s12l4h2d16f4r3n0i (RevIN off, 1.0687).
+* ETTh1 replay (lookups with observation noise, in-sample, no claims): the
+  factorized controller has the lowest AUC (1.32 SD), then TPE (1.37),
+  random 1.61; screening methods do poorly. One dominant field (RevIN) is
+  easy for a factorized policy. The ILI portfolio on ETTh1 scores 5.94.
+* RevIN study pre-registered (A23): the critic found 64% of RevIN-on
+  configs peak at the 30-epoch cap. A 100-epoch pair check (20 twin
+  pairs), a RevIN-on twin arm in E6 and a month-by-month prediction (no
+  reversal predicted: the off-advantage holds in all four validation
+  months) were committed before any test evaluation.
+* E6 reframed (A23): the space's best config against PatchTST/42, 10 seeds
+  each, on both datasets.
+* Credit: diya-027 is shared with another project's Modal apps
+  (ocmdp-experiments, started 18:36); remaining LeagueTST GPU work runs on
+  diyapr.
+
 ## 2026-11-23, late evening
 
 * E1 ETTh1 T=336 seed 2021 complete (2,368 configs); top-100 reseeds and the
