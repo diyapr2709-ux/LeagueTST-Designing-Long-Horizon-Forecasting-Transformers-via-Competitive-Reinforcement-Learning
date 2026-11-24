@@ -43,7 +43,7 @@ files and no data volume. Never upload anything to Modal (rule 10).
    `shasum -a 256 -c docs/e4_rerun.sha256` must print OK for every file.
    If any line fails, stop and tell Diya.
 2. `git switch -c soumitra-e4`. All commits go on this branch.
-3. Modal backend: `python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt`,
+3. Modal backend: `python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-modal.txt`,
    then `.venv/bin/modal token new --profile soumitra` (log in to your own
    workspace in the browser; never paste the token into a chat). Check the
    credit with `MODAL_PROFILE=soumitra .venv/bin/modal billing summary` and set a
@@ -51,7 +51,7 @@ files and no data volume. Never upload anything to Modal (rule 10).
    Confirm the image: `MODAL_PROFILE=soumitra .venv/bin/modal run scripts/modal_llm.py::versions`
    must print transformers 5.24.0, peft 0.22.0, accelerate 1.16.0, torch 2.15.0.
 4. Local backend: Linux or WSL2 with an NVIDIA driver, then
-   `python3.12 -m venv .venv && .venv/bin/pip install -r requirements-llm.txt`
+   `python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-llm.txt`
    (if `python -c "import torch; print(torch.cuda.is_available())"` prints
    False, install torch 2.15.0 from pytorch.org for your CUDA version). The
    first run downloads Qwen2.5-1.5B-Instruct (about 3 GB) at the pinned
@@ -158,6 +158,16 @@ MODAL_PROFILE=soumitra nohup $M run --detach $A::transfer --source ETTh1 --targe
 5. Extended test prereg committed by 28 Nov; E6 verified and the primary
    prereg committed by 29 Nov; Diya runs scripts/eval_test.py once on 30 Nov.
 6. Report regenerated from the ledger by scripts/report.py, due 3 Dec.
+
+## Alongside Anirudh
+
+Anirudh runs the ablation, robustness and external-validity workstream at
+the same time (docs/HANDOFF_anirudh.md, docs/prereg_ablations.md), on his
+own backend, branch anirudh-ablations and Modal items ABL_*. Nothing he runs
+writes into E4 folders, and he does not edit the E4 code until the rerun is
+complete. If you both use Modal, Anirudh's GRPO ablations use your J2
+league arm as their reference, so tell Anirudh (and Diya) when J2 is
+committed on soumitra-e4.
 
 ## Not before the report
 
