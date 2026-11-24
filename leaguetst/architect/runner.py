@@ -179,7 +179,6 @@ def _run(plan: dict, out: Path, execute: Executor, commit: Callable[[], None]) -
             else:
                 _append(out / "training.jsonl", [record])
                 adapters[record["job"]["run_name"]] = record["adapter"]
-                Path(record["job"]["out_dir"], "provenance.json").write_text(json.dumps(provenance(record["job"])))
         commit()
 
     done = deployed(out)

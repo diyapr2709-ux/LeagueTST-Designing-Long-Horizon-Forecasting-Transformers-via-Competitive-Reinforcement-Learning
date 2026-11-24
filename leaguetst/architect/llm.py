@@ -18,6 +18,7 @@ from. Rivals enter the group baseline only and cost nothing:
 
 from __future__ import annotations
 
+import json
 import math
 import time
 from pathlib import Path
@@ -286,6 +287,11 @@ def run_job(kind: str, job: dict[str, Any]) -> Any:
         env = environment(job)
         for record in [result] if isinstance(result, dict) else result:
             record["env"] = env
+        if kind == "train":
+            # Written by the worker that saved the adapter: on Modal the driver cannot see the folder.
+            from leaguetst.architect.runner import provenance
+
+            Path(job["out_dir"], "provenance.json").write_text(json.dumps(provenance(job)))
     except Exception as error:  # reported back to the driver, which logs it
         return {"error": repr(error), "kind": kind, "job": {k: v for k, v in job.items() if k != "rows"}}
     return result

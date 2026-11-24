@@ -26,6 +26,7 @@ def fake_execute(calls, fail_train=()):
                     saved = Path(j["out_dir"]) / "adapter"
                     saved.mkdir(parents=True, exist_ok=True)
                     (saved / "adapter_config.json").write_text("{}")
+                    (saved.parent / "provenance.json").write_text(json.dumps(runner.provenance(j)))
                     results.append({"adapter": str(saved), "job": j})
                 yield results
             else:
@@ -114,3 +115,15 @@ def test_lock_is_released_and_missing_adapters_are_logged(tmp_path):
     assert not (out / "driver.lock").exists()
     errors = [json.loads(line) for line in (out / "errors.jsonl").read_text().splitlines()]
     assert {"phase": "search", "error": "no adapter to deploy", "run_names": ["grpo_league_from_ILI:0"]} in errors
+
+
+def test_driver_never_writes_into_adapter_folders(tmp_path):
+    # On Modal the driver cannot see folders the GPU workers created; it must not write there.
+    def execute(kind, batches):
+        for batch in batches:
+            if kind == "train":
+                yield [{"adapter": f"{j['out_dir']}/adapter", "job": j} for j in batch]
+            else:
+                yield [[{"method": j["method"], "seed": j["seeds"][0]}] for j in batch]
+    runner.run_plan(plan(tmp_path), tmp_path / "out", execute)
+    assert not (tmp_path / "E4" / "adapters").exists()

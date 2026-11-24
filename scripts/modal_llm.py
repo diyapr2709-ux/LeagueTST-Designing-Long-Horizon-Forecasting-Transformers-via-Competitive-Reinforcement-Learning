@@ -77,6 +77,7 @@ def driver(plan: dict) -> str:
     def execute(kind: str, batches: list) -> list:
         return llm_batch.starmap([(kind, batch) for batch in batches], return_exceptions=True)
 
+    runs_vol.reload()
     return str(runner.run_plan(plan, Path(RUNS) / plan["item"] / plan["name"], execute, runs_vol.commit))
 
 
