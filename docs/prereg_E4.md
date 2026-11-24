@@ -260,7 +260,7 @@ decoding, 5 ILI seeds) is superseded by AB-P in docs/prereg_ablations.md (30
 seeds per table, rerun under the pinned A25 code with its own reference).
 Nothing else in this file changes.
 
-## Amendment A29 (2026-11-24 14:05 ET, before any E4 rerun result exists)
+## Amendment A29 (2026-11-24 14:01 ET, before any E4 rerun result exists)
 
 Found by Soumitra's session before launch. An on-policy stop (A22) is
 returned by the worker as an error record and logged by the driver, so a
@@ -280,4 +280,33 @@ lost. The code is not changed (its digests are frozen); instead:
   failed (None in leaguetst/sensitivity.py), whether or not it completed,
   and the conclusion is reported with and without.
 * If no batch was retried, this amendment changes nothing.
+
+## Amendment A29, addendum (2026-11-24 14:06 ET, before any E4 endpoint exists)
+
+From the critic's review of A29. A stop can also be lost in the driver:
+results come back in batch order, so a stop from a later batch waits in the
+driver until every earlier batch returns, and a driver that dies first (a
+preemption, `modal app stop`, a crash or a sleeping machine with
+llm_local) loses it; the next launch then retrains the run. The step rows
+name no run, a stop at step 1 prints no row, and a lost log stream can hide
+a retry's extra rows, so the log count alone is not enough. The first
+bullet of A29 is replaced by:
+
+* A run counts as retried if it trained more than once with no recorded
+  outcome in between: every run of an llm_batch input that the Modal
+  dashboard shows with several attempts or a failed, timed-out or
+  preempted container, and every run a relaunch (Modal or local) retrains
+  that an earlier launch started but no errors.jsonl names. Relaunches log
+  to new files. Step-1 rows per log are a cross-check; a count off the plan
+  that the dashboard cannot explain makes every run of that launch
+  retried. A dashboard showing every llm_batch input succeeding at its
+  first attempt explains a low count (a lost log stream, or a stop at step
+  1, which prints no row). Soumitra's commit names every retried run and
+  keeps dashboard screenshots.
+
+In the third bullet, "every run of a retried batch" becomes "every retried
+run". A hung worker pool (a killed worker process) holds its batch until
+the 8-hour timeout and is then retried; training batches took 12 to 24
+minutes on 23 Nov, so an llm_batch input still running after an hour is
+stopped by hand, and its runs count as retried when relaunched.
 

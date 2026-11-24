@@ -91,8 +91,17 @@ written to errors.jsonl, so a relaunch never retrains it. But the record
 stays in the container's memory until the other job of its batch finishes;
 if the container dies or is preempted in that window, Modal reruns the whole
 batch and the stop is lost. Rare, and the E4 code is frozen, so launch as
-written. Afterwards check for it (below); A29 in docs/prereg_E4.md fixes
-how such runs are analysed.
+written. A stop can also wait in the driver, which collects results in batch
+order, so stopping the app or losing the driver loses it too. Afterwards
+check (below); A29 and its addendum in docs/prereg_E4.md fix how such runs
+are analysed.
+
+Hung batch. Training batches took 12 to 24 minutes on 23 Nov. If an
+llm_batch input is still running after an hour, its worker pool has hung
+(it would wait for the 8-hour timeout, about $13, past the $15 cap): stop
+the app (`MODAL_PROFILE=soumitra $M app stop -y <app>`), remove the lock and
+relaunch. Every relaunch writes to a new log file (add `_relaunch1`,
+`_relaunch2` to the name), never over the first one.
 
 Local (one after the other on the one GPU; `--per-gpu 1` on a card under 16 GB).
 First J0, prompted Qwen on the same card, which K4 and family 3 then use as
@@ -137,13 +146,17 @@ Check before committing:
 * Each grpo_<arm>_from_<source>_runs.jsonl has one line per finished
   policy, and every line has a seed, a trace, charges and an env block whose
   backend, versions and model_revision match A25.
-* Retried batches (A29). Count training starts in each launch log:
-  `grep -c "'step': 1," results/logs/soumitra_e4_*.log`. J1 starts 25
-  runs and J2 20; a higher count means a batch ran twice (also check the
-  llm_batch inputs in the Modal dashboard for failed, retried or preempted
-  containers). Name every run of such a batch in the commit message. A
-  manual relaunch adds the runs it retrains (say so); a lower count only
-  means the local client lost the log stream.
+* Retried runs (A29 and addendum). The Modal dashboard is the evidence:
+  for each app, open llm_batch and check every input for more than one
+  attempt or a failed, timed-out or preempted container. Screenshot those
+  pages before Modal drops them and commit the images under
+  results/runs/E4/soumitra_<t>/. A run counts as retried if it is in such
+  an input, or if a relaunch retrained it after an earlier launch started
+  it and no errors.jsonl line names it. Cross-check with
+  `grep -c "'step': 1," results/logs/soumitra_e4_*.log` (J1 plans 25
+  starts, J2 20, per launch): a count the dashboard cannot explain makes
+  every run of that launch retried. Name every retried run in the commit
+  message.
 * errors.jsonl: an out-of-memory error means the card is too small for
   the chosen --per-gpu; stop and report it. An on-policy stop ("log-
   probabilities differ") is a valid outcome: report it; it is never
