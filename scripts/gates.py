@@ -54,10 +54,6 @@ def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def git(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
-
-
 def in_sample(row_id: str) -> bool:
     """A fixed 5% of rows, chosen by digest so nobody picks them."""
     return int(hashlib.sha256(row_id.encode()).hexdigest(), 16) % 20 == 0

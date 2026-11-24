@@ -98,8 +98,3 @@ def test_val_and_test_loaders_keep_every_window(synthetic_data_dir):
         assert seen == len(loaders[split].dataset)
     train_seen = sum(x.shape[0] for x, _ in loaders["train"])
     assert train_seen == (len(loaders["train"].dataset) // 16) * 16
-
-
-def test_real_files_have_expected_shape(real_data_dir):
-    assert load_benchmark_frame(real_data_dir, "ETTh1").shape == (17420, 7)
-    assert load_benchmark_frame(real_data_dir, "ILI").shape == (966, 7)

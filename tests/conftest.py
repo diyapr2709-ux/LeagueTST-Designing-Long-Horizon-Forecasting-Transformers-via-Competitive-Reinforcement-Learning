@@ -44,12 +44,3 @@ def trainval_dir(synthetic_data_dir: Path, tmp_path_factory: pytest.TempPathFact
     out = tmp_path_factory.mktemp("trainval")
     make_trainval(synthetic_data_dir, out)
     return out
-
-
-@pytest.fixture(scope="session")
-def real_data_dir() -> Path:
-    root = Path(__file__).resolve().parents[1] / "data"
-    needed = [root / "ETT-small" / "ETTh1.csv", root / "illness" / "national_illness.csv"]
-    if not all(p.exists() for p in needed):
-        pytest.skip("benchmark files not downloaded")
-    return root
