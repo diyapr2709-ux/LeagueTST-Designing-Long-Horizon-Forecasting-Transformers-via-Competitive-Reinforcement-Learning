@@ -71,6 +71,8 @@ def main() -> int:
     parser.add_argument("command", choices=("collect", "analyze", "winner"))
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--horizon", type=int, required=True)
+    parser.add_argument("--budgets", type=int, nargs="+", default=list(BUDGETS),
+                        help="collect: budgets whose picks are listed (batch 2 uses 25 50, as PLAN says)")
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     table = Table(ledger("E1", args.dataset, args.horizon))
@@ -81,7 +83,7 @@ def main() -> int:
         listed = set()
         for path in OUT.glob(f"{args.dataset}_T{args.horizon}_ids_*.txt"):
             listed |= set(path.read_text().split())
-        new = sorted({c for *_, c in picks if c} - done - listed)
+        new = sorted({c for _, _, b, c in picks if c and b in args.budgets} - done - listed)
         batch = len(list(OUT.glob(f"{args.dataset}_T{args.horizon}_ids_*.txt"))) + 1
         path = OUT / f"{args.dataset}_T{args.horizon}_ids_{batch}.txt"
         if new:
