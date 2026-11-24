@@ -23,9 +23,10 @@ checkpoints/
 # manifest with their digests is committed.
 data/trainval/**/*.csv
 
-# Raw records, checkpoints and per-window errors downloaded from Modal;
-# results/ledger.jsonl holds the committed rows.
-results/runs/
+# Raw records, checkpoints and per-window validation errors downloaded from
+# Modal are committed (owner's request, 2026-11-24); results/ledger.jsonl is
+# still the source of every reported number.
+!results/runs/**/*.pt
 
 # Regenerated from the runs files by scripts/replay.py --summarize-only.
 results/search/**/budget.json
