@@ -240,3 +240,55 @@ over three seeds:
 At ETTh1 T = 192, 336 and 720 the corrected drop-last means are 0.4129,
 0.4293 and 0.4483 against 0.414, 0.431 and 0.449. The full table and its
 reading are in `docs/progress.md`.
+
+## A16 wide space (paper stage, 2026-11-23)
+
+Each pass ran the full test suite and `scripts/wide_space.py` against
+results/ledger.jsonl, then fixed what surfaced. No existing module was
+changed; the new files are leaguetst/models/wide.py,
+leaguetst/search/wide_space.py, leaguetst/search/cost_model.py,
+scripts/wide_space.py and tests/test_wide_space.py.
+
+### First pass: ILI timings only
+
+* Tests: 167 passed, 1 skipped, 32 of them new.
+* The flatten head with today's fields equals PatchTST in parameter count,
+  weights and forecasts under the same seed, and the wide grid restricted
+  to the flatten head and the default lookbacks reproduces every count of
+  docs/feasible_set.md.
+* The page first said the head holds a single range of the parameters of
+  today's set. That range holds for PatchTST/42 on ETTh1 only; the page now
+  gives PatchTST/42 and today's set per dataset, both computed by the
+  script.
+* Configs whose activation estimate exceeded a worker's share of memory
+  were charged a whole GPU. Such configs keep the GPU busy on their own (the
+  K5 pilot records show one ETTh1 worker running far faster than four), so
+  their GPU share stays about their four-worker time over four. They are now
+  counted, not charged more.
+* The matmul coefficient was zero: ILI epochs are bound by kernel launches.
+
+### Second pass: ETTh1 timings in the ledger
+
+* The fit restricted to ILI under-predicts ETTh1 epochs badly (the "Fit on
+  ILI, scored on ETTh1" row of docs/wide_space.md), so both datasets are
+  now fitted together and the matmul term is identified.
+* Splitting the elementwise feature into token and attention-score parts,
+  adding a count of attention matrices, and weighting by absolute or
+  square-root time were compared by grouped cross-validation. None improved
+  the ETTh1 rows enough to justify it, and none brought both datasets'
+  held-out totals close to measured, so the four-feature relative-error fit
+  stays and prices carry a per-dataset correction (measured over predicted
+  total on held-out rows). The accounting check on the fitted rows then
+  matches the measured container time.
+* Dead code removed: `enumerate_wide_configs`, `sample_feasible_config`,
+  two unused `CostModel` fields, `Timing.horizon`, an unreported error
+  statistic and two pricing parameters that no caller set.
+* Tests: 167 passed, 1 skipped.
+
+### Third pass: final code
+
+* Tests: 167 passed, 1 skipped.
+* `scripts/wide_space.py` rebuilt docs/wide_space.md byte for byte from
+  the same ledger rows.
+* No em dashes, TODO markers, unused imports, unused names or unread
+  parameters in the new files.
