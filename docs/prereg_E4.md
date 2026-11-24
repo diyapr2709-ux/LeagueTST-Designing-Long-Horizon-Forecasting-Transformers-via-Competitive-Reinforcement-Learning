@@ -118,3 +118,49 @@ difference between cached generation and a fresh forward pass. The check
 now stops a run only when the mean gap per token exceeds 0.05 (a different
 sampler, such as a repetition penalty, shifts many tokens); both the mean
 and the largest gap are logged.
+
+## Amendment A25 (2026-11-24, before any E4 rerun result exists)
+
+Of 45 GRPO policies trained on diyapr on 23 Nov, 34 ran out of GPU memory
+(three processes per A10G). None of the 11 that finished was deployed. All
+45 are retrained, and no result from the 11 is reported.
+
+* Backend: the owner chose Soumitra's side. Every policy of the rerun (and
+  the conditional uniform arm) comes from one backend, chosen before launch
+  and written in the records: Soumitra's Modal workspace (A10G) or one local
+  CUDA GPU (scripts/llm_local.py). The two are never mixed within the rerun.
+* GPU sharing: two jobs per GPU (one on a card under 16 GB). Jobs are
+  ordered seed by seed across arms, so arms share GPUs evenly.
+* Environment: the image and requirements-llm.txt pin torch 2.15.0,
+  transformers 5.24.0, peft 0.22.0, accelerate 1.16.0 and huggingface_hub
+  2.4.0, the versions behind every LLM run so far; Qwen2.5-1.5B-Instruct is
+  pinned to revision 989aa7980e4cf806f80c7fef2b1adb7bc71aa306. Every record
+  carries the git hash, package versions, model revision, GPU name, backend
+  and jobs per GPU.
+* Relaunches keep finished adapters and deployed (method, seed) pairs, and
+  never retrain a run that the on-policy check stopped (A22); such a run is
+  reported as failed. Batch errors name their runs.
+* ETTh1-target tests: the ETTh1 table has one seed per config, so AUC
+  there is in-sample (A18). Every test whose deployment target is ETTh1
+  (family 1 for ILI to ETTh1, family 2 for the ILI-source arms) is scored on
+  fresh-seed picks instead: per deployment, the mean validation MSE over
+  seeds 4001 and 4002 of its incumbent at budgets 25 and 50, two-sample
+  seed-level permutation test per budget. Family sizes grow accordingly;
+  Holm within each family as before. ILI-target tests stay on AUC.
+* Pick batch 2 lists only the E4 incumbents at budgets 25 and 50
+  (scripts/picks.py collect --budgets 25 50) and runs on diyapr.
+* Code digests (sha256), checked before launch with
+  `shasum -a 256 -c docs/e4_rerun.sha256`:
+
+```
+leaguetst/architect/prompt.py: c4297c7aabd47db3379c18f91dd53cf84bcaae14e9a35f3032ea2f6c026beca3
+leaguetst/architect/constrained.py: 37ddedaf91b98bf3d5aad3712e9df0d04a1a1eda1f2cd2b55bdeae3ae923cb9a
+leaguetst/architect/episode.py: c387b058dfeb9f3238c2c3d96c06cc42cdeadc7960e8eed2c9558fb7798832b2
+leaguetst/architect/llm.py: 8059b8ea751f4dc0de2de6668a5be9861fa37b3d92474ae071650a47c6e4870c
+leaguetst/architect/runner.py: 3e2de41345ddadf02c07ab9b5b1633b4ad84251b2ba765ff496aab346cb79e7d
+leaguetst/search/replay.py: 9601281c9a6b402ba1620a8cdd4976aeb4ba1112e4587288b869e6f528ec5440
+scripts/replay.py: f4b5a16f9077a98e04729f73010e4a8f11da85ed97ff68bedd34f205380c2eaa
+scripts/modal_llm.py: e8aa3043afe6688ad6f72911f7208909f3cc746a79edad8a216d856785343a6d
+scripts/llm_local.py: 7adbbc68f6849997196dbd06eb39bdc52db7765b3ab3aa620900f6497e2cfdfe
+scripts/picks.py: 8a77ec0194390944b5bfdd312972258bb0c11fcf2b1dcde43f3894eadc1e759a
+```
