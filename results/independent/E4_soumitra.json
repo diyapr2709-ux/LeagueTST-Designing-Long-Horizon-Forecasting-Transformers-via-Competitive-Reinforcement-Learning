@@ -1,0 +1,658 @@
+{
+  "a26_completeness": "J1 and J2 finished (every job finished or failed) on 24 Nov, before the 26 Nov 18:00 ET cut-off; no ILI-target arm has a failed or retried seed",
+  "definitions": {
+    "alpha": 0.05,
+    "auc": "mean held-out regret over b = 1..100",
+    "budget_equivalents": 100,
+    "equivalent_epochs": 30,
+    "exact_limit": 2000000,
+    "family_size": 6,
+    "headline": [
+      25,
+      50
+    ],
+    "n_random": 200000,
+    "rng_seed": 20261125
+  },
+  "descriptive_ili": {
+    "grpo_league_from_ETTh1": {
+      "auc_mean": 3.142846099768888,
+      "auc_median": 3.2762437602339833,
+      "n": 10,
+      "regret_25_mean": 3.212999156298911,
+      "regret_50_mean": 3.0069134791223804
+    },
+    "grpo_none_from_ETTh1": {
+      "auc_mean": 3.2333866496957717,
+      "auc_median": 3.103517659570175,
+      "n": 10,
+      "regret_25_mean": 3.186421735245524,
+      "regret_50_mean": 3.414704008190353
+    },
+    "portfolio_from_ETTh1": {
+      "auc_mean": 3.27935636022483,
+      "auc_median": 3.069192075901256,
+      "n": 30,
+      "regret_25_mean": 2.6501460491214672,
+      "regret_50_mean": 3.292184675517288
+    },
+    "qwen_prompted": {
+      "auc_mean": 1.8085131882910332,
+      "auc_median": 1.6493398634334273,
+      "n": 10,
+      "regret_25_mean": 2.0654654605622462,
+      "regret_50_mean": 1.5672553430922096
+    },
+    "random": {
+      "auc_mean": 1.5151188254016021,
+      "auc_median": 1.4125668237663063,
+      "n": 30,
+      "regret_25_mean": 1.3922371635655024,
+      "regret_50_mean": 1.41716142375654
+    },
+    "tpe": {
+      "auc_mean": 1.136728119905339,
+      "auc_median": 1.125256547465602,
+      "n": 30,
+      "regret_25_mean": 1.070314149640466,
+      "regret_50_mean": 0.9474227390961963
+    },
+    "tpe_warm_from_ETTh1": {
+      "auc_mean": 1.6471222075712406,
+      "auc_median": 1.587417095944528,
+      "n": 30,
+      "regret_25_mean": 1.6193755107316998,
+      "regret_50_mean": 1.4702361827195245
+    }
+  },
+  "family_1": {
+    "holm_with_pending_as_not_rejected": {
+      "F1 ETTh1 picks b25 league_from_ILI vs portfolio": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F1 ETTh1 picks b25 league_from_ILI vs tpe_warm": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F1 ETTh1 picks b50 league_from_ILI vs portfolio": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F1 ETTh1 picks b50 league_from_ILI vs tpe_warm": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F1 ILI AUC league vs portfolio": {
+        "p": 0.6390468047659762,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F1 ILI AUC league vs tpe_warm": {
+        "p": 9.999950000249999e-06,
+        "p_holm": 5.9999700001499995e-05,
+        "reject": true
+      }
+    },
+    "pending_or_not_run": [
+      "F1 ETTh1 picks b25 league_from_ILI vs portfolio",
+      "F1 ETTh1 picks b50 league_from_ILI vs portfolio",
+      "F1 ETTh1 picks b25 league_from_ILI vs tpe_warm",
+      "F1 ETTh1 picks b50 league_from_ILI vs tpe_warm"
+    ],
+    "tests": {
+      "F1 ILI AUC league vs portfolio": {
+        "comparator": "portfolio_from_ETTh1",
+        "diff": -0.13651026045594206,
+        "endpoint": "auc",
+        "expected_n": [
+          10,
+          30
+        ],
+        "failed_or_retried": [
+          [],
+          []
+        ],
+        "lower_regret": "grpo_league_from_ETTh1",
+        "mean": [
+          3.142846099768888,
+          3.27935636022483
+        ],
+        "median": [
+          3.2762437602339833,
+          3.069192075901256
+        ],
+        "method": "random",
+        "n": [
+          10,
+          30
+        ],
+        "p": 0.6390468047659762,
+        "splits": 200000,
+        "test": "grpo_league_from_ETTh1",
+        "worst_case": "no failed or retried seed in either arm: the A26 worst case equals the primary test"
+      },
+      "F1 ILI AUC league vs tpe_warm": {
+        "comparator": "tpe_warm_from_ETTh1",
+        "diff": 1.4957238921976472,
+        "endpoint": "auc",
+        "expected_n": [
+          10,
+          30
+        ],
+        "failed_or_retried": [
+          [],
+          []
+        ],
+        "lower_regret": "tpe_warm_from_ETTh1",
+        "mean": [
+          3.142846099768888,
+          1.6471222075712406
+        ],
+        "median": [
+          3.2762437602339833,
+          1.587417095944528
+        ],
+        "method": "random",
+        "n": [
+          10,
+          30
+        ],
+        "p": 9.999950000249999e-06,
+        "splits": 200000,
+        "test": "grpo_league_from_ETTh1",
+        "worst_case": "no failed or retried seed in either arm: the A26 worst case equals the primary test"
+      }
+    }
+  },
+  "family_2": {
+    "holm_with_pending_as_not_rejected": {
+      "F2 ETTh1 picks b25 league_from_ILI vs none": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F2 ETTh1 picks b25 league_from_ILI vs uniform": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F2 ETTh1 picks b50 league_from_ILI vs none": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F2 ETTh1 picks b50 league_from_ILI vs uniform": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F2 ILI AUC league vs none": {
+        "p": 0.802528740609236,
+        "p_holm": 1.0,
+        "reject": false
+      },
+      "F2 ILI AUC league vs uniform": {
+        "p": 1.0,
+        "p_holm": 1.0,
+        "reject": false
+      }
+    },
+    "pending_or_not_run": [
+      "F2 ETTh1 picks b25 league_from_ILI vs none",
+      "F2 ETTh1 picks b50 league_from_ILI vs none",
+      "F2 ETTh1 picks b25 league_from_ILI vs uniform",
+      "F2 ETTh1 picks b50 league_from_ILI vs uniform",
+      "F2 ILI AUC league vs uniform"
+    ],
+    "tests": {
+      "F2 ILI AUC league vs none": {
+        "comparator": "grpo_none_from_ETTh1",
+        "diff": -0.09054054992688387,
+        "endpoint": "auc",
+        "expected_n": [
+          10,
+          10
+        ],
+        "failed_or_retried": [
+          [],
+          []
+        ],
+        "lower_regret": "grpo_league_from_ETTh1",
+        "mean": [
+          3.142846099768888,
+          3.2333866496957717
+        ],
+        "median": [
+          3.2762437602339833,
+          3.103517659570175
+        ],
+        "method": "exact",
+        "n": [
+          10,
+          10
+        ],
+        "p": 0.802528740609236,
+        "splits": 184756,
+        "test": "grpo_league_from_ETTh1",
+        "worst_case": "no failed or retried seed in either arm: the A26 worst case equals the primary test"
+      }
+    }
+  },
+  "family_2_note": "J3 not run (A30): ILI league vs uniform counted as not rejected",
+  "family_3_ili_unadjusted": {
+    "F3 ILI b25 qwen_prompted vs random": {
+      "comparator": "random",
+      "diff": 0.6732282969967438,
+      "endpoint": "regret_25",
+      "expected_n": [
+        10,
+        30
+      ],
+      "failed_or_retried": [
+        [],
+        []
+      ],
+      "lower_regret": "random",
+      "mean": [
+        2.0654654605622462,
+        1.3922371635655024
+      ],
+      "median": [
+        1.7287603088870034,
+        1.2214906175333804
+      ],
+      "method": "random",
+      "n": [
+        10,
+        30
+      ],
+      "p": 0.048264758676206616,
+      "splits": 200000,
+      "test": "qwen_prompted",
+      "worst_case": "no failed or retried seed in either arm: the A26 worst case equals the primary test"
+    },
+    "F3 ILI b25 qwen_prompted vs tpe": {
+      "comparator": "tpe",
+      "diff": 0.9951513109217802,
+      "endpoint": "regret_25",
+      "expected_n": [
+        10,
+        30
+      ],
+      "failed_or_retried": [
+        [],
+        []
+      ],
+      "lower_regret": "tpe",
+      "mean": [
+        2.0654654605622462,
+        1.070314149640466
+      ],
+      "median": [
+        1.7287603088870034,
+        0.8670356804238339
+      ],
+      "method": "random",
+      "n": [
+        10,
+        30
+      ],
+      "p": 0.0018299908500457498,
+      "splits": 200000,
+      "test": "qwen_prompted",
+      "worst_case": "no failed or retried seed in either arm: the A26 worst case equals the primary test"
+    },
+    "F3 ILI b50 qwen_prompted vs random": {
+      "comparator": "random",
+      "diff": 0.15009391933566962,
+      "endpoint": "regret_50",
+      "expected_n": [
+        10,
+        30
+      ],
+      "failed_or_retried": [
+        [],
+        []
+      ],
+      "lower_regret": "random",
+      "mean": [
+        1.5672553430922096,
+        1.41716142375654
+      ],
+      "median": [
+        1.6667353916750194,
+        1.3364701807825223
+      ],
+      "method": "random",
+      "n": [
+        10,
+        30
+      ],
+      "p": 0.535637321813391,
+      "splits": 200000,
+      "test": "qwen_prompted",
+      "worst_case": "no failed or retried seed in either arm: the A26 worst case equals the primary test"
+    },
+    "F3 ILI b50 qwen_prompted vs tpe": {
+      "comparator": "tpe",
+      "diff": 0.6198326039960133,
+      "endpoint": "regret_50",
+      "expected_n": [
+        10,
+        30
+      ],
+      "failed_or_retried": [
+        [],
+        []
+      ],
+      "lower_regret": "tpe",
+      "mean": [
+        1.5672553430922096,
+        0.9474227390961963
+      ],
+      "median": [
+        1.6667353916750194,
+        0.9050369742447768
+      ],
+      "method": "random",
+      "n": [
+        10,
+        30
+      ],
+      "p": 0.008309958450207749,
+      "splits": 200000,
+      "test": "qwen_prompted",
+      "worst_case": "no failed or retried seed in either arm: the A26 worst case equals the primary test"
+    }
+  },
+  "family_3_note": "Family 3 is Holm-adjusted together with the E3 CPU methods' comparisons (prereg); that family is defined outside docs/prereg_E4.md, so only unadjusted ILI p-values are given here. ETTh1 family-3 tests come from the pick reseeds.",
+  "git_head": "68593a0bb10dd1470334835d4d60366d636d2bd0",
+  "gpu_per_arm": {
+    "grpo_league_from_ETTh1": {
+      "NVIDIA A10": 5,
+      "NVIDIA A10G": 5
+    },
+    "grpo_none_from_ETTh1": {
+      "NVIDIA A10": 5,
+      "NVIDIA A10G": 5
+    },
+    "qwen_prompted": {
+      "NVIDIA A10": 10
+    }
+  },
+  "inputs_sha256": {
+    "e3_cpu": "093885b956513e3ce831adfb6942aa3f3bd6281331adddcaef19a16e47130c8f",
+    "e3_prompted": "d62b8bf00323eec52eb08ce40093a56498224c4488d700c2491a86cd0ec96ca0",
+    "e4_controls": "0a3e41c5c561cfc95900ec1e9e28783a5b441753e18b6bf8adad7e768a806605",
+    "e4_league": "54047f02c1edee748b6e20628c16e29bdba567aab3e4b4958696c6f2ff2cd103",
+    "e4_none": "c1fe5d6020a86ae6733cc8f7dac1b53f32fa8435aaeb31dbd0bfa68b35bdce22",
+    "ledger": "b5e1b558718844daebc8225b9ac8557fd1aecfc47b34d32944c6b28a110a0f36"
+  },
+  "j3_decision_A30": {
+    "league_mean_auc": 3.142846099768888,
+    "none_mean_auc": 3.2333866496957717,
+    "p": 0.802528740609236,
+    "runs": false,
+    "test": "exact",
+    "threshold": 0.008333333333333333
+  },
+  "k3_training_logs": {
+    "ETTh1_source_J2": {
+      "max_invalid": 0.0,
+      "min_of_mean_unique": 0.9122340425531915,
+      "pass_on_mean_unique": true,
+      "per_run": {
+        "grpo_league_ETTh1_seed100": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9680851063829787,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_league_ETTh1_seed101": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9414893617021277,
+          "min_unique_rate_after_10": 0.5
+        },
+        "grpo_league_ETTh1_seed102": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9813829787234043,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_league_ETTh1_seed103": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.973404255319149,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_league_ETTh1_seed104": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9601063829787234,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_league_ETTh1_seed105": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9680851063829787,
+          "min_unique_rate_after_10": 0.5
+        },
+        "grpo_league_ETTh1_seed106": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9707446808510638,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_league_ETTh1_seed107": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9893617021276596,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_league_ETTh1_seed108": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9361702127659575,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_league_ETTh1_seed109": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9840425531914894,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_none_ETTh1_seed100": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.976063829787234,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_none_ETTh1_seed101": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9654255319148937,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_none_ETTh1_seed102": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.973404255319149,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_none_ETTh1_seed103": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9654255319148937,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_none_ETTh1_seed104": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9893617021276596,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_none_ETTh1_seed105": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9893617021276596,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_none_ETTh1_seed106": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9787234042553191,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_none_ETTh1_seed107": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9946808510638298,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_none_ETTh1_seed108": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9122340425531915,
+          "min_unique_rate_after_10": 0.375
+        },
+        "grpo_none_ETTh1_seed109": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.973404255319149,
+          "min_unique_rate_after_10": 0.75
+        }
+      },
+      "runs": 20
+    },
+    "ILI_source_J1": {
+      "max_invalid": 0.0,
+      "min_of_mean_unique": 0.9505208333333334,
+      "pass_on_mean_unique": true,
+      "per_run": {
+        "grpo_league_ILI_seed100": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9557291666666666,
+          "min_unique_rate_after_10": 0.5
+        },
+        "grpo_league_ILI_seed101": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.984375,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_league_ILI_seed102": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9893617021276596,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_league_ILI_seed103": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9869791666666666,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_league_ILI_seed104": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9765625,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_league_ILI_seed105": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9713541666666666,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_league_ILI_seed106": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9713541666666666,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_league_ILI_seed107": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9921875,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_league_ILI_seed108": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9813829787234043,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_league_ILI_seed109": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9869791666666666,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_none_ILI_seed100": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9505208333333334,
+          "min_unique_rate_after_10": 0.375
+        },
+        "grpo_none_ILI_seed101": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9787234042553191,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_none_ILI_seed102": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9895833333333334,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_none_ILI_seed103": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9817708333333334,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_none_ILI_seed104": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9920212765957447,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_none_ILI_seed105": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9635416666666666,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_none_ILI_seed106": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9895833333333334,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_none_ILI_seed107": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9661458333333334,
+          "min_unique_rate_after_10": 0.75
+        },
+        "grpo_uniform_ILI_seed100": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9635416666666666,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_uniform_ILI_seed101": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9973404255319149,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_uniform_ILI_seed102": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9921875,
+          "min_unique_rate_after_10": 0.875
+        },
+        "grpo_uniform_ILI_seed103": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.96875,
+          "min_unique_rate_after_10": 0.625
+        },
+        "grpo_uniform_ILI_seed104": {
+          "max_invalid_rate_after_10": 0.0,
+          "mean_unique_rate_after_10": 0.9739583333333334,
+          "min_unique_rate_after_10": 0.75
+        }
+      },
+      "runs": 23
+    },
+    "note": "K3 reads 'unique configs per group at least 30%' per step; reported as the mean over steps after 10 and the minimum. J1 lacks grpo_none_ILI_seed108 and seed109 (records lost, A29)."
+  },
+  "pending_note": "ETTh1-target tests (A25) need pick batch 2 (E4 incumbents at budgets 25 and 50, reseeded on Diya's workspace); they are pending until it is on origin/main.",
+  "retried_runs_A29": {
+    "grpo_league_from_ILI": [
+      9
+    ],
+    "grpo_none_from_ILI": [
+      8
+    ]
+  },
+  "script": "scripts/independent/e4_analysis.py",
+  "script_sha256": "a9c5feadb83f92de00189dced15b26dc9c607f6aed0fccd57f71e68f1665643b",
+  "table": {
+    "ETTh1_pooled_sd_configs": 100,
+    "ETTh1_pooled_sd_without_2021": 0.013204393978570643,
+    "ILI_best_3seed_mean": 0.20229467250972485,
+    "ILI_best_config": "p24s12l4h4d16f1r3n1i",
+    "ILI_configs": 2368,
+    "ILI_pooled_sd": 0.009786926438667494,
+    "ILI_pooled_sd_configs": 2368
+  }
+}

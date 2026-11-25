@@ -211,6 +211,8 @@ def worst_case(test_vals: dict, comp_vals: dict, test_failed: list, comp_failed:
 
 def compare(scores: dict, test: str, comp: str, key: str, expected: tuple[int, int]) -> dict:
     a_runs, b_runs = scores.get(test, {}), scores.get(comp, {})
+    if not a_runs or not b_runs:
+        raise ValueError(f"empty arm in {test} vs {comp}")
     a = [a_runs[s][key] for s in sorted(a_runs)]
     b = [b_runs[s][key] for s in sorted(b_runs)]
     result = {"test": test, "comparator": comp, "endpoint": key, "n": [len(a), len(b)],
@@ -219,9 +221,44 @@ def compare(scores: dict, test: str, comp: str, key: str, expected: tuple[int, i
     failed_a = [s for s in range(expected[0]) if s not in a_runs] + RETRIED.get(test, [])
     failed_b = [s for s in range(expected[1]) if s not in b_runs] + RETRIED.get(comp, [])
     result["failed_or_retried"] = [sorted(set(failed_a)), sorted(set(failed_b))]
+    # lower regret is better; a two-sided rejection says nothing about direction without this
+    result["lower_regret"] = test if result["diff"] < 0 else comp
     if failed_a or failed_b:
         result["worst_case"] = worst_case(a_runs, b_runs, sorted(set(failed_a)), sorted(set(failed_b)), key)
+    else:
+        result["worst_case"] = "no failed or retried seed in either arm: the A26 worst case equals the primary test"
     return result
+
+
+def gpu_per_arm(path: Path) -> dict:
+    """GPU name per deployment record (AB1: recorded per run, reported per arm)."""
+    counts: dict = {}
+    with open(path) as fh:
+        for line in fh:
+            record = json.loads(line)
+            name = (record.get("env") or {}).get("gpu_name") or record.get("gpu") or "unrecorded"
+            arm = counts.setdefault(record["method"], {})
+            arm[name] = arm.get(name, 0) + 1
+    return counts
+
+
+def k3(path: Path) -> dict:
+    """K3 (prereg): after 10 steps, invalid proposals at most 20% and unique configs per group at least 30%."""
+    out = {}
+    with open(path) as fh:
+        for line in fh:
+            record = json.loads(line)
+            late = [r for r in record["log"] if r["step"] > 10]
+            out[record["job"]["run_name"]] = {
+                "max_invalid_rate_after_10": max(r["invalid_rate"] for r in late),
+                "min_unique_rate_after_10": min(r["unique_rate"] for r in late),
+                "mean_unique_rate_after_10": float(np.mean([r["unique_rate"] for r in late])),
+            }
+    passed = all(v["max_invalid_rate_after_10"] <= 0.2 and v["mean_unique_rate_after_10"] >= 0.3 for v in out.values())
+    return {"runs": len(out), "pass_on_mean_unique": passed,
+            "min_of_mean_unique": min(v["mean_unique_rate_after_10"] for v in out.values()),
+            "max_invalid": max(v["max_invalid_rate_after_10"] for v in out.values()),
+            "per_run": out}
 
 
 # ---------------------------------------------------------------- main
@@ -319,6 +356,16 @@ def main() -> int:
         "pending_note": ("ETTh1-target tests (A25) need pick batch 2 (E4 incumbents at budgets 25 and 50, "
                          "reseeded on Diya's workspace); they are pending until it is on origin/main."),
         "retried_runs_A29": RETRIED,
+        "a26_completeness": ("J1 and J2 finished (every job finished or failed) on 24 Nov, before the 26 Nov "
+                             "18:00 ET cut-off; no ILI-target arm has a failed or retried seed"),
+        "gpu_per_arm": {**gpu_per_arm(inputs["e4_league"]), **gpu_per_arm(inputs["e4_none"]),
+                        **gpu_per_arm(inputs["e3_prompted"])},
+        "k3_training_logs": {
+            "ETTh1_source_J2": k3(ROOT / "results/runs/E4/soumitra_ILI_T24/training.jsonl"),
+            "ILI_source_J1": k3(ROOT / "results/runs/E4/soumitra_ETTh1_T336/training.jsonl"),
+            "note": ("K3 reads 'unique configs per group at least 30%' per step; reported as the mean over steps "
+                     "after 10 and the minimum. J1 lacks grpo_none_ILI_seed108 and seed109 (records lost, A29)."),
+        },
         "descriptive_ili": descriptive,
     }
     path = ROOT / args.out
