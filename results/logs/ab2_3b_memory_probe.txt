@@ -1,0 +1,54 @@
+# 3B memory probe (AB2), not a registered run, no search result. Script: probe_3b.py (below). Run 2026-11-24 on the RTX 4080 Laptop GPU.
+
+snapshot /home/soumitra/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct/snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+rep 0: prompt 1971 tokens, 4.4s, peak 7.62 GiB, reserved 8.02 GiB
+rep 1: prompt 1968 tokens, 3.7s, peak 7.62 GiB, reserved 8.02 GiB
+rep 2: prompt 1968 tokens, 3.6s, peak 7.62 GiB, reserved 8.02 GiB
+rep 3: prompt 1971 tokens, 3.7s, peak 7.62 GiB, reserved 8.02 GiB
+rep 4: prompt 1970 tokens, 3.7s, peak 7.62 GiB, reserved 8.02 GiB
+rep 5: prompt 1962 tokens, 3.6s, peak 7.62 GiB, reserved 8.02 GiB
+{"model": "Qwen/Qwen2.5-3B-Instruct", "snapshot": "/home/soumitra/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct/snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1", "max_prompt_tokens": 1971, "peak_allocated_gib": 7.620303153991699, "peak_reserved_gib": 8.021484375, "card_total_gib": 11.99365234375, "card_free_now_gib": 2.5113525390625}
+
+[exited with code 0]
+
+# probe script
+"""Memory probe (not a registered run): peak GPU memory of a prompted-Qwen step with Qwen2.5-3B-Instruct
+under the registered settings (bf16, group 8, constrained decoding, temperature 1.0, max_new_tokens 112,
+full 24-line history), on the local card. Produces no search result."""
+import json, random, sys, time
+sys.path.insert(0, "/home/soumitra/LeagueTST-e4")
+import torch
+from huggingface_hub import snapshot_download
+from leaguetst.architect import runner
+from leaguetst.architect.llm import load, make_trie, generate
+from leaguetst.architect.prompt import build_messages
+from leaguetst.search.replay import Table, Space
+
+model = sys.argv[1] if len(sys.argv) > 1 else "Qwen/Qwen2.5-3B-Instruct"
+path = snapshot_download(model)
+print("snapshot", path, flush=True)
+rows = runner.table_rows("ILI")
+table = Table(rows)
+space = Space(table.ids)
+tok, m = load(model)
+m.eval()
+trie = make_trie(tok, space, False)
+rng = random.Random(0)
+ids = list(table.ids)
+torch.cuda.reset_peak_memory_stats()
+lens = []
+for rep in range(6):
+    hist = [(c, 0.2 + rng.random()) for c in rng.sample(ids, 40 + 20 * rep)]
+    msgs = build_messages("ILI", 24, space, hist, False)
+    t = time.time()
+    out = generate(tok, m, msgs, 8, 1.0, trie)
+    lens.append(int(out[0].shape[0]))
+    print(f"rep {rep}: prompt {out[0].shape[0]} tokens, {time.time()-t:.1f}s, peak {torch.cuda.max_memory_allocated()/2**30:.2f} GiB,"
+          f" reserved {torch.cuda.max_memory_reserved()/2**30:.2f} GiB", flush=True)
+free, total = torch.cuda.mem_get_info()
+print(json.dumps({"model": model, "snapshot": path, "max_prompt_tokens": max(lens),
+                  "peak_allocated_gib": torch.cuda.max_memory_allocated() / 2**30,
+                  "peak_reserved_gib": torch.cuda.max_memory_reserved() / 2**30,
+                  "card_total_gib": total / 2**30, "card_free_now_gib": free / 2**30}))

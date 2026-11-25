@@ -174,3 +174,109 @@ result existed before it, or names any that did.
   episode, whose budget (3000) equals a prompted search's, so the
   comparison uses each policy's final episode against prompted Qwen at the
   same spend; null rewards are skipped. The tested slope is unchanged.
+
+## Amendment AB2 (2026-11-25, before any run of the model-scale or KL arms)
+
+Soumitra's side, under AB1 and docs/LEG2_soumitra.md L4. No result of any
+item below exists when this is committed.
+
+* Backend, chosen per family by the L4 rule and never revisited. J3 was not
+  run (A30, commit 7808ea6). Soumitra's Modal workspace shows about $8.15 of
+  free credit (metered $21.87 this month, billed $0.00). The model-scale
+  family needs about $8 plus $5 free and the KL family about $10 plus $5
+  free, so neither fits: both families run on the local GPU, an NVIDIA
+  GeForce RTX 4080 Laptop GPU (12 GB, 12,282 MiB; driver 595.97; WSL2;
+  compute capability 8.9; torch 2.15.0+cu132, CUDA runtime 13.2, cuDNN
+  92600), one job at a time (--per-gpu 1). Nothing in AB2 runs on Modal.
+* Packages: requirements-llm.txt as pinned by A25 (torch 2.15.0,
+  transformers 5.24.0, peft 0.22.0, accelerate 1.16.0, huggingface_hub
+  2.4.0); every record carries its env block (A25).
+* Model revisions (Hugging Face commits, read on 2026-11-24, each the Hub
+  head that day): Qwen/Qwen2.5-0.5B-Instruct
+  7ae557604adf67be50417f59c2c2f167def9a775; Qwen/Qwen2.5-1.5B-Instruct
+  989aa7980e4cf806f80c7fef2b1adb7bc71aa306 (the A25 pin);
+  Qwen/Qwen2.5-3B-Instruct aa8e72537993ba99e69dfaafa59ed015b17504d1.
+* Memory check, before this amendment and producing no search result: one
+  prompted step of the 3B model under the registered settings (bf16, group
+  8, constrained decoding, temperature 1.0, 112 new tokens, full 24-line
+  history, about 1,970 prompt tokens) peaked at 7.62 GiB allocated and
+  8.02 GiB reserved on the card, so it runs at one job with the registered
+  settings unchanged. Output: results/logs/ab2_3b_memory_probe.txt.
+* Code. The launcher is scripts/ablate_llm.py, sha256 3919d68337302590eda42f53ca10158ca27766bb488026b5a4fc8373c477b786 (commit 79977de); the
+  queue that runs the items one after the other is
+  scripts/ablations/run_l4_queue.sh, sha256 f2f71ecb28e664afdceb6914b1047a46f248b2fdf2bcd05b1c87bbfbee6d8d9b. The launcher builds
+  plans with leaguetst/architect/runner.py and imports scripts/llm_local.py's
+  executor and GPU check; the ten files of docs/e4_rerun.sha256 are
+  unchanged, and the queue refuses to start if their check fails or if
+  leaguetst/ or scripts/ has uncommitted changes. An item is DONE only if
+  its launch exits 0 with no errors.jsonl row; otherwise it is PARTIAL or
+  FAILED and the next relaunch reruns it, keeping finished seeds and
+  adapters and never retraining an on-policy stop.
+* Items, outputs under results/runs/llm_local/<item>/<name>/ and logs under
+  results/logs/, in this order:
+
+| Item | Command (scripts/ablate_llm.py ... --per-gpu 1) | Method |
+|---|---|---|
+| ABL_P_ref_local | prompted --dataset ILI (and later ETTh1) --seeds 30 --model Qwen/Qwen2.5-1.5B-Instruct | qwen_prompted_1.5b_local |
+| ABL_P_05b_local | the same with Qwen/Qwen2.5-0.5B-Instruct | qwen_prompted_0.5b_local |
+| ABL_P_3b_local | the same with Qwen/Qwen2.5-3B-Instruct | qwen_prompted_3b_local |
+| ABL_G_ref_local | transfer --source ETTh1 --target ILI --arms league:10 (E4 recipe) | grpo_league_from_ETTh1 |
+| ABL_G_beta0_local | the same with --beta 0 | grpo_league_from_ETTh1 |
+| ABL_G_beta01_local | the same with --beta 0.1 | grpo_league_from_ETTh1 |
+
+  The queue runs the three prompted items on ILI (ref, 0.5B, 3B), then the
+  same three on ETTh1 (ILI is tested, ETTh1 descriptive), then the three KL
+  items (ETTh1 to ILI). Search seeds 0 to 29;
+  GRPO training seeds 100 to 109, deployed at seeds 0 to 9, budget 100.
+* Tests, unchanged from AB-P and AB-G: on ILI held-out AUC, the scale trend
+  (0.5B, 1.5B, 3B) uses ABL_P_ref_local as its 1.5B level and the KL trend
+  (beta 0, 0.04, 0.1) uses ABL_G_ref_local as its 0.04 level; local
+  references serve only local arms (AB1). ABL_G_ref_local against the J2
+  league arm and ABL_P_ref_local against ABL_P_ref are the AB1 hardware
+  check, descriptive.
+* Hand-stop, on record progress (prompted searches print nothing between
+  start and end, so a log line is not the signal). Prompted item: no new row
+  in its *_runs.jsonl for one hour. Transfer item: no new GRPO step row in
+  its log and no new training.jsonl or *_runs.jsonl row for 2.5 hours. A
+  hand-stop kills the queue, is logged as a line in
+  results/logs/l4_queue_status.txt, and is followed by a relaunch.
+* Stale lock. A killed or suspended launch (hand-stop, sleep, WSL shutdown)
+  can leave <item>/<name>/driver.lock behind, and the next launch of that
+  item then fails. Procedure: confirm with ps that no ablate_llm.py
+  process runs, delete that driver.lock, relaunch the queue, and log the
+  deletion in the status file. This is the procedure registered here, not
+  a workaround of the lock.
+* Retried runs (A29 adapted to one local GPU). An on-policy stop is
+  reported and never retrained. At --per-gpu 1 a run "started" in a killed
+  launch is the first job of that launch's pending list with no training.jsonl,
+  errors.jsonl or *_runs.jsonl row written by that launch; a GRPO policy that a later launch retrains after that, with
+  no errors.jsonl line naming it written after that start, counts as
+  retried: kept in the tests and
+  treated as failed in the A26 worst case. A rerun search (prompted or
+  deployment) is not retried: it has no on-policy stop to lose.
+* Completion, by counts at bring-back (the queue's DONE, PARTIAL and FAIL
+  status lines are operational only). A prompted item is complete on a
+  table when its runs file holds 30 distinct seeds. A transfer item is
+  complete when all 10 policies have an outcome (a saved adapter with its
+  training record, or an on-policy stop in errors.jsonl) and every
+  non-stopped policy is deployed. A job that failed without an on-policy
+  stop (out of memory, a crash) is relaunched with the registered settings
+  unchanged until 28 Nov 23:59 ET; nothing (history lines, group size, new
+  tokens, model, card, backend) is ever changed to make a job fit or
+  finish, and no item is analysed on fewer seeds as a fallback.
+* Each prompted item's ILI table and ETTh1 table is its own arm under AB1:
+  an arm with any job unfinished at 28 Nov 23:59 ET counts as not run. An
+  unfinished ETTh1 (descriptive) table does not make the tested ILI table
+  not run. A transfer item is one arm.
+* Holm sizes are unchanged: AB-P stays Holm over 3 (anon and repair against
+  Modal ABL_P_ref, run by Anirudh; the scale trend against ABL_P_ref_local)
+  and AB-G stays Holm over 2 (the steps trend against the J2 league arm; the
+  KL trend against ABL_G_ref_local). A trend with any of its arms not run
+  (any one level missing) is not tested and counts as not rejected (AB1);
+  it is never tested on fewer levels.
+* Launch order: the queue is launched only with HEAD at the commit that
+  adds AB2 or a descendant of it, so every record's git hash postdates this
+  registration.
+* Evidence: results/logs/ab2_modal_billing.txt (billing summary; the free
+  credit was read from the dashboard, as the E4 screenshots show) and
+  results/logs/ab2_3b_memory_probe.txt (the memory check).
