@@ -1,0 +1,2465 @@
+{
+ "analysis": "ST detectable effects",
+ "descriptive": true,
+ "provenance": {
+  "git_hash": "d8364cd82874cda1d4d461612969416f14f17a0e",
+  "inputs_sha256": {
+   "docs/claims/E3.json": "bf82ccda09ec9192708fe95cd5aa4a0327913196c4b1099c9e4bb3a6bd97b0d6",
+   "results/ablations/AB-C.json": "9d0b005fb1fd09469f4c257acf4ac0c670cfe2f1748550e775468a6724c56b26",
+   "results/ablations/AB-L.json": "b82641d9142f4496ed29cf32620589d281acb08130ae2035f9584e3e81b96ce2",
+   "results/ablations/AB-X.json": "d0d7b62990e2ef5d9d41d4d22dd6a0e772394c05df5f74a9ee34d278e335e7b6",
+   "results/e5/ETTh1_T336.json": "cf5d7a79de57ed6e35843696e7dad015e1d2aab8de98eb9db9ff15c4d4517dda",
+   "results/e5/ILI_T24.json": "fde064fc71a561f17ecf3378ddc5d335b17326790c274793ad82f5381ae31b02",
+   "results/independent/E4_soumitra.json": "f191b5e67bd1d1c9f00434c91fa461eb3bcd972bccc6d056675e5bb89eb611e8",
+   "results/ledger.jsonl": "b5e1b558718844daebc8225b9ac8557fd1aecfc47b34d32944c6b28a110a0f36",
+   "results/picks/ETTh1_T336_analysis.json": "0da2e8c45c822df58e358a6a53b6fb8977d9c0f132c32020c937c68d8dfb11e5",
+   "results/picks/ILI_T24_analysis.json": "4ad2c36baf5400018da7c9b1d2d3034c49802e3b47e3239b11563a3197296fa8",
+   "results/search/E3/ETTh1_T336/cpu_runs.jsonl": "77c509887c67a41de0f87381d08caf33afc6f491c5d7444771ad1239109acc8c",
+   "results/search/E3/ETTh1_T336/qwen_prompted_runs.jsonl": "04aa248107a09839f84645ba1e2dfa8808dc33609b29024c9ae5a7374f9b8ba3",
+   "results/search/E3/ILI_T24/cpu_runs.jsonl": "093885b956513e3ce831adfb6942aa3f3bd6281331adddcaef19a16e47130c8f",
+   "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl": "d62b8bf00323eec52eb08ce40093a56498224c4488d700c2491a86cd0ec96ca0",
+   "results/search/E4/ETTh1_T336/grpo_league_from_ILI_runs.jsonl": "7c48cd6fbced5ad6b1fa916a0602a2e818ba59ae532f763c4f65274a638e7171",
+   "results/search/E4/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": "54047f02c1edee748b6e20628c16e29bdba567aab3e4b4958696c6f2ff2cd103",
+   "results/search/E4/ILI_T24/grpo_none_from_ETTh1_runs.jsonl": "c1fe5d6020a86ae6733cc8f7dac1b53f32fa8435aaeb31dbd0bfa68b35bdce22"
+  },
+  "script": "scripts/ablations/power.py",
+  "script_sha256": "37f7be5f555ba63dab676aa6001b47e545a147db95b6bbae71533bb7ec7910ff",
+  "versions": {
+   "numpy": "2.5.4",
+   "optuna": "5.1.0",
+   "python": "3.12.16",
+   "scikit-learn": "1.9.1",
+   "scipy": "1.18.1",
+   "torch": "2.15.0"
+  }
+ },
+ "rows": [
+  {
+   "comparison": "ILI T24 re vs random @25",
+   "detectable_80": 0.9125891216569163,
+   "diff": 0.07358477104717709,
+   "family": 20,
+   "mean": [
+    1.4658219346126795,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.7605023949760502,
+   "sd": [
+    0.9968317524663287,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 re vs random @50",
+   "detectable_80": 0.6677001708752787,
+   "diff": -0.04303638382950492,
+   "family": 20,
+   "mean": [
+    1.374125039927035,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.8021319786802132,
+   "sd": [
+    0.7523310935618196,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 tpe vs random @25",
+   "detectable_80": 0.7510631513454347,
+   "diff": -0.3219230139250364,
+   "family": 20,
+   "mean": [
+    1.070314149640466,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.1018789812101879,
+   "sd": [
+    0.6737911309322978,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 tpe vs random @50",
+   "detectable_80": 0.5408368878991486,
+   "diff": -0.46973868466034363,
+   "family": 20,
+   "mean": [
+    0.9474227390961963,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.0011099889001109989,
+   "sd": [
+    0.5080256977885586,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 asha vs random @25",
+   "detectable_80": 0.7298136052791993,
+   "diff": 0.04719771181619348,
+   "family": 20,
+   "mean": [
+    1.439434875381696,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.8038319616803832,
+   "sd": [
+    0.6251376542829833,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 asha vs random @50",
+   "detectable_80": 0.6425099300349005,
+   "diff": -0.14750688423979685,
+   "family": 20,
+   "mean": [
+    1.2696545395167431,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.3800861991380086,
+   "sd": [
+    0.7069079195798983,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 epochk vs random @25",
+   "detectable_80": 0.9173718448985647,
+   "diff": 0.2685426921936538,
+   "family": 20,
+   "mean": [
+    1.6607798557591562,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.2645573544264557,
+   "sd": [
+    1.0056095976887478,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 epochk vs random @50",
+   "detectable_80": 0.7502596975180195,
+   "diff": 0.03243628184817293,
+   "family": 20,
+   "mean": [
+    1.449597705604713,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.8710712892871071,
+   "sd": [
+    0.8950458247252773,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 referee vs random @25",
+   "detectable_80": 0.750961937861901,
+   "diff": -0.12159659685450452,
+   "family": 20,
+   "mean": [
+    1.270640566710998,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.5347046529534705,
+   "sd": [
+    0.6735645288192734,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 referee vs random @50",
+   "detectable_80": 0.5961195079955363,
+   "diff": -0.33284094823064514,
+   "family": 20,
+   "mean": [
+    1.0843204755258948,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.03518964810351897,
+   "sd": [
+    0.61993568418937,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg vs random @25",
+   "detectable_80": 0.9391889211466741,
+   "diff": 0.5281845068306557,
+   "family": 20,
+   "mean": [
+    1.920421670396158,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.03332966670333297,
+   "sd": [
+    1.0452735016996846,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg vs random @50",
+   "detectable_80": 0.7328420567091628,
+   "diff": 0.2036853973810142,
+   "family": 20,
+   "mean": [
+    1.6208468211375542,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.2863771362286377,
+   "sd": [
+    0.865579637280736,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg_league vs random @25",
+   "detectable_80": 0.9135855469062618,
+   "diff": 0.3896714281173286,
+   "family": 20,
+   "mean": [
+    1.781908591682831,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.10536894631053689,
+   "sd": [
+    0.9986630844342466,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg_league vs random @50",
+   "detectable_80": 0.7068647257322546,
+   "diff": -0.05690945034183548,
+   "family": 20,
+   "mean": [
+    1.3602519734147045,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.7617623823761762,
+   "sd": [
+    0.8210468046534258,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg_uniform_rivals vs random @25",
+   "detectable_80": 0.8903691056500054,
+   "diff": 0.5356805943913323,
+   "family": 20,
+   "mean": [
+    1.9279177579568347,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.023139768602313978,
+   "sd": [
+    0.9556239466547746,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg_uniform_rivals vs random @50",
+   "detectable_80": 0.6615838798988876,
+   "diff": -0.1281046829742425,
+   "family": 20,
+   "mean": [
+    1.2890567407822975,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.45828541714582854,
+   "sd": [
+    0.7413999861524248,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg_league_charged vs random @25",
+   "detectable_80": 0.8351180249753245,
+   "diff": 0.37626113463884736,
+   "family": 20,
+   "mean": [
+    1.7684982982043498,
+    1.3922371635655024
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.08602913970860292,
+   "sd": [
+    0.8495615821513799,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 pg_league_charged vs random @50",
+   "detectable_80": 0.7020030687498696,
+   "diff": 0.16352707956174295,
+   "family": 20,
+   "mean": [
+    1.580688503318283,
+    1.41716142375654
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.37183628163718363,
+   "sd": [
+    0.8126266523106689,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 qwen_prompted vs random @25",
+   "detectable_80": 1.5086532376920054,
+   "diff": 0.6732282969967438,
+   "family": 20,
+   "mean": [
+    2.0654654605622462,
+    1.3922371635655024
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.04867951320486795,
+   "sd": [
+    1.1390196580462655,
+    0.8239445319764143
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI T24 qwen_prompted vs random @50",
+   "detectable_80": 1.1390828192974474,
+   "diff": 0.15009391933566962,
+   "family": 20,
+   "mean": [
+    1.5672553430922096,
+    1.41716142375654
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "held-out regret on ILI",
+   "p": 0.5356446435535644,
+   "sd": [
+    0.871101119026962,
+    0.5738898335537912
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "ILI picks: asha vs random @100",
+   "detectable_80": 0.00789389460721682,
+   "detectable_80_sd": 0.8065754511067508,
+   "diff": -0.001288712344638565,
+   "family": 36,
+   "mean": [
+    0.2213547588436709,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5126148738512615,
+   "sd": [
+    0.0076666400875644095,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: asha vs random @25",
+   "detectable_80": 0.00959285759603634,
+   "detectable_80_sd": 0.980170603728623,
+   "diff": -0.0012037973242069455,
+   "family": 36,
+   "mean": [
+    0.22062586137968193,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6133038669613304,
+   "sd": [
+    0.00983839852438661,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: asha vs random @50",
+   "detectable_80": 0.009368382551826997,
+   "detectable_80_sd": 0.9572343892167353,
+   "diff": -0.0017223846069838733,
+   "family": 36,
+   "mean": [
+    0.22126603598715613,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.45948540514594854,
+   "sd": [
+    0.008024610583220553,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: epochk vs random @100",
+   "detectable_80": 0.008135063487056553,
+   "detectable_80_sd": 0.8312173937381871,
+   "diff": -0.0019439859714491803,
+   "family": 36,
+   "mean": [
+    0.22069948521686028,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.33719662803371964,
+   "sd": [
+    0.008117126423273571,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: epochk vs random @25",
+   "detectable_80": 0.009358574274757805,
+   "detectable_80_sd": 0.9562322076707046,
+   "diff": -0.0009637142333002724,
+   "family": 36,
+   "mean": [
+    0.2208659444705886,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6776132238677613,
+   "sd": [
+    0.00941420938514889,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: epochk vs random @50",
+   "detectable_80": 0.009752319543724823,
+   "detectable_80_sd": 0.9964639669911136,
+   "diff": -0.00402479005864842,
+   "family": 36,
+   "mean": [
+    0.2189636305354916,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.1004989950100499,
+   "sd": [
+    0.008825947612191878,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg vs random @100",
+   "detectable_80": 0.007059618473636743,
+   "detectable_80_sd": 0.7213315148405183,
+   "diff": -0.0010598195341972316,
+   "family": 36,
+   "mean": [
+    0.22158365165411223,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5470245297547025,
+   "sd": [
+    0.005985879053501006,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg vs random @25",
+   "detectable_80": 0.008724991421893537,
+   "detectable_80_sd": 0.8914945337099579,
+   "diff": 0.0013110573569345696,
+   "family": 36,
+   "mean": [
+    0.22314071606082345,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5484045159548404,
+   "sd": [
+    0.008219065434400305,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg vs random @50",
+   "detectable_80": 0.00967158908608256,
+   "detectable_80_sd": 0.9882151609795243,
+   "diff": -0.0029740922443859397,
+   "family": 36,
+   "mean": [
+    0.22001432834975407,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.21753782462175378,
+   "sd": [
+    0.008661007779716956,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_league vs random @100",
+   "detectable_80": 0.006815508314072936,
+   "detectable_80_sd": 0.6963890407048853,
+   "diff": -0.0032723847637611825,
+   "family": 36,
+   "mean": [
+    0.21937108642454828,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.057599424005759944,
+   "sd": [
+    0.005440656318563848,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_league vs random @25",
+   "detectable_80": 0.010292593878518603,
+   "detectable_80_sd": 1.0516676448954647,
+   "diff": 0.0017756908211469247,
+   "family": 36,
+   "mean": [
+    0.2236053495250358,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.48508514914850853,
+   "sd": [
+    0.011062907932938024,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_league vs random @50",
+   "detectable_80": 0.009568590359358984,
+   "detectable_80_sd": 0.9776910472683356,
+   "diff": -0.003741834141355538,
+   "family": 36,
+   "mean": [
+    0.21924658645278447,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.12065879341206588,
+   "sd": [
+    0.008447957087243364,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_league_charged vs random @100",
+   "detectable_80": 0.008394178688644236,
+   "detectable_80_sd": 0.8576930399189877,
+   "diff": -0.0014527225635980467,
+   "family": 36,
+   "mean": [
+    0.22119074862471141,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.4896351036489635,
+   "sd": [
+    0.008588693788911719,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_league_charged vs random @25",
+   "detectable_80": 0.009051967300404482,
+   "detectable_80_sd": 0.9249039887171076,
+   "diff": 0.0012939315536972529,
+   "family": 36,
+   "mean": [
+    0.22312359025758613,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5655343446565534,
+   "sd": [
+    0.008845594539408242,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_league_charged vs random @50",
+   "detectable_80": 0.010099611701382825,
+   "detectable_80_sd": 1.0319492809795658,
+   "diff": -0.0014018859524089211,
+   "family": 36,
+   "mean": [
+    0.2215865346417311,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5731042689573105,
+   "sd": [
+    0.009517281213228583,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_uniform_rivals vs random @100",
+   "detectable_80": 0.008540572962837134,
+   "detectable_80_sd": 0.8726511858813917,
+   "diff": -0.0008677029583469831,
+   "family": 36,
+   "mean": [
+    0.22177576822996248,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6828631713682863,
+   "sd": [
+    0.008850180834378349,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_uniform_rivals vs random @25",
+   "detectable_80": 0.008788818257414104,
+   "detectable_80_sd": 0.8980161762215836,
+   "diff": 0.0033136808670217177,
+   "family": 36,
+   "mean": [
+    0.2251433395709106,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.12973870261297388,
+   "sd": [
+    0.008343210548577097,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: pg_uniform_rivals vs random @50",
+   "detectable_80": 0.00877948331187257,
+   "detectable_80_sd": 0.8970623583299264,
+   "diff": -0.0020051119052407473,
+   "family": 36,
+   "mean": [
+    0.22098330868889926,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.35930640693593063,
+   "sd": [
+    0.006688549531969321,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: portfolio_from_ETTh1 vs random @100",
+   "detectable_80": 0.005687501709766658,
+   "detectable_80_sd": 0.5811325695977153,
+   "diff": 0.02358336679090861,
+   "family": 36,
+   "mean": [
+    0.24622683797921807,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 9.99990000099999e-06,
+   "sd": [
+    0.0019129635303194318,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: portfolio_from_ETTh1 vs random @25",
+   "detectable_80": 0.008929790576235304,
+   "detectable_80_sd": 0.9124203223756027,
+   "diff": 0.025850867589033544,
+   "family": 36,
+   "mean": [
+    0.24768052629292242,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 9.99990000099999e-06,
+   "sd": [
+    0.00861414918511935,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: portfolio_from_ETTh1 vs random @50",
+   "detectable_80": 0.008276528011963531,
+   "detectable_80_sd": 0.8456718320946524,
+   "diff": 0.023869952683807233,
+   "family": 36,
+   "mean": [
+    0.24685837327794724,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 9.99990000099999e-06,
+   "sd": [
+    0.005381258735263557,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: qwen_prompted vs random @100",
+   "detectable_80": 0.015529116741839148,
+   "detectable_80_sd": 1.586720492808104,
+   "diff": 0.0019386306181326807,
+   "family": 36,
+   "mean": [
+    0.22458210180644214,
+    0.22264347118830946
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5416845831541685,
+   "sd": [
+    0.01136848774484115,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: qwen_prompted vs random @25",
+   "detectable_80": 0.014845802153610532,
+   "detectable_80_sd": 1.516901373137511,
+   "diff": 0.005111256478324777,
+   "family": 36,
+   "mean": [
+    0.22694091518221365,
+    0.22182965870388888
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.12936870631293687,
+   "sd": [
+    0.010534407569061497,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: qwen_prompted vs random @50",
+   "detectable_80": 0.013122210342083268,
+   "detectable_80_sd": 1.3407897182345512,
+   "diff": -0.0018132961420274374,
+   "family": 36,
+   "mean": [
+    0.22117512445211257,
+    0.22298842059414
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6064639353606464,
+   "sd": [
+    0.008557325718814969,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: re vs random @100",
+   "detectable_80": 0.0076666405665182565,
+   "detectable_80_sd": 0.7833552867249385,
+   "diff": -0.0019680500036910187,
+   "family": 36,
+   "mean": [
+    0.22067542118461844,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.3043269567304327,
+   "sd": [
+    0.007230010436702409,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: re vs random @25",
+   "detectable_80": 0.009468250723871962,
+   "detectable_80_sd": 0.967438631853156,
+   "diff": 0.0008245328477221037,
+   "family": 36,
+   "mean": [
+    0.22265419155161098,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.7261227387726122,
+   "sd": [
+    0.009613810326330012,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: re vs random @50",
+   "detectable_80": 0.010134907728917317,
+   "detectable_80_sd": 1.0355557275749996,
+   "diff": -0.0007929709481482305,
+   "family": 36,
+   "mean": [
+    0.22219544964599178,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.7516924830751692,
+   "sd": [
+    0.009586047470277333,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: referee vs random @100",
+   "detectable_80": 0.0076849887255487324,
+   "detectable_80_sd": 0.785230048852299,
+   "diff": -0.0006987015195334956,
+   "family": 36,
+   "mean": [
+    0.22194476966877597,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.7146228537714623,
+   "sd": [
+    0.007265751841849083,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: referee vs random @25",
+   "detectable_80": 0.008866935430092576,
+   "detectable_80_sd": 0.905997964290393,
+   "diff": -0.0019102601573375844,
+   "family": 36,
+   "mean": [
+    0.2199193985465513,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.3883761162388376,
+   "sd": [
+    0.00849388214346741,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: referee vs random @50",
+   "detectable_80": 0.008707204490388665,
+   "detectable_80_sd": 0.8896771161972854,
+   "diff": -0.002059231373449072,
+   "family": 36,
+   "mean": [
+    0.22092918922069094,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.3425065749342507,
+   "sd": [
+    0.006512442063145401,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: tpe vs random @100",
+   "detectable_80": 0.0073063763439009085,
+   "detectable_80_sd": 0.7465445244416983,
+   "diff": 0.0020204309151951316,
+   "family": 36,
+   "mean": [
+    0.2246639021035046,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.2698973010269897,
+   "sd": [
+    0.006507773880030082,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: tpe vs random @25",
+   "detectable_80": 0.007941684227149172,
+   "detectable_80_sd": 0.811458457046546,
+   "diff": -0.0038367287117183346,
+   "family": 36,
+   "mean": [
+    0.21799292999217054,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.055449445505544946,
+   "sd": [
+    0.006598485819925523,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: tpe vs random @50",
+   "detectable_80": 0.009541507367696305,
+   "detectable_80_sd": 0.9749237850606953,
+   "diff": -0.002628410893006111,
+   "family": 36,
+   "mean": [
+    0.2203600097011339,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.2685173148268517,
+   "sd": [
+    0.008391424466760219,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: tpe_warm_from_ETTh1 vs random @100",
+   "detectable_80": 0.007767745862325723,
+   "detectable_80_sd": 0.7936859351099113,
+   "diff": -0.0018726415810718933,
+   "family": 36,
+   "mean": [
+    0.22077082960723757,
+    0.22264347118830946
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.33438665613343865,
+   "sd": [
+    0.007425857667916548,
+    0.007472579912969146
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: tpe_warm_from_ETTh1 vs random @25",
+   "detectable_80": 0.009889591676609195,
+   "detectable_80_sd": 1.0104900387864444,
+   "diff": 0.0029945575221829446,
+   "family": 36,
+   "mean": [
+    0.22482421622607182,
+    0.22182965870388888
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.22796772032279677,
+   "sd": [
+    0.010364728493256968,
+    0.008512860061302741
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ILI picks: tpe_warm_from_ETTh1 vs random @50",
+   "detectable_80": 0.009271423036833384,
+   "detectable_80_sd": 0.9473273447936228,
+   "diff": -0.0011886599064129255,
+   "family": 36,
+   "mean": [
+    0.22179976068772708,
+    0.22298842059414
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6041639583604164,
+   "sd": [
+    0.00781473579687344,
+    0.009850868037790707
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: asha vs random @100",
+   "detectable_80": 0.013251563583011829,
+   "detectable_80_robust_sd": 1.5502670657593098,
+   "detectable_80_sd": 1.0035722657562125,
+   "diff": 0.0006525982614404846,
+   "family": 36,
+   "mean": [
+    1.0878514644375246,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.8417615823841762,
+   "sd": [
+    0.011554499218393941,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: asha vs random @25",
+   "detectable_80": 0.012772554231437791,
+   "detectable_80_robust_sd": 1.4942289675164777,
+   "detectable_80_sd": 0.9672957541380783,
+   "diff": -0.0012664709158358711,
+   "family": 36,
+   "mean": [
+    1.0881664937173072,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6885131148688514,
+   "sd": [
+    0.01245582184000249,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: asha vs random @50",
+   "detectable_80": 0.014717735125921907,
+   "detectable_80_robust_sd": 1.7217907838087694,
+   "detectable_80_sd": 1.1146089059298943,
+   "diff": -0.0037514777759828366,
+   "family": 36,
+   "mean": [
+    1.086032869849762,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.3063169368306317,
+   "sd": [
+    0.011364385320240793,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: epochk vs random @100",
+   "detectable_80": 0.014327547973194908,
+   "detectable_80_robust_sd": 1.6761437710192353,
+   "detectable_80_sd": 1.085059109599958,
+   "diff": 0.0004126989568222772,
+   "family": 36,
+   "mean": [
+    1.0876115651329064,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.9075709242907571,
+   "sd": [
+    0.013714545831343598,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: epochk vs random @25",
+   "detectable_80": 0.01651811923756198,
+   "detectable_80_robust_sd": 1.9324131889693215,
+   "detectable_80_sd": 1.250956254741351,
+   "diff": 0.0018372506401416189,
+   "family": 36,
+   "mean": [
+    1.0912702152732847,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6551334486655134,
+   "sd": [
+    0.018892946554825863,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: epochk vs random @50",
+   "detectable_80": 0.01642049469842846,
+   "detectable_80_robust_sd": 1.9209923398838111,
+   "detectable_80_sd": 1.2435629173953167,
+   "diff": 0.0025728515041347766,
+   "family": 36,
+   "mean": [
+    1.0923571991298797,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5272147278527215,
+   "sd": [
+    0.015055682661435942,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg vs random @100",
+   "detectable_80": 0.014098059512102313,
+   "detectable_80_robust_sd": 1.6492964936413625,
+   "detectable_80_sd": 1.0676794054298893,
+   "diff": -0.00017288470519027932,
+   "family": 36,
+   "mean": [
+    1.0870259814708938,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.9607703922960771,
+   "sd": [
+    0.013269891057548664,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg vs random @25",
+   "detectable_80": 0.013090224414445083,
+   "detectable_80_robust_sd": 1.5313924025635899,
+   "detectable_80_sd": 0.9913536687627736,
+   "diff": -0.004532846370482124,
+   "family": 36,
+   "mean": [
+    1.084900118262661,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.16504834951650482,
+   "sd": [
+    0.013048346167202648,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg vs random @50",
+   "detectable_80": 0.0167671065201548,
+   "detectable_80_robust_sd": 1.9615415843906285,
+   "detectable_80_sd": 1.2698126508013976,
+   "diff": -0.002928560058795604,
+   "family": 36,
+   "mean": [
+    1.0868557875669493,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.47965520344796553,
+   "sd": [
+    0.01574268349868601,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_league vs random @100",
+   "detectable_80": 0.013625831905298112,
+   "detectable_80_robust_sd": 1.5940517746476435,
+   "detectable_80_sd": 1.031916491390019,
+   "diff": -0.002199939459120337,
+   "family": 36,
+   "mean": [
+    1.0849989267169637,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5185248147518525,
+   "sd": [
+    0.01232920064839295,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_league vs random @25",
+   "detectable_80": 0.012595763479675982,
+   "detectable_80_robust_sd": 1.4735466624986369,
+   "detectable_80_sd": 0.9539069721880152,
+   "diff": -0.006692579989874714,
+   "family": 36,
+   "mean": [
+    1.0827403846432684,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.035619643803561966,
+   "sd": [
+    0.012120156808606937,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_league vs random @50",
+   "detectable_80": 0.014679104484727914,
+   "detectable_80_robust_sd": 1.717271482339395,
+   "detectable_80_sd": 1.1116833160651352,
+   "diff": -0.0009761496067623998,
+   "family": 36,
+   "mean": [
+    1.0888081980189825,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.7892521074789252,
+   "sd": [
+    0.011272109248928637,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_league_charged vs random @100",
+   "detectable_80": 0.012641272648991904,
+   "detectable_80_robust_sd": 1.4788706656578552,
+   "detectable_80_sd": 0.9573534892632993,
+   "diff": -0.0007538955007888593,
+   "family": 36,
+   "mean": [
+    1.0864449706752952,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.8104018959810402,
+   "sd": [
+    0.010219621031428944,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_league_charged vs random @25",
+   "detectable_80": 0.013471525371593133,
+   "detectable_80_robust_sd": 1.5759998417013323,
+   "detectable_80_sd": 1.0202304924751575,
+   "diff": -0.0011628792202635907,
+   "family": 36,
+   "mean": [
+    1.0882700854128795,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.7266827331726683,
+   "sd": [
+    0.013743666527997606,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_league_charged vs random @50",
+   "detectable_80": 0.015111778121866221,
+   "detectable_80_robust_sd": 1.767888881990083,
+   "detectable_80_sd": 1.1444507143903055,
+   "diff": -0.004019281074047365,
+   "family": 36,
+   "mean": [
+    1.0857650665516976,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.28621713782862174,
+   "sd": [
+    0.012278812798677069,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_uniform_rivals vs random @100",
+   "detectable_80": 0.01475069664589978,
+   "detectable_80_robust_sd": 1.7256468690578017,
+   "detectable_80_sd": 1.1171051598307826,
+   "diff": -7.845991005783759e-06,
+   "family": 36,
+   "mean": [
+    1.0871910201850783,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.998360016399836,
+   "sd": [
+    0.014516231360948694,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_uniform_rivals vs random @25",
+   "detectable_80": 0.012518988705566775,
+   "detectable_80_robust_sd": 1.464564974938748,
+   "detectable_80_sd": 0.9480926368816162,
+   "diff": -0.006141871801772947,
+   "family": 36,
+   "mean": [
+    1.0832910928313702,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.05291947080529195,
+   "sd": [
+    0.011972952574293599,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: pg_uniform_rivals vs random @50",
+   "detectable_80": 0.015808662847536768,
+   "detectable_80_robust_sd": 1.8494156717964385,
+   "detectable_80_sd": 1.1972274436216144,
+   "diff": -0.0038974057247664895,
+   "family": 36,
+   "mean": [
+    1.0858869419009785,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.32317676823231767,
+   "sd": [
+    0.013798682837114929,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: portfolio_from_ILI vs random @100",
+   "detectable_80": 0.015518131702931112,
+   "detectable_80_robust_sd": 1.8154271645355364,
+   "detectable_80_sd": 1.1752248325909864,
+   "diff": 0.031242678904125576,
+   "family": 36,
+   "mean": [
+    1.1184415450802097,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 9.99990000099999e-06,
+   "sd": [
+    0.015920051114205438,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: portfolio_from_ILI vs random @25",
+   "detectable_80": 0.009345723433878654,
+   "detectable_80_robust_sd": 1.0933326587823042,
+   "detectable_80_sd": 0.7077737493326683,
+   "diff": 0.07896572509191646,
+   "family": 36,
+   "mean": [
+    1.1683986897250596,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 9.99990000099999e-06,
+   "sd": [
+    0.003966414214004939,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: portfolio_from_ILI vs random @50",
+   "detectable_80": 0.01251340918181284,
+   "detectable_80_robust_sd": 1.4639122404999656,
+   "detectable_80_sd": 0.9476700863455605,
+   "diff": 0.07762654664507762,
+   "family": 36,
+   "mean": [
+    1.1674108942708226,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 9.99990000099999e-06,
+   "sd": [
+    0.004328915201717489,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: qwen_prompted vs random @100",
+   "detectable_80": 0.020261222244365135,
+   "detectable_80_robust_sd": 2.370309387319125,
+   "detectable_80_sd": 1.5344303023105028,
+   "diff": 0.00027192485728710913,
+   "family": 36,
+   "mean": [
+    1.0874707910333712,
+    1.087198866176084
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.958030419695803,
+   "sd": [
+    0.013730687700430013,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: qwen_prompted vs random @25",
+   "detectable_80": 0.015841979972700725,
+   "detectable_80_robust_sd": 1.8533133584010348,
+   "detectable_80_sd": 1.1997506283446715,
+   "diff": -0.0038778106352761466,
+   "family": 36,
+   "mean": [
+    1.085555153997867,
+    1.089432964633143
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.36601633983660165,
+   "sd": [
+    0.010274538917348194,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: qwen_prompted vs random @50",
+   "detectable_80": 0.017438183434001137,
+   "detectable_80_robust_sd": 2.0400491832570045,
+   "detectable_80_sd": 1.3206348933772722,
+   "diff": -0.005168959992836175,
+   "family": 36,
+   "mean": [
+    1.0846153876329088,
+    1.089784347625745
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.35649643503564965,
+   "sd": [
+    0.009832825179486132,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: re vs random @100",
+   "detectable_80": 0.013960437718022222,
+   "detectable_80_robust_sd": 1.6331964663837049,
+   "detectable_80_sd": 1.0572569813259556,
+   "diff": 0.001542689770957617,
+   "family": 36,
+   "mean": [
+    1.0887415559470417,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.6567334326656733,
+   "sd": [
+    0.012999515724682614,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: re vs random @25",
+   "detectable_80": 0.01400758089250128,
+   "detectable_80_robust_sd": 1.6387116276937197,
+   "detectable_80_sd": 1.0608272454785979,
+   "diff": 0.000303045428265758,
+   "family": 36,
+   "mean": [
+    1.0897360100614089,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.92980070199298,
+   "sd": [
+    0.014696349176430942,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: re vs random @50",
+   "detectable_80": 0.015598753992189294,
+   "detectable_80_robust_sd": 1.8248589632074539,
+   "detectable_80_sd": 1.1813305493235395,
+   "diff": -0.0005635595196109566,
+   "family": 36,
+   "mean": [
+    1.089220788106134,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.8827311726882732,
+   "sd": [
+    0.013352053677248763,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: referee vs random @100",
+   "detectable_80": 0.013601258350853157,
+   "detectable_80_robust_sd": 1.5911769763714994,
+   "detectable_80_sd": 1.030055477966394,
+   "diff": 0.0004074816892025712,
+   "family": 36,
+   "mean": [
+    1.0876063478652866,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.9037109628903711,
+   "sd": [
+    0.01227919124348202,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: referee vs random @25",
+   "detectable_80": 0.01626662674290515,
+   "detectable_80_robust_sd": 1.9029917150949518,
+   "detectable_80_sd": 1.2319101330439088,
+   "diff": 0.0006594780385336119,
+   "family": 36,
+   "mean": [
+    1.0900924426716767,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.8694613053869461,
+   "sd": [
+    0.018487231430806807,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: referee vs random @50",
+   "detectable_80": 0.01617333140185005,
+   "detectable_80_robust_sd": 1.8920773279948575,
+   "detectable_80_sd": 1.2248446561120248,
+   "diff": 0.002276416619820587,
+   "family": 36,
+   "mean": [
+    1.0920607642455655,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5720442795572044,
+   "sd": [
+    0.01455526488525676,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: tpe vs random @100",
+   "detectable_80": 0.014161985739444053,
+   "detectable_80_robust_sd": 1.6567750620582389,
+   "detectable_80_sd": 1.0725206898875845,
+   "diff": -0.004242683718139739,
+   "family": 36,
+   "mean": [
+    1.0829561824579443,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.23279767202327978,
+   "sd": [
+    0.01339451049810923,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: tpe vs random @25",
+   "detectable_80": 0.011491431376874401,
+   "detectable_80_robust_sd": 1.3443536296984344,
+   "detectable_80_sd": 0.8702732889918158,
+   "diff": 0.0009770666952038098,
+   "family": 36,
+   "mean": [
+    1.090410031328347,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.7310026899731003,
+   "sd": [
+    0.009898022928283998,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: tpe vs random @50",
+   "detectable_80": 0.016426390857395327,
+   "detectable_80_robust_sd": 1.921682116679097,
+   "detectable_80_sd": 1.2440094474652643,
+   "diff": -0.00225105699014283,
+   "family": 36,
+   "mean": [
+    1.0875332906356021,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.5817741822581775,
+   "sd": [
+    0.01506750839569312,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: tpe_warm_from_ILI vs random @100",
+   "detectable_80": 0.014624203553588967,
+   "detectable_80_robust_sd": 1.7108487606061393,
+   "detectable_80_sd": 1.107525538644373,
+   "diff": 0.005280443314422456,
+   "family": 36,
+   "mean": [
+    1.0924793094905065,
+    1.087198866176084
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.15118848811511884,
+   "sd": [
+    0.014278880864519235,
+    0.013765596319185325
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: tpe_warm_from_ILI vs random @25",
+   "detectable_80": 0.012893303810294406,
+   "detectable_80_robust_sd": 1.5083551567871307,
+   "detectable_80_sd": 0.9764404054604018,
+   "diff": 0.002997315507588416,
+   "family": 36,
+   "mean": [
+    1.0924302801407315,
+    1.089432964633143
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.35042649573504264,
+   "sd": [
+    0.01268258338138035,
+    0.012038337284655207
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "ETTh1 picks: tpe_warm_from_ILI vs random @50",
+   "detectable_80": 0.01612437502522507,
+   "detectable_80_robust_sd": 1.8863500447301178,
+   "detectable_80_sd": 1.2211370738705047,
+   "diff": -0.0015173781023005706,
+   "family": 36,
+   "mean": [
+    1.0882669695234444,
+    1.089784347625745
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "fresh seeds 4001 and 4002",
+   "p": 0.7049229507704923,
+   "sd": [
+    0.014455012485055761,
+    0.016409654182756236
+   ],
+   "unit": "validation MSE"
+  },
+  {
+   "comparison": "E4 family 1, ILI AUC: league vs portfolio_from_ETTh1",
+   "detectable_80": 1.1017989231896843,
+   "diff": -0.13651026045594206,
+   "family": 6,
+   "mean": [
+    3.142846099768889,
+    3.2793563602248312
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "Holm size 6 (A25, A30); not rejected",
+   "p": null,
+   "sd": [
+    0.8996256766121903,
+    0.7612269786914168
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E4 family 1, ILI AUC: league vs tpe_warm_from_ETTh1",
+   "detectable_80": 1.0191758038826104,
+   "diff": 1.4957238921976492,
+   "family": 6,
+   "mean": [
+    3.142846099768889,
+    1.64712220757124
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "Holm size 6 (A25, A30); REJECTED with the league worse, not a null",
+   "p": null,
+   "sd": [
+    0.8996256766121903,
+    0.3812166616546755
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E4 family 2, ILI AUC: league vs none",
+   "detectable_80": 1.2489698537912468,
+   "diff": -0.0905405499268821,
+   "family": 6,
+   "mean": [
+    3.142846099768889,
+    3.2333866496957713
+   ],
+   "n": [
+    10,
+    10
+   ],
+   "note": "Holm size 6 (A25, A30)",
+   "p": null,
+   "sd": [
+    0.8996256766121903,
+    0.6919907937713918
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E4 family 3, ILI AUC (shown on AUC): prompted Qwen vs random",
+   "detectable_80": 0.5554865841385284,
+   "diff": 0.2933943628894313,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.515118825401602
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "unadjusted; the registered tests are at budgets 25 and 50",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.5448030374396655
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E4 family 3, ILI AUC (shown on AUC): prompted Qwen vs tpe",
+   "detectable_80": 0.5059268250184495,
+   "diff": 0.6717850683856945,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.1367281199053387
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "unadjusted; the registered tests are at budgets 25 and 50",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.30943429303159187
+   ],
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-C, ILI AUC: rivals_1 vs ref",
+   "detectable_80": 0.2260970997033376,
+   "diff": 0.06866233567000002,
+   "family": 3,
+   "mean": [
+    1.579393227177991,
+    1.510730891507991
+   ],
+   "n": [
+    100,
+    100
+   ],
+   "note": "",
+   "p": 0.3288867111328887,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-C, ILI AUC: rivals_8 vs ref",
+   "detectable_80": 0.21443127421918176,
+   "diff": 0.018579951469684053,
+   "family": 3,
+   "mean": [
+    1.529310842977675,
+    1.510730891507991
+   ],
+   "n": [
+    100,
+    100
+   ],
+   "note": "",
+   "p": 0.7796322036779633,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-C, ILI AUC: snapshot_1 vs ref",
+   "detectable_80": 0.22391436487460062,
+   "diff": 0.04978556983923976,
+   "family": 3,
+   "mean": [
+    1.5605164613472307,
+    1.510730891507991
+   ],
+   "n": [
+    100,
+    100
+   ],
+   "note": "",
+   "p": 0.4752352476475235,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-X, ILI AUC: dehb vs random",
+   "detectable_80": 0.4366022158840551,
+   "diff": 0.01977297970173897,
+   "family": 3,
+   "mean": [
+    1.534891805103341,
+    1.515118825401602
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "",
+   "p": 0.8842811571884281,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-X, ILI AUC: hyperband vs random",
+   "detectable_80": 0.48518544829875737,
+   "diff": -0.0051265967481488595,
+   "family": 3,
+   "mean": [
+    1.509992228653453,
+    1.515118825401602
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "",
+   "p": 0.9727302726972731,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-X, ILI AUC: smac vs random",
+   "detectable_80": 0.39926170552554924,
+   "diff": -0.24163048999305414,
+   "family": 3,
+   "mean": [
+    1.2734883354085478,
+    1.515118825401602
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "",
+   "p": 0.05269947300526995,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-L: league slopes vs zero, ILI source",
+   "detectable_80": 0.2537727312844628,
+   "diff": 0.07716203864424358,
+   "family": 2,
+   "mean": [
+    0.07716203864424358
+   ],
+   "n": [
+    10
+   ],
+   "note": "Soumitra's AB-L; the registered test is against zero, but the null is not centred at zero (AB-L section)",
+   "p": 0.400390625,
+   "sd": [
+    0.26029633535322155
+   ],
+   "unit": "Spearman slope"
+  },
+  {
+   "comparison": "AB-L: league slopes vs zero, ETTh1 source",
+   "detectable_80": 0.2030079906057113,
+   "diff": 0.20212600466683953,
+   "family": 2,
+   "mean": [
+    0.20212600466683953
+   ],
+   "n": [
+    10
+   ],
+   "note": "Soumitra's AB-L; the registered test is against zero, but the null is not centred at zero (AB-L section)",
+   "p": 0.015625,
+   "sd": [
+    0.2082266117979995
+   ],
+   "unit": "Spearman slope"
+  },
+  {
+   "comparison": "AB-G step trend (30 + 10 + 10 + 10 runs)",
+   "detectable_80": 0.3870763117279219,
+   "family": 2,
+   "n": [
+    60
+   ],
+   "unit": "Spearman rho"
+  },
+  {
+   "comparison": "AB-G step trend, 10 per level",
+   "detectable_80": 0.46748412872397355,
+   "family": 2,
+   "n": [
+    40
+   ],
+   "unit": "Spearman rho"
+  },
+  {
+   "comparison": "AB-G KL trend (10 + 10 + 10 runs)",
+   "detectable_80": 0.5322850887470398,
+   "family": 2,
+   "n": [
+    30
+   ],
+   "unit": "Spearman rho"
+  },
+  {
+   "comparison": "AB-P scale trend (30 + 30 + 30 runs)",
+   "detectable_80": 0.33361708293519865,
+   "family": 3,
+   "n": [
+    90
+   ],
+   "unit": "Spearman rho"
+  },
+  {
+   "comparison": "E5 ILI: qwen_prompted, tau against matched sets",
+   "detectable_80": null,
+   "diff": 0.009190225560032395,
+   "family": 1,
+   "half_width": 0.03867681511743396,
+   "n": [
+    10
+   ],
+   "note": "half width of the registered interval; margin 0.05",
+   "unit": "Kendall tau"
+  },
+  {
+   "comparison": "E5 ETTh1: qwen_prompted, tau against matched sets",
+   "detectable_80": null,
+   "diff": 0.019861694189029,
+   "family": 1,
+   "half_width": 0.02934966947268404,
+   "n": [
+    10
+   ],
+   "note": "half width of the registered interval; margin 0.05",
+   "unit": "Kendall tau"
+  },
+  {
+   "comparison": "E6 ETTh1, validation: patchtst42 vs table_best",
+   "detectable_80": 0.0073547540291870345,
+   "diff": 0.08692751885670746,
+   "family": 2,
+   "mean": [
+    1.051378307140398,
+    0.9644507882836905
+   ],
+   "n": [
+    10,
+    10
+   ],
+   "note": "planning only: the registered endpoint is the test split, evaluated once by Diya",
+   "p": null,
+   "sd": [
+    0.0045593853282104345,
+    0.006010092237813145
+   ],
+   "unit": "validation MSE, 4-horizon mean"
+  },
+  {
+   "comparison": "E6 ETTh1, validation: patchtst42 vs table_best_revin_on",
+   "detectable_80": 0.005295902475695867,
+   "diff": 0.0008839404995144573,
+   "family": 2,
+   "mean": [
+    1.051378307140398,
+    1.0504943666408835
+   ],
+   "n": [
+    10,
+    10
+   ],
+   "note": "planning only: the registered endpoint is the test split, evaluated once by Diya",
+   "p": null,
+   "sd": [
+    0.0045593853282104345,
+    0.0029528088728857983
+   ],
+   "unit": "validation MSE, 4-horizon mean"
+  },
+  {
+   "comparison": "E6 ETTh1, validation: table_best vs table_best_revin_on",
+   "detectable_80": 0.006528465318164131,
+   "diff": -0.086043578357193,
+   "family": 2,
+   "mean": [
+    0.9644507882836905,
+    1.0504943666408835
+   ],
+   "n": [
+    10,
+    10
+   ],
+   "note": "planning only: the registered endpoint is the test split, evaluated once by Diya",
+   "p": null,
+   "sd": [
+    0.006010092237813145,
+    0.0029528088728857983
+   ],
+   "unit": "validation MSE, 4-horizon mean"
+  },
+  {
+   "comparison": "E6 ILI, validation: patchtst42 vs table_best",
+   "detectable_80": 0.005972268918470708,
+   "diff": 0.019228297008275885,
+   "family": 2,
+   "mean": [
+    0.21813158901665589,
+    0.19890329200838
+   ],
+   "n": [
+    10,
+    10
+   ],
+   "note": "planning only: the registered endpoint is the test split, evaluated once by Diya",
+   "p": null,
+   "sd": [
+    0.005352681325764309,
+    0.0029789538889019034
+   ],
+   "unit": "validation MSE, 4-horizon mean"
+  }
+ ]
+}
