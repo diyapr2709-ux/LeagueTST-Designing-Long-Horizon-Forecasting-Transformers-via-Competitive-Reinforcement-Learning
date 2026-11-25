@@ -80,12 +80,16 @@ def holdout(k: int, sigma: float) -> dict:
     """Exploratory (AB3 addendum): noise-free lookups of two seeds scored on the third, every seed held out in turn."""
     full, _ = load_table("ILI")
     aucs: dict[str, dict[int, np.ndarray]] = {m: {} for m in METHODS}
+    in_sample: dict[str, dict[int, np.ndarray]] = {m: {} for m in METHODS}
     for held in sorted(next(iter(full.obs.values()))):
         runs = replay(functools.partial(holdout_build, "ILI", k, held), list(METHODS), SEEDS)
         write_runs(OUT / "AB-Q" / f"ILI_T24_holdout{held}.jsonl", runs)
         search = holdout_build("ILI", k, held)["table"]
         for m in METHODS:
-            aucs[m][held] = np.array([holdout_curve(r, search, full, held).mean() / sigma for r in runs if r["method"] == m])
+            mine = [r for r in runs if r["method"] == m]
+            aucs[m][held] = np.array([holdout_curve(r, search, full, held).mean() / sigma for r in mine])
+            fallback = no_incumbent_value(search)
+            in_sample[m][held] = np.array([curve(r, search, fallback).mean() / sigma for r in mine])
     # The unit is the search seed: each seed's AUC is averaged over the three hold-outs (same seed, same table rows).
     per_seed = {m: np.mean([aucs[m][h] for h in aucs[m]], axis=0) for m in METHODS}
     base = per_seed["random"]
@@ -96,11 +100,20 @@ def holdout(k: int, sigma: float) -> dict:
         for m in METHODS:
             final = {regret_from_trace(r["trace"], search, 100 * FULL_RUN_EPOCHS, no_incumbent_value(search))[1] for r in runs if r["method"] == m}
             picked.setdefault(m, {})[str(held)] = len(final)
-    out = {"held_seeds": sorted(aucs["random"]), "unit": "search seed, AUC averaged over the three held-out seeds (the interval resamples search seeds only)", "methods": {}}
+    def t_over_holdouts(values: list[float]) -> dict:
+        from scipy.stats import t as student_t
+
+        half = float(student_t.ppf(0.975, len(values) - 1) * np.std(values, ddof=1) / np.sqrt(len(values)))
+        return {"mean": float(np.mean(values)), "low": float(np.mean(values) - half), "high": float(np.mean(values) + half), "n": len(values)}
+
+    out = {"reference": "held-out AUC is measured from the best config at the held seed itself, so it is not comparable with the noise-free or E3 AUC columns",
+           "held_seeds": sorted(aucs["random"]), "unit": "search seed, AUC averaged over the three held-out seeds (the interval resamples search seeds only)", "methods": {}}
     for m in METHODS:
         diff = per_seed[m] - base
         out["methods"][m] = {"auc": mean_ci(per_seed[m]), "diff_vs_random": mean_ci(diff), "values": per_seed[m].tolist(),
                              "diff_by_held_seed": {str(h): float((aucs[m][h] - aucs["random"][h]).mean()) for h in aucs[m]},
+                             "diff_t_over_holdouts": t_over_holdouts([float((aucs[m][h] - aucs["random"][h]).mean()) for h in aucs[m]]),
+                             "in_sample_diff_vs_random": mean_ci(np.mean([in_sample[m][h] - in_sample["random"][h] for h in aucs[m]], axis=0)),
                              "distinct_final_configs_of_30_runs": picked[m],
                              "prob_better_than_random": float(np.mean(np.concatenate([aucs[m][h] < aucs["random"][h] for h in aucs[m]])))}
     return out

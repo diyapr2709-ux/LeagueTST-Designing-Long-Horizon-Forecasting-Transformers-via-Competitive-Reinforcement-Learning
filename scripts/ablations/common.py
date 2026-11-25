@@ -106,6 +106,14 @@ def replay(build: Callable[[], dict[str, Any]], names: list[str], seeds: int, wo
         return pool.map(_work, tasks, chunksize=4)
 
 
+def files_digest(paths: Iterable[Path]) -> str:
+    """One sha256 over the digests of many files, in path order (for provenance of per-window files)."""
+    h = hashlib.sha256()
+    for path in sorted(str(p) for p in paths):
+        h.update(hashlib.sha256((ROOT / path).read_bytes()).digest())
+    return h.hexdigest()
+
+
 def write_runs(path: Path, runs: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(json.dumps(r, sort_keys=True) + "\n" for r in runs))

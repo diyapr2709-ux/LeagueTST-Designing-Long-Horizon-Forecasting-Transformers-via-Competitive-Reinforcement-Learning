@@ -164,9 +164,12 @@ def e5_rows() -> list[dict]:
 
 def main() -> int:
     rows = e3_rows() + pick_rows("ILI") + pick_rows("ETTh1") + e4_rows() + abl_rows() + trend_rows() + e5_rows() + e6_rows()
-    write_json(OUT / "ST-power.json", {"analysis": "ST detectable effects", "descriptive": True, "rows": rows,
-                                       "provenance": provenance(__file__, ["results/ledger.jsonl", "docs/claims/E3.json", "results/ablations/AB-L.json",
-                                                                           "results/picks/ILI_T24_analysis.json", "results/picks/ETTh1_T336_analysis.json"])})
+    files = ["results/ledger.jsonl", "docs/claims/E3.json", "results/independent/E4_soumitra.json", "results/picks/ILI_T24_analysis.json",
+             "results/picks/ETTh1_T336_analysis.json", "results/e5/ILI_T24.json", "results/e5/ETTh1_T336.json",
+             *(f"results/search/E3/{s}/{f}" for s in ("ILI_T24", "ETTh1_T336") for f in ("cpu_runs.jsonl", "qwen_prompted_runs.jsonl")),
+             *(f"results/search/E4/{s}/{f}" for s in ("ILI_T24", "ETTh1_T336") for f in ("grpo_league_from_ETTh1_runs.jsonl", "grpo_none_from_ETTh1_runs.jsonl", "grpo_league_from_ILI_runs.jsonl") if (ROOT / f"results/search/E4/{s}/{f}").exists()),
+             *(f"results/ablations/{n}.json" for n in ("AB-C", "AB-X", "AB-L", "LLM") if (OUT / f"{n}.json").exists())]
+    write_json(OUT / "ST-power.json", {"analysis": "ST detectable effects", "descriptive": True, "rows": rows, "provenance": provenance(__file__, files)})
     return 0
 
 

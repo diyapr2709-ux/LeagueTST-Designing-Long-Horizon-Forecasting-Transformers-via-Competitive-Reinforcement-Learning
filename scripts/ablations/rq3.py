@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import OUT, ROOT, SETTINGS, load_table, mean_ci, provenance, setting, write_json  # noqa: E402
+from common import OUT, ROOT, SETTINGS, files_digest, load_table, mean_ci, provenance, setting, write_json  # noqa: E402
 
 from leaguetst.ledger import read_rows  # noqa: E402
 from leaguetst.search.replay import MUTABLE_FIELDS, Space, Table  # noqa: E402
@@ -70,16 +70,39 @@ def interactions(table: Table, space: Space) -> dict:
             b = explained(additive, ys)
             by_seed[str(s)] = {p: explained(np.column_stack([additive, design(space, ids, tuple(p.split(" x ")))]), ys) - b for p in pairs}
         values = np.array([[table.obs[c][s].best for s in seeds] for c in ids])
-        within = values.var(axis=1, ddof=1).mean() / len(seeds)
-        noise_share = float(within / np.array([table.true_value(c) for c in ids]).var())
+        # Config-by-seed residual after removing the common shift of each seed (which no config carries).
+        residual = values - values.mean(axis=1, keepdims=True) - values.mean(axis=0, keepdims=True) + values.mean()
+        noise_var = (residual ** 2).sum() / ((len(seeds) - 1) * (len(ids) - 1))
+        means = np.array([table.true_value(c) for c in ids])
+        noise_share = float(noise_var / len(seeds) / means.var())
+        heldout_r2 = heldout_gain(table, ids, seeds, additive, pairs)
     else:
-        noise_share = None
+        noise_share, heldout_r2 = None, None
     all_pairs = np.column_stack([additive] + [design(space, ids, p) for p in itertools.combinations(MUTABLE_FIELDS, 2)])
     return {"additive_r2": base, "all_pairs_r2": explained(all_pairs, y),
             "main_effect_share": {f: explained(x, y) for f, x in main.items()},
             "conditional_share": conditional, "seed_noise_share_of_config_means": noise_share,
             "interaction_increment": dict(sorted(pairs.items(), key=lambda kv: -kv[1])),
-            "interaction_increment_by_seed": by_seed or None}
+            "interaction_increment_by_seed": by_seed or None, "held_seed_r2": heldout_r2}
+
+
+def heldout_gain(table: Table, ids: list[str], seeds: list[int], additive: np.ndarray, pairs: dict) -> dict:
+    """Fit the additive and the all-pairs model on the mean of the other seeds, score each held seed (R2 of the held values)."""
+    out = {"additive": [], "all_pairs": []}
+    full = np.column_stack([additive] + [design_cache(table, ids, p) for p in pairs])
+    for held in seeds:
+        fit = np.array([np.mean([table.obs[c][s].best for s in seeds if s != held]) for c in ids])
+        score = np.array([table.obs[c][held].best for c in ids])
+        for name, x in (("additive", additive), ("all_pairs", full)):
+            design_x = np.column_stack([np.ones(len(ids)), x])
+            beta, *_ = np.linalg.lstsq(design_x, fit, rcond=None)
+            resid = score - design_x @ beta
+            out[name].append(float(1 - (resid ** 2).sum() / ((score - score.mean()) ** 2).sum()))
+    return {k: {"by_held_seed": v, "mean": float(np.mean(v))} for k, v in out.items()}
+
+
+def design_cache(table: Table, ids: list[str], pair: str) -> np.ndarray:
+    return design(Space(table.ids), ids, tuple(pair.split(" x ")))
 
 
 def cross_table(tables: dict[str, Table], spaces: dict[str, Space], shares: dict[str, dict]) -> dict:
@@ -154,6 +177,9 @@ def main() -> int:
     result["cross_table"]["conditional_share_spearman"] = _spearman([cond["ILI"][f] for f in MUTABLE_FIELDS], [cond["ETTh1"][f] for f in MUTABLE_FIELDS])
     result["revin"] = revin()
     result["provenance"] = provenance(__file__, ["results/ledger.jsonl", "results/revin_prediction.json"])
+    windows = sorted((ROOT / "results/runs/REVIN/ETTh1_T336_s2021/perwindow").glob("*.npy")) + sorted((ROOT / "results/runs/E1/ETTh1_T336_s2021/perwindow").glob("*.npy"))
+    result["provenance"]["perwindow_digest"] = files_digest([p.relative_to(ROOT) for p in windows])
+    result["provenance"]["perwindow_files"] = len(windows)
     write_json(OUT / "RQ3.json", result)
     return 0
 
