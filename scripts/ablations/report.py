@@ -332,11 +332,13 @@ def glance() -> list[str]:
     q, x, c, n, r, a, g, w = (load(k) for k in ("AB-Q", "AB-X", "AB-C", "AB-L-null", "AB-R", "RQ3", "LLM", "ST-power"))
     if q:
         s, h = q["separation"], q["holdout"]["methods"]
-        best = min((m for m in h if m != "random"), key=lambda m: h[m]["diff_vs_random"]["mean"])
+        noise_free_gap = s["tpe"]["noise_free_diff_vs_random"]
         clear = [m for m in h if m != "random" and h[m]["diff_vs_random"]["high"] < 0]
-        lines.append(f"* With noise-free lookups the methods separate in-sample (TPE beats random in {s['tpe']['noise_free_prob_better_than_random']:.0%} of seed pairs, against {s['tpe']['e3_prob_better_than_random']:.0%} with noise), "
-                     f"but only {len(clear)} of {len(h) - 1} methods still beat random when the lookups are two-seed means scored on the third seed; the closest to random of those that gain is {best}, {h[best]['diff_vs_random']['mean']:+.2f} SD "
-                     f"[{h[best]['diff_vs_random']['low']:+.2f}, {h[best]['diff_vs_random']['high']:+.2f}] (AB-Q, exploratory hold-out). Most of the in-sample gap is fitting noise in the stored means, so seed noise alone does not explain the null.")
+        named = ", ".join(f"{m} {h[m]['diff_vs_random']['mean']:+.2f} [{h[m]['diff_vs_random']['low']:+.2f}, {h[m]['diff_vs_random']['high']:+.2f}]" for m in clear) or "none"
+        lines.append(f"* Noise-free lookups separate the methods only in-sample. Searching and scoring on the same 3-seed means, TPE beats random by {noise_free_gap:+.2f} SD in AUC and in "
+                     f"{s['tpe']['noise_free_prob_better_than_random']:.0%} of seed pairs (with noisy lookups: {s['tpe']['e3_prob_better_than_random']:.0%}). With lookups from two seeds scored on the third, the difference falls to "
+                     f"{h['tpe']['diff_vs_random']['mean']:+.2f} SD and {len(clear)} of {len(h) - 1} methods have an interval below zero ({named}; no correction over the nine comparisons) (AB-Q; the hold-out is exploratory). "
+                     "Most of the in-sample gap is the search fitting the seed noise left in the 3-seed means, so it is not evidence that better configs were found.")
     if w:
         picks = [v for v in w["rows"] if " picks: " in v["comparison"] and "@50" in v["comparison"] and v["p"] > 0.05]
         sd = [v["detectable_80_sd"] for v in picks]
