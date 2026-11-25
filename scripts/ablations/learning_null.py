@@ -119,8 +119,10 @@ def main() -> int:
     for dataset, _ in SETTINGS:
         table, _space = load_table(dataset)
         observed = observed_slopes(dataset)
+        mac = read_runs(OUT / "mps/ABL_P_ref_mps" / setting(dataset) / "qwen_prompted_mps_runs.jsonl")
         sources = {"E3_A10": read_runs(ROOT / "results/search/E3" / setting(dataset) / "qwen_prompted_runs.jsonl"),
-                   "ABL_P_ref_mps": read_runs(OUT / "mps/ABL_P_ref_mps" / setting(dataset) / "qwen_prompted_mps_runs.jsonl")}
+                   # Only a complete reference item is a null source (30 searches), so partial runs never enter.
+                   "ABL_P_ref_mps (Mac, exploratory)": mac if len(mac) == 30 else []}
         result.setdefault("observed_adjusted_slopes", {})[dataset] = sign_flip_observed(dataset)
         result["tables"][dataset] = {name: null([step_rewards(r, table) for r in runs], observed) for name, runs in sources.items() if runs}
     write_json(OUT / "AB-L-null.json", result)

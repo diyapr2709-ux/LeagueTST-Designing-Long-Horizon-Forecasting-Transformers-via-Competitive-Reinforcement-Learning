@@ -75,6 +75,15 @@ def external() -> list[str]:
                        [[a, ci(x["auc"]), *(ci(x[str(b)]) for b in BUDGETS)] for a, x in sorted(t["summary"].items(), key=lambda kv: kv[1]["auc"]["mean"])])
         if "tests" in t:
             lines += family(t["tests"], 3)
+        rates = t["repair_rate"]
+        lines += ["Share of proposals replaced by the repair rule: " + ", ".join(f"{m} {v:.0%}" if v is not None else f"{m} none (always feasible)" for m, v in rates.items()) + ".", ""]
+        if t.get("exploratory"):
+            lines += ["Exploratory (AB3 addendum 2): DEHB with the evaluated config's vector stored in its population, against random: "
+                      + "; ".join(f"{k} {v['diff']:+.3f} [{v['low']:+.3f}, {v['high']:+.3f}], p {v['p']:.3f}" for k, v in t["exploratory"].items()) + ".", ""]
+    lines += ["Choices a SMAC or DEHB user would question: SMAC starts from 10 random configs (its default is a Sobol design), refits after every trial (default 8), and maximises EI "
+              "over all unevaluated configs; every field is an unordered categorical (the numeric fields are ordinal); SMAC sees a deterministic objective, the one seed value the search run draws, "
+              "which is the same noise E3's methods see. Hyperband and DEHB screen at one epoch, whose ranking agrees with the final value only weakly (E2: tau at k = 1 is in AB-R). "
+              "SMAC and Hyperband never repair; DEHB does.", ""]
     return lines
 
 
@@ -99,9 +108,12 @@ def noise_free() -> list[str]:
     h = d["holdout"]
     lines += ["Hold-out check (exploratory, AB3 addendum): lookups are the mean of two seeds and the search's incumbent is scored on the third, each seed held out in turn; "
               f"{h['unit']}. Held seeds {', '.join(str(x) for x in h['held_seeds'])}.", ""]
-    lines += table(["method", "held-out AUC", "difference from random", "P(beats random), run level"],
+    lines += table(["method", "held-out AUC", "difference from random", "difference per held seed", "distinct configs in 30 final picks (per held seed)", "P(beats random), run level"],
                    [[m, ci(v["auc"]), f"{v['diff_vs_random']['mean']:+.2f} [{v['diff_vs_random']['low']:+.2f}, {v['diff_vs_random']['high']:+.2f}]" if m != "random" else "0 (itself)",
+                     " / ".join(f"{x:+.2f}" for x in v["diff_by_held_seed"].values()) if m != "random" else "",
+                     " / ".join(str(x) for x in v["distinct_final_configs_of_30_runs"].values()),
                      f"{v['prob_better_than_random']:.2f}" if m != "random" else "0.50 (itself)"] for m, v in sorted(h["methods"].items(), key=lambda kv: kv[1]["auc"]["mean"])])
+    lines += ["The hold-out scores one seed and cuts lookups to two, so its per-seed differences are noisy; its interval resamples search seeds only, while the runs share the same three seeds of every config.", ""]
     q = load("LLM")
     if q and q["mps"].get("AB-Q_prompted"):
         e = q["mps"]["AB-Q_prompted"]
@@ -122,7 +134,7 @@ def one_seed() -> list[str]:
                   f"{v['best_reported']:.4f}, best 3-seed mean {v['best_full']:.4f}. Kendall tau between the method rankings: reported against held-out "
                   f"{r['reported_vs_heldout_kendall']:.2f}, reported against E3's 3-seed replay {r['reported_vs_e3_kendall']:.2f}, held-out against E3 "
                   f"{r['heldout_vs_e3_kendall']:.2f}.", ""]
-        lines += [f"The cut table's best value sits {v['reference_shift_sd']:+.2f} SD from the full table's best; optimism = the incumbents' value optimism minus that shift.", ""]
+        lines += [f"Exploratory split (AB3 addendum): the cut table's best value sits {v['reference_shift_sd']:+.2f} SD from the full table's best; optimism = the incumbents' value optimism minus that shift.", ""]
         lines += table(["method", "reported AUC", "held-out AUC", "optimism of regret", "optimism of the incumbent's value", "E3 AUC (3 seeds)"],
                        [[m, ci(x["reported_auc"]), ci(x["heldout_auc"]), ci(x["optimism_auc"]), ci(x["incumbent_value_optimism_auc"]), f"{d['e3_three_seed_auc'][m]['mean']:.2f}"]
                         for m, x in sorted(v["methods"].items(), key=lambda kv: kv[1]["reported_auc"]["mean"])])
@@ -158,7 +170,13 @@ def referee() -> list[str]:
         if ind[0].get("tau_independent_seeds"):
             lines += [f"Against the mean of the seeds the referee never saw (2022 and 2023, {t['independent_target_configs']} configs; exploratory), boosted trees at 300: "
                       + "; ".join(f"{x['features']}{'' if x['k'] is None else ' k=' + str(x['k'])} {x['tau_independent_seeds']['tau']:.2f}" for x in ind) + ".", ""]
-    lines += ["Config-only rows have one value because they do not depend on k.", ""]
+    lines += ["Config-only rows have one value because they do not depend on k. Intervals of the 300-config boosted-trees variants:", ""]
+    for dataset, _ in SETTINGS:
+        t = d["tables"][setting(dataset)]
+        rows = [[f"{x['features']}{'' if x['k'] is None else ', k=' + str(x['k'])}", f"{x['tau']:.2f} [{x['low']:.2f}, {x['high']:.2f}]",
+                 f"{x['tau_vs_seed2021_final']:.2f}", f"{x['tau_independent_seeds']['tau']:.2f} [{x['tau_independent_seeds']['low']:.2f}, {x['tau_independent_seeds']['high']:.2f}]" if x.get("tau_independent_seeds") else "not computed"]
+                for x in t["variants"] if x["size"] == 300 and x["model"] == "gbt"]
+        lines += [f"{dataset}:", ""] + table(["boosted trees, 300 configs", "tau against the multi-seed mean", "tau against the seed-2021 value", "tau against seeds 2022 and 2023 (exploratory)"], rows)
     return lines
 
 
@@ -296,6 +314,7 @@ def rq3() -> list[str]:
     ili, ett = d["tables"]["ILI_T24"]["main_effect_share"], d["tables"]["ETTh1_T336"]["main_effect_share"]
     lv = d["cross_table"]["level_means"]
     c2 = {d2: d["tables"][d2]["conditional_share"] for d2 in ("ILI_T24", "ETTh1_T336")}
+    lines += ["Marginal shares are registered; conditional shares (what a field adds to a model that has the other seven) are exploratory.", ""]
     lines += table(["field", "ILI marginal / conditional", "ETTh1 marginal / conditional", "best level on ILI", "best level on ETTh1", "same"],
                    [[f, f"{ili[f]:.3f} / {c2['ILI_T24'][f]:.3f}", f"{ett[f]:.3f} / {c2['ETTh1_T336'][f]:.3f}", lv[f]["best_level"]["ILI"], lv[f]["best_level"]["ETTh1"], "yes" if lv[f]["same_best_level"] else "no"]
                     for f in sorted(fields, key=lambda f: -(ili[f] + ett[f]))])
@@ -335,26 +354,33 @@ def glance() -> list[str]:
         noise_free_gap = s["tpe"]["noise_free_diff_vs_random"]
         clear = [m for m in h if m != "random" and h[m]["diff_vs_random"]["high"] < 0]
         named = ", ".join(f"{m} {h[m]['diff_vs_random']['mean']:+.2f} [{h[m]['diff_vs_random']['low']:+.2f}, {h[m]['diff_vs_random']['high']:+.2f}]" for m in clear) or "none"
-        lines.append(f"* Noise-free lookups separate the methods only in-sample. Searching and scoring on the same 3-seed means, TPE beats random by {noise_free_gap:+.2f} SD in AUC and in "
-                     f"{s['tpe']['noise_free_prob_better_than_random']:.0%} of seed pairs (with noisy lookups: {s['tpe']['e3_prob_better_than_random']:.0%}). With lookups from two seeds scored on the third, the difference falls to "
-                     f"{h['tpe']['diff_vs_random']['mean']:+.2f} SD and {len(clear)} of {len(h) - 1} methods have an interval below zero ({named}; no correction over the nine comparisons) (AB-Q; the hold-out is exploratory). "
-                     "Most of the in-sample gap is the search fitting the seed noise left in the 3-seed means, so it is not evidence that better configs were found.")
+        e3 = s["tpe"]["e3_diff_vs_random"]
+        per = h["tpe"]["diff_by_held_seed"]
+        lines.append(f"* Noise-free lookups: searching and scoring on the same 3-seed means, TPE beats random by {noise_free_gap:+.2f} SD in AUC ({s['tpe']['noise_free_prob_better_than_random']:.0%} of seed pairs); "
+                     f"with E3's noisy lookups its held-out gap is {e3:+.2f} SD ({s['tpe']['e3_prob_better_than_random']:.0%}). So removing noise does not widen TPE's margin. "
+                     f"With lookups from two seeds scored on the third, TPE's difference per held seed is {', '.join(f'{v:+.2f}' for v in per.values())} SD (interval over search seeds only; by budget 100 its 30 runs hold few distinct configs). "
+                     "AB-Q neither supports nor refutes that seed noise explains the null on fresh seeds. (AB-Q; the hold-out is exploratory)")
     if w:
+        nulls = [v for v in w["rows"] if v["comparison"].startswith(("E4 family 1", "E4 family 2")) and "REJECTED" not in v.get("note", "")]
+        rejected = [v for v in w["rows"] if v["comparison"].startswith(("E4 family 1", "E4 family 2")) and "REJECTED" in v.get("note", "")]
         picks = [v for v in w["rows"] if " picks: " in v["comparison"] and "@50" in v["comparison"] and v["p"] > 0.05]
         sd = [v["detectable_80_sd"] for v in picks]
-        e4 = [v["detectable_80"] for v in w["rows"] if v["comparison"].startswith(("E4 family 1", "E4 family 2"))]
+        e4 = [v["detectable_80"] for v in nulls]
+        ili = [v["detectable_80_sd"] for v in picks if v["comparison"].startswith("ILI")]
+        ett = [v["detectable_80_robust_sd"] for v in picks if v["comparison"].startswith("ETTh1")]
         ratio = sorted(abs(v["diff"]) / v["detectable_80"] for v in picks)
-        lines.append(f"* The nulls have limited resolution. At budget 50 the pick reseeds could detect differences of {min(sd):.2f} to {max(sd):.2f} seed SD (80% power, Holm size in the table); the observed "
-                     f"non-significant differences are {ratio[0]:.0%} to {ratio[-1]:.0%} of that. E4's ILI comparisons with 10 policies could detect {min(e4):.2f} to {max(e4):.2f} SD (ST).")
+        worse = f" The one E4 comparison that rejects, {rejected[0]['comparison'].split(': ')[1]}, is a loss, not a null: the league is {rejected[0]['diff']:+.2f} SD worse." if rejected else ""
+        lines.append(f"* The nulls have limited resolution. At budget 50 the pick reseeds could detect differences of {min(ili):.2f} to {max(ili):.2f} SD on ILI and, in robust-SD units, {min(ett):.2f} to {max(ett):.2f} on ETTh1 (80% power, Holm size in the table); the "
+                     f"observed non-significant differences are {ratio[0]:.0%} to {ratio[-1]:.0%} of that. E4's ILI nulls (league against the portfolio and against no league, 10 policies) could detect {min(e4):.2f} to {max(e4):.2f} SD.{worse} (ST)")
     if x:
         t = x["tables"]["ILI_T24"]["tests"]
         wins = [k for k, v in t.items() if v["reject"]]
         best = min(t, key=lambda k: t[k]["diff"])
-        lines.append(f"* External HPO baselines: {len(wins)} of {len(t)} differ from random search on ILI after Holm; the closest is {best} ({t[best]['diff']:+.2f} SD, Holm p {t[best]['p_holm']:.2f}), "
-                     f"with a detectable difference of {t[best]['detectable_80']:.2f} (AB-X).")
+        lines.append(f"* External HPO baselines: none of the {len(t)} is rejected against random search on ILI after Holm; the closest is {best} ({t[best]['diff']:+.2f} SD, Holm p {t[best]['p_holm']:.2f}), and effects below about "
+                     f"{t[best]['detectable_80']:.2f} SD are not excluded. DEHB is handicapped: {x['tables']['ILI_T24']['repair_rate']['dehb']:.0%} of its proposals were infeasible or repeated and were replaced (AB-X).")
     if c:
         t = c["tables"]["ILI_T24"]["tests"]
-        lines.append(f"* Controller ablations: {sum(v['reject'] for v in t.values())} of {len(t)} league settings change ILI AUC; the test could detect about "
+        lines.append(f"* Controller ablations: none of the {len(t)} league settings is rejected against the reference; the test could detect about "
                      f"{max(v['detectable_80'] for v in t.values()):.2f} SD (AB-C).")
     if g and g["mps"]["AB-P"]["tests"]:
         t = g["mps"]["AB-P"]["tests"]
@@ -365,8 +391,11 @@ def glance() -> list[str]:
     if n:
         e, i = n["tables"]["ETTh1"]["E3_A10"], n["tables"]["ILI"]["E3_A10"]
         o = n["observed_adjusted_slopes"]
-        lines.append(f"* GRPO learned on its ETTh1 source and shows no detectable learning on ILI. The registered AB-L test is too liberal (false-positive rate {e['raw']['false_positive_rate']['0.025']:.2f} and "
-                     f"{i['raw']['false_positive_rate']['0.025']:.2f} at the 0.025 level for a model that never learns, from a null of ten searches per table), but the position-adjusted slopes give the same reading: "
+        none = load("AB-L")["by_source"]["ETTh1"]["arms"]["none"]["mean_slope"]
+        mac = n["tables"]["ILI"].get("ABL_P_ref_mps (Mac, exploratory)")
+        lines.append(f"* On the ETTh1 source GRPO raised the league policies' mean reward and on ILI no trend was detected. The no-league arm's ETTh1 slope is {none:+.3f}, at least as large, so nothing here says the league did it. The registered AB-L test is too liberal (false-positive rate {e['raw']['false_positive_rate']['0.025']:.2f} and "
+                     f"{i['raw']['false_positive_rate']['0.025']:.2f} at the 0.025 level for a model that never learns, from a null of ten searches per table"
+                     + (f"; ILI from thirty Mac searches {mac['raw']['false_positive_rate']['0.025']:.2f}, exploratory" if mac else "") + "), but the position-adjusted slopes give the same reading: "
                      f"exact sign flip of the {o['ETTh1']['n']} adjusted ETTh1 slopes p {o['ETTh1']['p_sign_flip']:.3f}, ILI p {o['ILI']['p_sign_flip']:.2f}; exploratory, post hoc.")
     if r:
         t = r["tables"]["ILI_T24"]
@@ -374,9 +403,21 @@ def glance() -> list[str]:
         lines.append(f"* The referee's skill on ILI comes mostly from the config fields: tau {pick('config', None):.2f} from fields alone, {pick('curves', 1):.2f} from curves alone, {pick('both', 1):.2f} from both, against the 3-seed mean. "
                      f"That target contains the seed-2021 value the referee is trained on; against the mean of the other two seeds the same three are {pick('config', None, 'ind'):.2f}, {pick('curves', 1, 'ind'):.2f} and {pick('both', 1, 'ind'):.2f} (AB-R).")
     if a:
-        lines.append(f"* The two datasets disagree on what matters, weakly supported (Spearman {a['cross_table']['share_spearman']:.2f} between marginal field shares, {a['cross_table']['conditional_share_spearman']:.2f} between conditional shares, 8 fields); RevIN explains {a['tables']['ETTh1_T336']['main_effect_share']['instance_norm']:.0%} "
+        lines.append(f"* The two tables show no detectable agreement on which fields matter (Spearman {a['cross_table']['share_spearman']:.2f} between marginal field shares, {a['cross_table']['conditional_share_spearman']:.2f} between conditional shares, 8 fields), exploratory conditional shares); RevIN explains {a['tables']['ETTh1_T336']['main_effect_share']['instance_norm']:.0%} "
                      f"of ETTh1's variance and {a['tables']['ILI_T24']['main_effect_share']['instance_norm']:.0%} of ILI's, and its ETTh1 validation advantage for RevIN off does not shrink from 30 to 100 epochs (that comparison also changes patience from 10 to 100, RQ3).")
     return lines + [""]
+
+
+def history() -> list[str]:
+    return ["## Runs, re-runs and open questions", "",
+            "* Registration: AB3 is commit 31f9313 (00:58 on 25 Nov); the first CPU outputs were written after it. AB3 addendum 1 and 2 follow a verifier and a critic "
+            "review of the first outputs and are exploratory. The branch was not on GitHub when the runs started, so the order is shown by commit times only.",
+            "* AB-X ran three times: once with a provenance stamp marked dirty (the report generator had been added to the tree, not the code that ran), once from a clean commit, and once more after run records "
+            "gained a git hash. The first two run files were byte-identical; the third differs only by the added field. The CPU analyses were re-run once after the verifier's fixes; the registered numbers "
+            "were produced by scripts unchanged since 31f9313 except where addendum 1 and 2 say otherwise, and their first outputs are not kept.",
+            "* Not answered here: why TPE wins E3's held-out replay but not the pick reseeds (an effect-size question, no equivalence test exists yet); whether rankings survive resampling "
+            "of the three table seeds; whether results survive a different fidelity ladder or a common first configuration; BOHB and one-epoch-then-top-K baselines; and, for AB-L, how much of the ETTh1 slope the league contributes.",
+            "* Verifier and critic reports, verbatim, are in docs/verdicts/.", ""]
 
 
 def main() -> int:
@@ -385,7 +426,7 @@ def main() -> int:
              "docs/prereg_ablations.md (AB1, AB3); every result here is secondary to the primary endpoints. Regret is in pooled "
              "seed-SD units unless stated; lower is better. ILI regret is scored on seeds the search never saw; ETTh1 has one seed per config, "
              "so ETTh1 replays are in-sample and descriptive.", ""]
-    lines += glance() + noise_free() + external() + controller() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power()
+    lines += glance() + noise_free() + external() + controller() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power() + history()
     TARGET.write_text("\n".join(lines).rstrip() + "\n")
     print(f"wrote {TARGET.relative_to(ROOT)} ({len(lines)} lines)")
     return 0

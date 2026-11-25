@@ -24,6 +24,10 @@ Definitions (AB3):
   30/27 to 30, rounded the same way). An infeasible proposal, or one already
   evaluated at that fidelity or higher, is replaced by the nearest feasible
   config not looked up in the run, as TPE's proposals are.
+* dehb_vector (exploratory, AB3 addendum 2): as dehb, but a repaired proposal's
+  stored vector is replaced by the evaluated config's, so DEHB's population
+  holds what was trained (TPE discards its raw proposal the same way).
+* Every run counts its proposals and its repairs.
 * Objective: validation MSE for SMAC (its encoder takes logs); log validation
   MSE for DEHB. Screening values are the best value up to the rung, as ASHA's.
 * Incumbent: the best fully trained config, as for every E3 method.
@@ -55,7 +59,8 @@ from leaguetst.search.replay import MUTABLE_FIELDS, Oracle, Space, nearest_unsee
 SEEDS, FAMILY = 30, 3
 MIN_FIDELITY, MAX_FIDELITY, ETA = 30 / 27, 30.0, 3
 ARCH = ("patch_len", "stride", "n_layers", "d_model", "ff_ratio")
-NAMES = ("smac", "hyperband", "dehb")
+NAMES = ("smac", "hyperband", "dehb")          # registered (AB3)
+EXPLORATORY = ("dehb_vector",)                  # AB3 addendum 2
 
 
 def configspace(space: Space, forbid: bool):
@@ -135,6 +140,7 @@ def smac_rf():
                 cid = space.to_id(choice_of(space, info.config))
                 if cid is None:
                     raise RuntimeError("SMAC proposed an infeasible config")
+                oracle.proposals = getattr(oracle, "proposals", 0) + 1
                 smac.tell(info, TrialValue(cost=float(oracle.full(cid)), time=0.0))
 
     return run
@@ -156,12 +162,13 @@ def hyperband():
                 cid = space.to_id(choice_of(space, info.config))
                 if cid is None:
                     raise RuntimeError("SMAC proposed an infeasible config")
+                oracle.proposals = getattr(oracle, "proposals", 0) + 1
                 smac.tell(info, TrialValue(cost=float(oracle.partial(cid, rung(info.budget))), time=0.0))
 
     return run
 
 
-def dehb():
+def dehb(store_evaluated: bool = False):
     def run(oracle: Oracle, space: Space, rng: np.random.Generator) -> None:
         from dehb import DEHB
         from loguru import logger
@@ -177,8 +184,13 @@ def dehb():
                 epochs = rung(job["fidelity"])
                 params = choice_of(space, job["config"])
                 cid = space.to_id(params)
+                oracle.proposals = getattr(oracle, "proposals", 0) + 1
                 if cid is None or reached.get(cid, 0) >= epochs:
+                    oracle.repairs = getattr(oracle, "repairs", 0) + 1
                     cid = nearest_unseen(params, space, set(oracle.charged), rng)
+                    if store_evaluated:
+                        stored = configspace_config(space, cid)
+                        optimizer.config_repository.configs[job["config_id"]].config = optimizer.de[job["fidelity"]].configspace_to_vector(stored)
                 value = oracle.partial(cid, epochs)
                 reached[cid] = epochs
                 optimizer.tell(job, {"fitness": math.log(value), "cost": float(epochs)})
@@ -186,7 +198,14 @@ def dehb():
     return run
 
 
-FACTORIES = {"smac": smac_rf, "hyperband": hyperband, "dehb": dehb}
+def configspace_config(space: Space, cid: str):
+    """The ConfigSpace configuration of one feasible config."""
+    from ConfigSpace import Configuration
+
+    return Configuration(configspace(space, False), values={f: str(space.domains[f].index(space.choices[cid][f])) for f in MUTABLE_FIELDS})
+
+
+FACTORIES = {"smac": smac_rf, "hyperband": hyperband, "dehb": dehb, "dehb_vector": lambda: dehb(store_evaluated=True)}
 
 
 def build(dataset: str) -> dict:
@@ -197,9 +216,14 @@ def build(dataset: str) -> dict:
 
 def run(seeds: int) -> None:
     for dataset, _ in SETTINGS:
-        runs = replay(functools.partial(build, dataset), list(NAMES), seeds, workers=10)
+        runs = replay(functools.partial(build, dataset), [*NAMES, *EXPLORATORY], seeds, workers=10)
         write_runs(OUT / "AB-X" / f"{setting(dataset)}.jsonl", runs)
     write_json(OUT / "AB-X" / "run_provenance.json", provenance(__file__, ["results/ledger.jsonl", "requirements-ablations.txt"]))
+
+
+def repair_rate(runs: list[dict]) -> float | None:
+    total = sum(r.get("proposals") or 0 for r in runs)
+    return sum(r.get("repairs") or 0 for r in runs) / total if total else None
 
 
 def analyze() -> None:
@@ -213,10 +237,12 @@ def analyze() -> None:
         runs = read_runs(OUT / "AB-X" / f"{setting(dataset)}.jsonl")
         e3 = read_runs(ROOT / "results" / "search" / "E3" / setting(dataset) / "cpu_runs.jsonl")
         base = [r for r in e3 if r["method"] in ("random", "tpe")]
-        entry = {"summary": summarise(runs + base, table), "registered": dataset == "ILI"}
+        entry = {"summary": summarise(runs + base, table), "registered": dataset == "ILI",
+                 "repair_rate": {m: repair_rate([r for r in runs if r["method"] == m]) for m in (*NAMES, *EXPLORATORY)}}
         if dataset == "ILI":
             rand = list(by_seed(e3, "random", table).values())
             entry["tests"] = apply_holm({f"{m} vs random": compare(by_seed(runs, m, table).values(), rand, FAMILY) for m in NAMES}, FAMILY)
+            entry["exploratory"] = {f"{m} vs random": compare(by_seed(runs, m, table).values(), rand, 1) for m in EXPLORATORY}
         result["tables"][setting(dataset)] = entry
     write_json(OUT / "AB-X.json", result)
 

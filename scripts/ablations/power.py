@@ -23,6 +23,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from robust import mad_sd  # noqa: E402
 from common import ALPHA, OUT, POWER, ROOT, by_seed, detectable, load_table, provenance, read_runs, setting, write_json  # noqa: E402
 
 from leaguetst.ledger import read_rows  # noqa: E402
@@ -72,6 +73,8 @@ def pick_rows(dataset: str) -> list[dict]:
         a, r = values[(method, int(b))], values[("random", int(b))]
         entry = row(f"{dataset} picks: {name}", a, r, family, "validation MSE", test["p"], "fresh seeds 4001 and 4002")
         entry["detectable_80_sd"] = entry["detectable_80"] / sigma
+        if dataset == "ETTh1":
+            entry["detectable_80_robust_sd"] = entry["detectable_80"] / mad_sd(table)
         out.append(entry)
     return out
 
@@ -83,7 +86,11 @@ def e4_rows() -> list[dict]:
     auc = lambda m: list(by_seed(runs, m, table).values())
     e3 = read_runs(ROOT / "results/search/E3/ILI_T24/cpu_runs.jsonl") + read_runs(ROOT / "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl")
     league = auc("grpo_league_from_ETTh1")
-    out = [row(f"E4 family 1, ILI AUC: league vs {b}", league, auc(b), 6, "pooled seed SD", None, "Holm size 6 (A25, A30)")
+    e4 = json.loads((ROOT / "results/independent/E4_soumitra.json").read_text())
+    reject = {name: h["reject"] for name, h in e4["family_1"]["holm_with_pending_as_not_rejected"].items()}
+    key = {"portfolio_from_ETTh1": "F1 ILI AUC league vs portfolio", "tpe_warm_from_ETTh1": "F1 ILI AUC league vs tpe_warm"}
+    out = [row(f"E4 family 1, ILI AUC: league vs {b}", league, auc(b), 6, "pooled seed SD", None,
+               "Holm size 6 (A25, A30); " + ("REJECTED with the league worse, not a null" if reject[key[b]] else "not rejected"))
            for b in ("portfolio_from_ETTh1", "tpe_warm_from_ETTh1")]
     out.append(row("E4 family 2, ILI AUC: league vs none", league, auc("grpo_none_from_ETTh1"), 6, "pooled seed SD", None, "Holm size 6 (A25, A30)"))
     q = list(by_seed(e3, "qwen_prompted", table).values())
@@ -114,7 +121,8 @@ def abl_rows() -> list[dict]:
         out.append({"comparison": f"AB-L: league slopes vs zero, {dataset} source", "n": [len(slopes)], "sd": [sd],
                     "mean": [float(np.mean(slopes))], "diff": float(np.mean(slopes)), "family": 2, "unit": "Spearman slope",
                     "detectable_80": float((norm.ppf(1 - ALPHA / 2 / 2) + norm.ppf(POWER)) * sd / math.sqrt(len(slopes))),
-                    "p": data["tests"][f"league slopes vs 0, {dataset} source"]["p"], "note": "Soumitra's AB-L"})
+                    "p": data["tests"][f"league slopes vs 0, {dataset} source"]["p"],
+                    "note": "Soumitra's AB-L; the registered test is against zero, but the null is not centred at zero (AB-L section)"})
     return out
 
 

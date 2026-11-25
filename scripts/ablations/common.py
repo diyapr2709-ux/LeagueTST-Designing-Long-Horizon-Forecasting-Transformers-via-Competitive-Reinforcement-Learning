@@ -78,7 +78,8 @@ def code_hash() -> str:
 
 def record(method: str, seed: int, oracle: Oracle, noise: float) -> dict[str, Any]:
     """The run dict that ``run_metric`` and the summaries read (as scripts/replay.py writes it)."""
-    return {"method": method, "seed": seed, "git_hash": code_hash(), "noise_sd": noise, "spent": oracle.spent, "lookups": len(oracle.charged),
+    extra = {k: getattr(oracle, k) for k in ("proposals", "repairs") if getattr(oracle, k, None) is not None}
+    return {"method": method, "seed": seed, "git_hash": code_hash(), **extra, "noise_sd": noise, "spent": oracle.spent, "lookups": len(oracle.charged),
             "trace": [list(t) for t in oracle.trace], "charges": [list(c) for c in oracle.charges]}
 
 

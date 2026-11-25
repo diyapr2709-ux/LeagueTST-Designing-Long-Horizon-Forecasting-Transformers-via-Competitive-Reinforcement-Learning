@@ -285,3 +285,19 @@ size or endpoint.
   slopes is reported beside the null-based p, which rests on ten reused
   untrained searches.
 * Records: every run record carries the git hash of the code that wrote it.
+
+### AB3 addendum 2 (2026-11-25, exploratory, after the critic's review and before its outputs exist)
+
+* AB-X DEHB, exploratory variant dehb_vector: a proposal that the repair rule
+  replaces has its stored vector replaced by the evaluated config's, so DEHB's
+  population holds what was trained, as TPE discards its raw proposal. The
+  registered dehb arm is unchanged; AB-X's registered tests do not include the
+  variant. Every AB-X run now counts its proposals and repairs.
+* AB-Q hold-out: per-held-seed differences and the number of distinct final
+  configs are reported beside the interval.
+* AB-L calibration: the Mac reference (ABL_P_ref_mps) enters the null only when
+  all 30 of its searches exist.
+* ST: the E4 comparison that rejects (league worse than warm-started TPE) is
+  labelled as such, and ETTh1 detectable differences are also given in robust
+  seed SD. AB-N's split, AB-R's independent-seed target and RQ3's conditional
+  shares are labelled exploratory in the report.
