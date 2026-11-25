@@ -174,3 +174,90 @@ result existed before it, or names any that did.
   episode, whose budget (3000) equals a prompted search's, so the
   comparison uses each policy's final episode against prompted Qwen at the
   same spend; null rewards are skipped. The tested slope is unchanged.
+
+## Amendment AB3 (2026-11-25, Anirudh, before any ablation result exists)
+
+AB2 is reserved for Soumitra's launcher. Nothing below changes a primary
+test, its family or its data.
+
+What existed before this amendment. No ablation arm had been run. On
+24 Nov, 14:02 to 14:06 ET (before AB1), Anirudh's session made three scratch
+calculations on committed data, never committed: that AB-N's noise SD is
+undefined as registered; that untrained prompted Qwen's reward rises within a
+search (E3, ten searches per table); and what the AB-L slope looks like for a
+model that does not learn (the same E3 searches chained). The scripts written
+here were tested on synthetic tables only. When writing AB3 the author had read
+the E3 and pick summaries, results/independent/E4_soumitra.json and AB-L
+(3cb92a1).
+
+* Where ablation outputs live. scripts/picks.py and scripts/e5_referee.py read
+  every folder under results/search/, and the ablation items reuse E4's and
+  E3's method names. With dummy files, merging the ABL_* folders named in the
+  handoffs raised grpo_league_from_ETTh1 from 10 to 50 runs and qwen_prompted
+  from 10 to 40 in the ILI picks, and would add methods to E5's Bonferroni
+  count. Every output of this workstream therefore goes to results/ablations/,
+  never to results/search/. Soumitra's ABL_* items meet the same problem; it is
+  logged in docs/ISSUES.md for Diya and Soumitra.
+* AB-C. No change. Reference and arms run on both tables; ETTh1 descriptive.
+* AB-Q. The noise-free ILI table has one pseudo-seed per config: the best value
+  is the mean of the three seeds' best values; the charge is the mean epochs
+  run, rounded half up; the curves are seed means, a seed that stopped earlier
+  carrying its last value forward. Regret is on the same means, in the real
+  table's pooled seed SD. The ten CPU methods of E3, 30 seeds. Prompted Qwen
+  needs a GPU: it is added only if the Mac item ABL_Q_prompted_mps runs.
+* AB-N. A table cut to one seed has no seed SD, so the registered rule gives
+  NaN. Two variants, both descriptive: etth1_like (seed 2021 for every config,
+  seeds 2022 and 2023 for the 100 best by seed 2021, as the ETTh1 table was
+  built; noise SD by the ETTh1 rule) and strict (seed 2021 only; noise SD = the
+  full ILI table's pooled SD). Each run is scored as its cut table would report
+  it and held out on the full table (the config's seeds the run did not see).
+  The ten CPU methods of E3, 30 seeds.
+* AB-X. smac 2.4.1, dehb 0.1.2 and ConfigSpace 1.2.2 in their own environment
+  (requirements-ablations.txt; dehb needs numpy below 2). Definitions are in
+  scripts/ablations/external_hpo.py: SMAC's random forest and EI with a random
+  initial design of 10 and the acquisition maximised over every feasible config
+  not yet evaluated; SMAC's Hyperband facade with random sampling; DEHB's
+  ask/tell with TPE's nearest-unseen repair; rungs 1, 3, 10 and 30 epochs, eta
+  3, through Oracle.partial, so a promoted config continues its run. SMAC's
+  default acquisition search was replaced after it was seen, on a synthetic
+  table, to fall back to random sampling in a space this small.
+* AB-R. The E2 draw; training sets are the first 100, 300 and 1,000 of the
+  configs after the 150 scored ones. Target: log of the seed-2021 final value.
+  Ridge with a cross-validated penalty; random forest of 300 trees.
+* ST. Detectable differences use the observed per-arm SDs, the registered Holm
+  size and the normal approximation at 80% power. The robust ETTh1 SD is
+  1.4826 x median|d| / sqrt(2), d the difference of a config's seed-2022 and
+  seed-2023 values; it replaces the pooled SD as noise and as unit. E6 appears
+  only as a planning figure from validation errors.
+* RQ3. Interactions are the extra share of variance a field pair adds to the
+  additive least-squares model of the config means.
+* AB-L calibration, exploratory and post hoc (AB-L was already pushed): the
+  raw and position-adjusted slopes of untrained prompted Qwen chained over 60
+  steps with AB-L's episode resets. It changes no AB-L number.
+* LLM arms on a Mac. Anirudh does not launch WP3 on Modal. The registered items
+  (ABL_P_ref, ABL_P_anon, ABL_P_repair, ABL_G_steps30, ABL_G_steps120) are
+  therefore not launched by Anirudh and stay free for Soumitra's RTX queue
+  (docs/LEG2_anirudh.md); if nobody runs them they are reported as not run and
+  their families keep their registered sizes. Separately, Anirudh runs the same
+  questions on an Apple M4 Pro (torch MPS): scripts/ablations/llm_mps.py, items
+  ABL_P_ref_mps, ABL_P_anon_mps, ABL_P_repair_mps (30 seeds, both tables) and
+  ABL_G_steps_mps (10 policies, training seeds 100 to 109, ETTh1 source, ILI
+  target). The owner's decision names Modal or a CUDA GPU, not a Mac, and the
+  code is not the frozen E4 code, so every Mac result is exploratory, as AB1
+  says of arms run under other digests. It replaces no registered item. Whether
+  the team uses it, and how, is Diya's decision.
+  * Every Mac arm and its reference run on the same Mac with the same code.
+    Model, revision, prompt, trie, episode rules, recipe and seeds are E4's.
+    Differences: the prompt is run once and its cache shared by the group (the
+    same quantity; checked against the frozen formula), sampling uses a CPU
+    generator, no gradient checkpointing.
+  * Step trend: each policy is trained once to 120 steps and its adapter saved
+    at 30 and 60, because a run with the same seed passes through those states;
+    levels 0 (ABL_P_ref_mps on ILI), 30, 60 and 120. Levels of one policy are
+    therefore dependent. Beside the trend: the same trend with 10 seeds per
+    level, and over the trained levels only.
+  * Tests as registered (anon and repair against ref, Holm size 3; step trend,
+    Holm size 2), labelled exploratory. The on-policy check (0.05) is kept; a
+    policy it stops is reported and not retrained.
+  * Hardware check, no test: ABL_P_ref_mps against E3's ten A10 searches, and
+    the 60-step Mac policies against the J2 league arm, on the same seeds.
