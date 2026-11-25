@@ -73,7 +73,7 @@ def tau_interval(predicted: np.ndarray, true: np.ndarray, rng: np.random.Generat
 def main() -> int:
     from scipy.stats import kendalltau
 
-    result = {"analysis": "AB-R", "descriptive": True, "provenance": provenance(__file__, ["results/ledger.jsonl"]), "tables": {}}
+    result = {"analysis": "AB-R", "descriptive": True, "provenance": provenance(__file__, ["results/ledger.jsonl", "results/fidelity/ILI_T24.json", "results/fidelity/ETTh1_T336.json"]), "tables": {}}
     for dataset, _ in SETTINGS:
         table, space = load_table(dataset)
         chosen_k = json.loads((ROOT / "results" / "fidelity" / f"{setting(dataset)}.json").read_text())["chosen_k"]
@@ -81,7 +81,7 @@ def main() -> int:
         true = np.array([table.true_value(c) for c in evaluate])
         final = np.array([table.obs[c][TABLE_SEED].best for c in evaluate])
         target = np.log([table.obs[c][TABLE_SEED].best for c in train])
-        rows = []
+        rows, predictions = [], []
         for kind in FEATURES:
             for k in (KS if kind != "config" else KS[:1]):  # config-only features do not depend on k
                 x_eval = np.array([features(table, space, c, k, kind) for c in evaluate])
@@ -91,13 +91,18 @@ def main() -> int:
                         model = make_model(name)
                         model.fit(x_train[:size], target[:size])
                         predicted = model.predict(x_eval)
+                        predictions.append(predicted)
                         rows.append({"features": kind, "k": None if kind == "config" else k, "size": size, "model": name,
                                      **tau_interval(predicted, true, np.random.default_rng(0)),
                                      "tau_vs_seed2021_final": float(kendalltau(predicted, final)[0])})
+        multi_rows = [i for i, c in enumerate(evaluate) if len(table.obs[c]) >= 3]
+        independent = np.array([np.mean([o.best for s, o in table.obs[evaluate[i]].items() if s != TABLE_SEED]) for i in multi_rows])
+        for row, pred in zip(rows, predictions):
+            row["tau_independent_seeds"] = tau_interval(pred[multi_rows], independent, np.random.default_rng(0)) if len(multi_rows) >= 30 else None
         plain = {str(k): tau_interval(np.array([min(table.obs[c][TABLE_SEED].val_curve[:k]) for c in evaluate]), true,
                                       np.random.default_rng(0)) for k in KS}
         multi = [i for i, c in enumerate(evaluate) if len(table.obs[c]) >= 3]
-        entry = {"n_eval": len(evaluate), "eval_configs_with_3_seeds": len(multi), "variants": rows, "epoch_k_ranking": plain,
+        entry = {"n_eval": len(evaluate), "eval_configs_with_3_seeds": len(multi), "independent_target_configs": len(multi_rows), "variants": rows, "epoch_k_ranking": plain,
                  "one_seed_ceiling": tau_interval(final[multi], true[multi], np.random.default_rng(0)) if len(multi) >= 10 else None,
                  "e2_referee": next(r for r in rows if (r["features"], r["k"], r["size"], r["model"]) == ("both", chosen_k, 300, "gbt"))}
         result["tables"][setting(dataset)] = entry

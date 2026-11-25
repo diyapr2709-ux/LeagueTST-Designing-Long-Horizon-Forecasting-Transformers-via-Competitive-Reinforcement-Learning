@@ -62,16 +62,20 @@ def heldout_on_full(cid: str, run_seed: int, cut: Table, full: Table) -> float:
     return float(np.mean([o.best for s, o in full.obs[cid].items() if s != seen]))
 
 
-def score(run: dict, cut: Table, full: Table, sigma: float) -> tuple[np.ndarray, np.ndarray]:
-    """Regret curves over budgets 1 to 100 in SD units: as reported on the cut table, and held out on the full one."""
+def score(run: dict, cut: Table, full: Table, sigma: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Curves over budgets 1 to 100 in SD units: regret as the cut table reports it, regret held out on the full
+    table, and the incumbent's value on the full table minus its value as the cut table shows it."""
     seed = int(run["seed"])
     cut_fallback, full_fallback = no_incumbent_value(cut), no_incumbent_value(full)
-    reported, heldout = [], []
+    reported, heldout, gap = [], [], []
     for b in range(1, 101):
         value, cid = regret_from_trace(run["trace"], cut, b * FULL_RUN_EPOCHS, cut_fallback, seed)
         reported.append(value)
-        heldout.append((heldout_on_full(cid, seed, cut, full) if cid else full_fallback) - full.best_true)
-    return np.array(reported) / sigma, np.array(heldout) / sigma
+        truth = heldout_on_full(cid, seed, cut, full) if cid else full_fallback
+        shown = cut.heldout_value(cid, seed)[0] if cid else cut_fallback
+        heldout.append(truth - full.best_true)
+        gap.append(truth - shown)
+    return np.array(reported) / sigma, np.array(heldout) / sigma, np.array(gap) / sigma
 
 
 def main() -> int:
@@ -85,7 +89,7 @@ def main() -> int:
     e3_auc = {m: mean_ci(by_seed(e3, m, full).values()) for m in METHODS}
     result = {"analysis": "AB-N", "descriptive": True, "dataset": dataset, "k": k, "seeds": SEEDS, "sigma": sigma,
               "left_out": "prompted Qwen (GPU)", "e3_three_seed_auc": e3_auc, "variants": {},
-              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/fidelity/ILI_T24.json"])}
+              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/fidelity/ILI_T24.json", "results/search/E3/ILI_T24/cpu_runs.jsonl"])}
     for variant in VARIANTS:
         runs = replay(functools.partial(build, dataset, variant, k), list(METHODS), SEEDS)
         write_runs(OUT / "AB-N" / f"ILI_T24_{variant}.jsonl", runs)
@@ -96,7 +100,8 @@ def main() -> int:
             pairs = [score(r, cut, full, sigma) for r in runs if r["method"] == m]
             reported = np.array([p[0] for p in pairs])
             heldout = np.array([p[1] for p in pairs])
-            methods[m] = {"reported_auc": mean_ci(reported.mean(axis=1)), "heldout_auc": mean_ci(heldout.mean(axis=1)),
+            gap = np.array([p[2] for p in pairs])
+            methods[m] = {"incumbent_value_optimism_auc": mean_ci(gap.mean(axis=1)),"reported_auc": mean_ci(reported.mean(axis=1)), "heldout_auc": mean_ci(heldout.mean(axis=1)),
                           "optimism_auc": mean_ci(heldout.mean(axis=1) - reported.mean(axis=1)),
                           "optimism_at": {str(b): mean_ci(heldout[:, b - 1] - reported[:, b - 1]) for b in BUDGETS}}
         order = list(METHODS)
@@ -104,7 +109,8 @@ def main() -> int:
         held = [methods[m]["heldout_auc"]["mean"] for m in order]
         three = [e3_auc[m]["mean"] for m in order]
         result["variants"][variant] = {
-            "noise_sd": state["noise"], "multi_seed_configs": int(sum(len(s) > 1 for s in cut.obs.values())),
+            "noise_sd": state["noise"], "reference_shift_sd": float((full.best_true - cut.best_true) / sigma),
+            "decomposition": "optimism of regret = optimism of the incumbent's value minus the reference shift", "multi_seed_configs": int(sum(len(s) > 1 for s in cut.obs.values())),
             "best_reported": cut.best_true, "best_full": full.best_true, "best_id_cut": cut.best_id, "best_id_full": full.best_id,
             "methods": methods,
             "method_ranking": {"reported_vs_heldout_kendall": float(kendalltau(rep, held)[0]),

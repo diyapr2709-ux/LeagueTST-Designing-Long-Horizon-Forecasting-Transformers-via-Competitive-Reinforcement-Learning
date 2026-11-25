@@ -198,11 +198,13 @@ def test_rq3_additive_table_has_no_interactions(table, space):
 
     flat = Flat.__new__(Flat)
     flat.ids = table.ids
+    flat.obs = {c: {2021: None} for c in table.ids}
     flat._true = {c: space.choices[c]["n_layers"] + 2.0 * space.choices[c]["instance_norm"] for c in table.ids}
     result = rq3.interactions(flat, space)
     assert result["additive_r2"] == pytest.approx(1.0)
     assert max(result["interaction_increment"].values()) == pytest.approx(0.0, abs=1e-9)
     assert len(result["interaction_increment"]) == 28
+    assert result["seed_noise_share_of_config_means"] is None and result["interaction_increment_by_seed"] is None
 
 
 # AB-L calibration
@@ -256,3 +258,25 @@ def test_mac_outputs_stay_out_of_the_e4_search_folder():
     import llm_mps
 
     assert "results/search" not in str(llm_mps.OUT) and llm_mps.CHECKPOINTS == (30, 60, 120)
+
+
+def test_holdout_build_uses_two_seeds_and_scores_the_third(rows, table):
+    search = Table(plateau.noise_free_rows([r for r in rows if int(r["seed"]) != 2021]))
+    cid = table.ids[11]
+    assert search.true_value(cid) == pytest.approx(np.mean([table.obs[cid][s].best for s in (2022, 2023)]))
+    run = {"trace": [(30, search.best_id)], "seed": 0}
+    curve = plateau.holdout_curve(run, search, table, 2021)
+    assert curve[0] == pytest.approx(table.obs[search.best_id][2021].best - min(o[2021].best for o in table.obs.values()))
+    assert len(curve) == 100
+
+
+def test_heldout_share_is_one_for_three_seed_tables(table):
+    assert common.heldout_share([{"trace": [(30, table.best_id)], "seed": 1}], table, 10) == 1.0
+
+
+def test_incumbent_value_optimism_is_zero_without_bias(rows, table):
+    strict = Table(one_seed_bias.cut_rows(rows, "strict"))
+    run = {"trace": [(30, strict.best_id)], "seed": 2}
+    reported, heldout, gap = one_seed_bias.score(run, strict, table, table.seed_sd())
+    assert len(reported) == len(heldout) == len(gap) == 100
+    assert heldout[0] == pytest.approx(gap[0] + reported[0] - (table.best_true - strict.best_true) / table.seed_sd())

@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import BUDGETS, FULL_RUN_EPOCHS, OUT, ROOT, MAX_EPOCHS, load_table, mean_ci, no_incumbent_value, provenance, \
+from common import BUDGETS, FULL_RUN_EPOCHS, OUT, ROOT, load_table, mean_ci, no_incumbent_value, provenance, \
     read_runs, regret_from_trace, replay, runner, write_json, write_runs  # noqa: E402
 
 from leaguetst.search.replay import METHODS, Space, Table  # noqa: E402
@@ -58,6 +58,45 @@ def curve(run: dict, table: Table, fallback: float) -> np.ndarray:
     return np.array([regret_from_trace(run["trace"], table, b * FULL_RUN_EPOCHS, fallback)[0] for b in range(1, 101)])
 
 
+def holdout_build(dataset: str, k: int, held: int) -> dict:
+    """Noise-free lookups from the other two seeds only, so seed ``held`` can score what the search found."""
+    table = Table(noise_free_rows([r for r in runner.table_rows(dataset) if int(r["seed"]) != held]))
+    return {"table": table, "space": Space(table.ids), "noise": 0.0,
+            "factories": {name: functools.partial(factory, k=k) for name, factory in METHODS.items()}}
+
+
+def holdout_curve(run: dict, search: Table, full: Table, held: int) -> np.ndarray:
+    """Held-out value at seed ``held`` of the incumbent, minus the best config's value there, at budgets 1 to 100."""
+    best = min(o[held].best for o in full.obs.values())
+    fallback = float(np.mean([o[held].best for o in full.obs.values()]))
+    out = []
+    for b in range(1, 101):
+        _, cid = regret_from_trace(run["trace"], search, b * FULL_RUN_EPOCHS, no_incumbent_value(search))
+        out.append((full.obs[cid][held].best if cid else fallback) - best)
+    return np.array(out)
+
+
+def holdout(k: int, sigma: float) -> dict:
+    """Exploratory (AB3 addendum): noise-free lookups of two seeds scored on the third, every seed held out in turn."""
+    full, _ = load_table("ILI")
+    aucs: dict[str, dict[int, np.ndarray]] = {m: {} for m in METHODS}
+    for held in sorted(next(iter(full.obs.values()))):
+        runs = replay(functools.partial(holdout_build, "ILI", k, held), list(METHODS), SEEDS)
+        write_runs(OUT / "AB-Q" / f"ILI_T24_holdout{held}.jsonl", runs)
+        search = holdout_build("ILI", k, held)["table"]
+        for m in METHODS:
+            aucs[m][held] = np.array([holdout_curve(r, search, full, held).mean() / sigma for r in runs if r["method"] == m])
+    # The unit is the search seed: each seed's AUC is averaged over the three hold-outs (same seed, same table rows).
+    per_seed = {m: np.mean([aucs[m][h] for h in aucs[m]], axis=0) for m in METHODS}
+    base = per_seed["random"]
+    out = {"held_seeds": sorted(aucs["random"]), "unit": "search seed, AUC averaged over the three held-out seeds", "methods": {}}
+    for m in METHODS:
+        diff = per_seed[m] - base
+        out["methods"][m] = {"auc": mean_ci(per_seed[m]), "diff_vs_random": mean_ci(diff), "values": per_seed[m].tolist(),
+                             "prob_better_than_random": float(np.mean(np.concatenate([aucs[m][h] < aucs["random"][h] for h in aucs[m]])))}
+    return out
+
+
 def summary(runs: list[dict], table: Table, sigma: float) -> dict:
     fallback = no_incumbent_value(table)
     out = {}
@@ -80,7 +119,7 @@ def main() -> int:
     sigma = real.seed_sd()
     result = {"analysis": "AB-Q", "descriptive": True, "dataset": dataset, "k": k, "seeds": SEEDS, "sigma": sigma,
               "left_out": "prompted Qwen (GPU); see AB-Q-mps if it was run",
-              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/fidelity/ILI_T24.json"]),
+              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/fidelity/ILI_T24.json", "results/search/E3/ILI_T24/cpu_runs.jsonl"]),
               "noise_free": summary(runs, table, sigma)}
     # The same methods with noisy lookups: E3's committed runs, held-out AUC, for the side-by-side table.
     from common import by_seed
@@ -98,6 +137,7 @@ def main() -> int:
                          "e3_diff_vs_random": float(y.mean() - e3_base.mean()),
                          "e3_prob_better_than_random": float(mannwhitneyu(e3_base, y).statistic / (len(e3_base) * len(y)))}
     result["separation"] = separation
+    result["holdout"] = holdout(k, sigma)
     plateau = np.sort([table.true_value(c) for c in table.ids])
     result["plateau"] = {"best_mean": float(plateau[0]), "within_1sd": int((plateau <= plateau[0] + sigma).sum()),
                          "within_2sd": int((plateau <= plateau[0] + 2 * sigma).sum()), "configs": len(plateau)}

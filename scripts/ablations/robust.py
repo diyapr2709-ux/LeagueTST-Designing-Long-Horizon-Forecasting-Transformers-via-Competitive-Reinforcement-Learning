@@ -85,8 +85,8 @@ def profile(x: np.ndarray, base: np.ndarray, sigma: float) -> dict:
 
 def main() -> int:
     result = {"analysis": "ST robust", "descriptive": True, "tables": {},
-              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/search/E3/ILI_T24/cpu_runs.jsonl",
-                                                  "results/search/E3/ETTh1_T336/cpu_runs.jsonl"])}
+              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/fidelity/ETTh1_T336.json",
+                                                  *(f"results/search/E3/{s}/{f}" for s in ("ILI_T24", "ETTh1_T336") for f in ("cpu_runs.jsonl", "qwen_prompted_runs.jsonl"))])}
     for dataset, _ in SETTINGS:
         table, _space = load_table(dataset)
         folder = ROOT / "results" / "search" / "E3" / setting(dataset)

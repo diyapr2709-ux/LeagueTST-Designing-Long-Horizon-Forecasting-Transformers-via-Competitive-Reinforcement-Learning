@@ -261,3 +261,27 @@ the E3 and pick summaries, results/independent/E4_soumitra.json and AB-L
     policy it stops is reported and not retrained.
   * Hardware check, no test: ABL_P_ref_mps against E3's ten A10 searches, and
     the 60-step Mac policies against the J2 league arm, on the same seeds.
+
+### AB3 addendum 1 (2026-11-25, exploratory, after the CPU results were seen)
+
+Added after the verifier's review of the first CPU results, before the new
+outputs exist. All of it is exploratory and changes no registered test, family
+size or endpoint.
+
+* AB-Q hold-out: the noise-free replay with the lookups replaced by the mean of
+  two seeds and the incumbent scored on the third, each ILI seed held out in
+  turn, 30 search seeds, ten CPU methods; the unit is the search seed. (The
+  verifier ran a scratch version first: TPE against random was -0.39 SD
+  in-sample and -0.05 held out.)
+* AB-N: the optimism of regret is also split into the optimism of the incumbent's
+  value and the shift of the reference (the best value of each table).
+* AB-R: every variant is also scored against the mean of seeds 2022 and 2023,
+  which the referee never saw; the AB3 target (the multi-seed mean, which
+  contains the seed-2021 value) stays the registered one.
+* RQ3: conditional shares (what a field adds to a model that has the other
+  seven), the seed-noise share of the config means on ILI, and interaction
+  increments per single seed.
+* AB-L calibration: the exact sign-flip p of the observed position-adjusted
+  slopes is reported beside the null-based p, which rests on ten reused
+  untrained searches.
+* Records: every run record carries the git hash of the code that wrote it.

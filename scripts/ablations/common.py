@@ -7,6 +7,7 @@ leaguetst.eval.stats.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import math
@@ -70,9 +71,14 @@ def observation_noise(table: Table) -> float:
     return noise(table)
 
 
+@functools.lru_cache(maxsize=None)
+def code_hash() -> str:
+    return runner.git_hash()
+
+
 def record(method: str, seed: int, oracle: Oracle, noise: float) -> dict[str, Any]:
     """The run dict that ``run_metric`` and the summaries read (as scripts/replay.py writes it)."""
-    return {"method": method, "seed": seed, "noise_sd": noise, "spent": oracle.spent, "lookups": len(oracle.charged),
+    return {"method": method, "seed": seed, "git_hash": code_hash(), "noise_sd": noise, "spent": oracle.spent, "lookups": len(oracle.charged),
             "trace": [list(t) for t in oracle.trace], "charges": [list(c) for c in oracle.charges]}
 
 
@@ -181,12 +187,25 @@ def apply_holm(tests: dict[str, dict[str, Any]], family: int) -> dict[str, dict[
     return tests
 
 
+def heldout_share(runs: list[dict[str, Any]], table: Table, budget: int) -> float:
+    """Share of incumbents at ``budget`` scored on seeds the search did not see (1.0 on ILI; small on ETTh1)."""
+    fallback = no_incumbent_value(table)
+    flags = []
+    for run in runs:
+        _, cid = regret_from_trace(run["trace"], table, budget * FULL_RUN_EPOCHS, fallback)
+        flags.append(bool(cid) and table.heldout_value(cid, int(run["seed"]))[1])
+    return float(np.mean(flags))
+
+
 def summarise(runs: list[dict[str, Any]], table: Table) -> dict[str, Any]:
     """Per method: AUC and regret at each budget (pooled seed-SD units), and the same regret in raw MSE."""
     sigma = table.seed_sd()
     out: dict[str, Any] = {}
     for method in sorted({r["method"] for r in runs}):
-        entry: dict[str, Any] = {"auc": mean_ci(by_seed(runs, method, table).values())}
+        aucs = list(by_seed(runs, method, table).values())
+        entry: dict[str, Any] = {"auc": mean_ci(aucs), "auc_raw_mse": mean_ci([v * sigma for v in aucs])}
+        chosen = [r for r in runs if r["method"] == method]
+        entry["heldout_share"] = {str(b): heldout_share(chosen, table, b) for b in BUDGETS}
         for b in BUDGETS:
             values = list(by_seed(runs, method, table, b).values())
             entry[str(b)] = mean_ci(values)

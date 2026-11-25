@@ -102,15 +102,26 @@ def observed_slopes(dataset: str) -> dict:
     return {"raw": float(arm["mean_slope"]), "adjusted": float(arm["mean_position_adjusted_slope"])}
 
 
+def sign_flip_observed(dataset: str) -> dict:
+    """Exact two-sided sign flip of the ten observed position-adjusted slopes against zero (no null model)."""
+    import itertools
+
+    data = json.loads((OUT / "AB-L.json").read_text())
+    slopes = np.array([v["position_adjusted_slope"] for v in data["by_source"][dataset]["per_policy"].values() if v["arm"] == "league"])
+    signs = np.array(list(itertools.product((-1.0, 1.0), repeat=len(slopes))))
+    return {"n": len(slopes), "mean": float(slopes.mean()), "sd": float(slopes.std(ddof=1)), "p_sign_flip": sign_flip_p(slopes, signs)}
+
+
 def main() -> int:
     result = {"analysis": "AB-L calibration", "exploratory": "post hoc: written after AB-L's results were seen",
               "n_chains": N_CHAINS, "n_tests": N_TESTS, "tables": {},
-              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/ablations/AB-L.json"])}
+              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/ablations/AB-L.json", "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl", "results/search/E3/ETTh1_T336/qwen_prompted_runs.jsonl"])}
     for dataset, _ in SETTINGS:
         table, _space = load_table(dataset)
         observed = observed_slopes(dataset)
         sources = {"E3_A10": read_runs(ROOT / "results/search/E3" / setting(dataset) / "qwen_prompted_runs.jsonl"),
                    "ABL_P_ref_mps": read_runs(OUT / "mps/ABL_P_ref_mps" / setting(dataset) / "qwen_prompted_mps_runs.jsonl")}
+        result.setdefault("observed_adjusted_slopes", {})[dataset] = sign_flip_observed(dataset)
         result["tables"][dataset] = {name: null([step_rewards(r, table) for r in runs], observed) for name, runs in sources.items() if runs}
     write_json(OUT / "AB-L-null.json", result)
     return 0

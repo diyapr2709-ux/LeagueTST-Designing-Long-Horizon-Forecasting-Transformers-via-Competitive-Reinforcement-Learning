@@ -96,6 +96,12 @@ def noise_free() -> list[str]:
     lines += ["The noise-free table is searched and scored on the same 3-seed means, so a method that fits the remaining noise of those "
               "means is rewarded for it; a gap here is not evidence of a gap on fresh seeds (the pick reseeds are). "
               f"Left out: {d['left_out']}.", ""]
+    h = d["holdout"]
+    lines += ["Hold-out check (exploratory, AB3 addendum): lookups are the mean of two seeds and the search's incumbent is scored on the third, each seed held out in turn; "
+              f"{h['unit']}. Held seeds {', '.join(str(x) for x in h['held_seeds'])}.", ""]
+    lines += table(["method", "held-out AUC", "difference from random", "P(beats random), run level"],
+                   [[m, ci(v["auc"]), f"{v['diff_vs_random']['mean']:+.2f} [{v['diff_vs_random']['low']:+.2f}, {v['diff_vs_random']['high']:+.2f}]" if m != "random" else "0 (itself)",
+                     f"{v['prob_better_than_random']:.2f}" if m != "random" else "0.50 (itself)"] for m, v in sorted(h["methods"].items(), key=lambda kv: kv[1]["auc"]["mean"])])
     q = load("LLM")
     if q and q["mps"].get("AB-Q_prompted"):
         e = q["mps"]["AB-Q_prompted"]
@@ -116,8 +122,9 @@ def one_seed() -> list[str]:
                   f"{v['best_reported']:.4f}, best 3-seed mean {v['best_full']:.4f}. Kendall tau between the method rankings: reported against held-out "
                   f"{r['reported_vs_heldout_kendall']:.2f}, reported against E3's 3-seed replay {r['reported_vs_e3_kendall']:.2f}, held-out against E3 "
                   f"{r['heldout_vs_e3_kendall']:.2f}.", ""]
-        lines += table(["method", "reported AUC", "held-out AUC", "optimism", "E3 AUC (3 seeds)"],
-                       [[m, ci(x["reported_auc"]), ci(x["heldout_auc"]), ci(x["optimism_auc"]), f"{d['e3_three_seed_auc'][m]['mean']:.2f}"]
+        lines += [f"The cut table's best value sits {v['reference_shift_sd']:+.2f} SD from the full table's best; optimism = the incumbents' value optimism minus that shift.", ""]
+        lines += table(["method", "reported AUC", "held-out AUC", "optimism of regret", "optimism of the incumbent's value", "E3 AUC (3 seeds)"],
+                       [[m, ci(x["reported_auc"]), ci(x["heldout_auc"]), ci(x["optimism_auc"]), ci(x["incumbent_value_optimism_auc"]), f"{d['e3_three_seed_auc'][m]['mean']:.2f}"]
                         for m, x in sorted(v["methods"].items(), key=lambda kv: kv[1]["reported_auc"]["mean"])])
     return lines
 
@@ -147,6 +154,10 @@ def referee() -> list[str]:
                     cells.setdefault(x["model"], []).append(x)
                 rows.append([features, str(size), *(" / ".join(f"{x['tau']:.2f}" for x in sorted(cells[m], key=lambda x: x["k"] or 0)) for m in ("gbt", "ridge", "forest"))])
         lines += table(["features", "training configs", "boosted trees, k = 1 / 2 / 3", "ridge, k = 1 / 2 / 3", "random forest, k = 1 / 2 / 3"], rows)
+        ind = [x for x in t["variants"] if x["size"] == 300 and x["model"] == "gbt"]
+        if ind[0].get("tau_independent_seeds"):
+            lines += [f"Against the mean of the seeds the referee never saw (2022 and 2023, {t['independent_target_configs']} configs; exploratory), boosted trees at 300: "
+                      + "; ".join(f"{x['features']}{'' if x['k'] is None else ' k=' + str(x['k'])} {x['tau_independent_seeds']['tau']:.2f}" for x in ind) + ".", ""]
     lines += ["Config-only rows have one value because they do not depend on k.", ""]
     return lines
 
@@ -261,10 +272,12 @@ def robustness() -> list[str]:
     lines += ["Interquartile mean of regret and probability of improvement over random search, 95% bootstrap intervals over search seeds within arms. " + provenance_line(d), ""]
     for dataset, _ in SETTINGS:
         t = d["tables"][setting(dataset)]
+        share = t["summary"]["random"]["heldout_share"] if "heldout_share" in t["summary"]["random"] else {}
         rows = [[m, f"{p['iqm_sd']['50']:.2f} [{p['iqm_low']['50']:.2f}, {p['iqm_high']['50']:.2f}]",
                  f"{p['pi']['25']:.2f} [{p['pi_low']['25']:.2f}, {p['pi_high']['25']:.2f}]", f"{p['pi']['50']:.2f} [{p['pi_low']['50']:.2f}, {p['pi_high']['50']:.2f}]",
                  f"{t['summary'][m]['50_raw_mse']['mean']:.4f}"] for m, p in sorted(t["profiles"].items(), key=lambda kv: kv[1]["iqm_sd"]["50"])]
-        lines += [f"{dataset}{' (in-sample)' if dataset == 'ETTh1' else ''}:", ""]
+        note = f" (held-out share of incumbents, random search: {', '.join(f'@{b} {v:.0%}' for b, v in share.items())})" if share and dataset == "ETTh1" else ""
+        lines += [f"{dataset}{note}:", ""]
         lines += table(["method", "IQM regret @50 (SD)", "P(improvement) @25", "P(improvement) @50", "mean regret @50 (raw MSE)"], rows)
     mad = d["tables"]["ETTh1_T336"]["mad"]
     pooled = d["tables"]["ETTh1_T336"]["pooled_sd"]
@@ -282,21 +295,32 @@ def rq3() -> list[str]:
     fields = sorted(next(iter(d["tables"].values()))["main_effect_share"])
     ili, ett = d["tables"]["ILI_T24"]["main_effect_share"], d["tables"]["ETTh1_T336"]["main_effect_share"]
     lv = d["cross_table"]["level_means"]
-    lines += table(["field", "ILI share", "ETTh1 share", "best level on ILI", "best level on ETTh1", "same"],
-                   [[f, f"{ili[f]:.3f}", f"{ett[f]:.3f}", lv[f]["best_level"]["ILI"], lv[f]["best_level"]["ETTh1"], "yes" if lv[f]["same_best_level"] else "no"]
+    c2 = {d2: d["tables"][d2]["conditional_share"] for d2 in ("ILI_T24", "ETTh1_T336")}
+    lines += table(["field", "ILI marginal / conditional", "ETTh1 marginal / conditional", "best level on ILI", "best level on ETTh1", "same"],
+                   [[f, f"{ili[f]:.3f} / {c2['ILI_T24'][f]:.3f}", f"{ett[f]:.3f} / {c2['ETTh1_T336'][f]:.3f}", lv[f]["best_level"]["ILI"], lv[f]["best_level"]["ETTh1"], "yes" if lv[f]["same_best_level"] else "no"]
                     for f in sorted(fields, key=lambda f: -(ili[f] + ett[f]))])
     for dataset, _ in SETTINGS:
         t = d["tables"][setting(dataset)]
         top = sorted(t["interaction_increment"].items(), key=lambda kv: -kv[1])[:5]
+        noise = t.get("seed_noise_share_of_config_means")
+        by_seed = t.get("interaction_increment_by_seed")
+        extra = ""
+        if noise is not None:
+            extra += f" Seed noise is {noise:.0%} of the variance of the config means."
+        if by_seed:
+            ranges = [(k, min(v[k] for v in by_seed.values()), max(v[k] for v in by_seed.values())) for k in [k for k, _ in sorted(t["interaction_increment"].items(), key=lambda kv: -kv[1])[:5]]]
+            extra += " The five largest increments per single seed (min to max): " + ", ".join(f"{k} {lo:.3f} to {hi:.3f}" for k, lo, hi in ranges) + "."
         lines += [f"{dataset}: the additive model explains {t['additive_r2']:.3f} of the variance of the config means and all pairwise interactions "
-                  f"{t['all_pairs_r2']:.3f}. Largest pair increments: " + ", ".join(f"{k} {v:.3f}" for k, v in top) + ".", ""]
+                  f"{t['all_pairs_r2']:.3f}. Largest pair increments: " + ", ".join(f"{k} {v:.3f}" for k, v in top) + "." + extra, ""]
     c = d["cross_table"]
-    lines += [f"Agreement of the field shares across the two tables: Spearman {c['share_spearman']:.2f}, Kendall {c['share_kendall']:.2f} (8 fields).", ""]
+    lines += [f"Agreement of the field shares across the two tables: Spearman {c['share_spearman']:.2f}, Kendall {c['share_kendall']:.2f} (marginal shares, 8 fields); "
+              f"Spearman {c['conditional_share_spearman']:.2f} for the conditional shares (the share a field adds to a model that has the others). Marginal shares and best levels come from an unbalanced set, "
+              "so a best level can flip when the other fields are held fixed.", ""]
     r = d["revin"]
     lines += [f"RevIN on ETTh1, validation only, {r['pairs']} twin pairs: the RevIN-off advantage is {ci(r['epochs_30']['off_advantage'], 4)} at 30 epochs and "
               f"{ci(r['epochs_100']['off_advantage'], 4)} at 100 epochs (ratio {r['shrinkage_30_to_100']['ratio_of_means']:.2f}; change {ci(r['shrinkage_30_to_100']['mean_change'], 4)}); "
               f"off is better in {r['epochs_30']['share_pairs_off_better']:.0%} and {r['epochs_100']['share_pairs_off_better']:.0%} of pairs. Share of RevIN-on runs whose best epoch is the last one: "
-              f"{r['epochs_30']['on_configs_best_epoch_at_cap']:.0%} at 30 epochs, {r['epochs_100']['on_configs_best_epoch_at_cap']:.0%} at 100. By validation month at 100 epochs: "
+              f"{r['epochs_30']['on_configs_best_epoch_at_cap']:.0%} at 30 epochs, {r['epochs_100']['on_configs_best_epoch_at_cap']:.0%} at 100. {r['caveat']}. By validation month at 100 epochs: "
               + ", ".join(f"{x:.4f}" for x in r["epochs_100"]["off_advantage_by_month"]) + " (prediction file, 30 epochs, all 1,184 pairs: "
               + ", ".join(f"{x:.4f}" for x in r["prediction"]["off_advantage_by_month"]) + "). The test part stays with Diya's single evaluation.", ""]
     return lines
@@ -307,10 +331,12 @@ def glance() -> list[str]:
     lines = ["## At a glance", ""]
     q, x, c, n, r, a, g, w = (load(k) for k in ("AB-Q", "AB-X", "AB-C", "AB-L-null", "AB-R", "RQ3", "LLM", "ST-power"))
     if q:
-        s = q["separation"]
-        above = [m for m in s if s[m]["noise_free_prob_better_than_random"] >= 0.7]
-        lines.append(f"* Seed noise hides differences between methods on ILI. TPE beats random search in {s['tpe']['e3_prob_better_than_random']:.0%} of seed pairs with noisy lookups "
-                     f"and {s['tpe']['noise_free_prob_better_than_random']:.0%} with noise-free ones; {len(above)} of {len(s)} methods reach 70% without noise ({', '.join(sorted(above))}) (AB-Q).")
+        s, h = q["separation"], q["holdout"]["methods"]
+        best = min((m for m in h if m != "random"), key=lambda m: h[m]["diff_vs_random"]["mean"])
+        clear = [m for m in h if m != "random" and h[m]["diff_vs_random"]["high"] < 0]
+        lines.append(f"* With noise-free lookups the methods separate in-sample (TPE beats random in {s['tpe']['noise_free_prob_better_than_random']:.0%} of seed pairs, against {s['tpe']['e3_prob_better_than_random']:.0%} with noise), "
+                     f"but only {len(clear)} of {len(h) - 1} methods still beat random when the lookups are two-seed means scored on the third seed; the closest to random of those that gain is {best}, {h[best]['diff_vs_random']['mean']:+.2f} SD "
+                     f"[{h[best]['diff_vs_random']['low']:+.2f}, {h[best]['diff_vs_random']['high']:+.2f}] (AB-Q, exploratory hold-out). Most of the in-sample gap is fitting noise in the stored means, so seed noise alone does not explain the null.")
     if w:
         picks = [v for v in w["rows"] if " picks: " in v["comparison"] and "@50" in v["comparison"] and v["p"] > 0.05]
         sd = [v["detectable_80_sd"] for v in picks]
@@ -336,16 +362,18 @@ def glance() -> list[str]:
         lines.append(f"* GRPO training steps on the Mac (exploratory): Spearman rho {t['rho']:+.2f} between steps and target-table regret, Holm p {t['p_holm']:.4f} (AB-G).")
     if n:
         e, i = n["tables"]["ETTh1"]["E3_A10"], n["tables"]["ILI"]["E3_A10"]
+        o = n["observed_adjusted_slopes"]
         lines.append(f"* GRPO learned on its ETTh1 source and shows no detectable learning on ILI. The registered AB-L test is too liberal (false-positive rate {e['raw']['false_positive_rate']['0.025']:.2f} and "
-                     f"{i['raw']['false_positive_rate']['0.025']:.2f} at the 0.025 level for a model that never learns), but the position-adjusted slope gives the same reading "
-                     f"(ETTh1 p {e['position_adjusted']['p_one_sided_against_null']:.3f}, ILI p {i['position_adjusted']['p_one_sided_against_null']:.2f}); exploratory.")
+                     f"{i['raw']['false_positive_rate']['0.025']:.2f} at the 0.025 level for a model that never learns, from a null of ten searches per table), but the position-adjusted slopes give the same reading: "
+                     f"exact sign flip of the {o['ETTh1']['n']} adjusted ETTh1 slopes p {o['ETTh1']['p_sign_flip']:.3f}, ILI p {o['ILI']['p_sign_flip']:.2f}; exploratory, post hoc.")
     if r:
         t = r["tables"]["ILI_T24"]
-        pick = lambda f, k: next(v["tau"] for v in t["variants"] if v["features"] == f and v["size"] == 300 and v["model"] == "gbt" and v["k"] == k)
-        lines.append(f"* The referee's skill on ILI comes mostly from the config fields: tau {pick('config', None):.2f} from fields alone, {pick('curves', 1):.2f} from curves alone, {pick('both', 1):.2f} from both (AB-R).")
+        pick = lambda f, k, key="tau": next(v[key] if key == "tau" else v["tau_independent_seeds"]["tau"] for v in t["variants"] if v["features"] == f and v["size"] == 300 and v["model"] == "gbt" and v["k"] == k)
+        lines.append(f"* The referee's skill on ILI comes mostly from the config fields: tau {pick('config', None):.2f} from fields alone, {pick('curves', 1):.2f} from curves alone, {pick('both', 1):.2f} from both, against the 3-seed mean. "
+                     f"That target contains the seed-2021 value the referee is trained on; against the mean of the other two seeds the same three are {pick('config', None, 'ind'):.2f}, {pick('curves', 1, 'ind'):.2f} and {pick('both', 1, 'ind'):.2f} (AB-R).")
     if a:
-        lines.append(f"* The two datasets disagree on what matters (Spearman {a['cross_table']['share_spearman']:.2f} between field shares); RevIN explains {a['tables']['ETTh1_T336']['main_effect_share']['instance_norm']:.0%} "
-                     f"of ETTh1's variance and {a['tables']['ILI_T24']['main_effect_share']['instance_norm']:.0%} of ILI's, and its ETTh1 validation advantage for RevIN off does not shrink at 100 epochs (RQ3).")
+        lines.append(f"* The two datasets disagree on what matters, weakly supported (Spearman {a['cross_table']['share_spearman']:.2f} between marginal field shares, {a['cross_table']['conditional_share_spearman']:.2f} between conditional shares, 8 fields); RevIN explains {a['tables']['ETTh1_T336']['main_effect_share']['instance_norm']:.0%} "
+                     f"of ETTh1's variance and {a['tables']['ILI_T24']['main_effect_share']['instance_norm']:.0%} of ILI's, and its ETTh1 validation advantage for RevIN off does not shrink from 30 to 100 epochs (that comparison also changes patience from 10 to 100, RQ3).")
     return lines + [""]
 
 

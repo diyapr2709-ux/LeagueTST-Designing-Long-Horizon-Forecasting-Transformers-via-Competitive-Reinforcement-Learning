@@ -60,10 +60,26 @@ def interactions(table: Table, space: Space) -> dict:
     pairs = {}
     for a, b in itertools.combinations(MUTABLE_FIELDS, 2):
         pairs[f"{a} x {b}"] = explained(np.column_stack([additive, design(space, ids, (a, b))]), y) - base
+    conditional = {f: base - explained(np.column_stack([x for g, x in main.items() if g != f]), y) for f in MUTABLE_FIELDS}
+    by_seed = {}
+    seed_counts = {len(s) for s in table.obs.values()}
+    if len(seed_counts) == 1 and seed_counts.pop() >= 2:
+        seeds = sorted(table.obs[ids[0]])
+        for s in seeds:
+            ys = np.array([table.obs[c][s].best for c in ids])
+            b = explained(additive, ys)
+            by_seed[str(s)] = {p: explained(np.column_stack([additive, design(space, ids, tuple(p.split(" x ")))]), ys) - b for p in pairs}
+        values = np.array([[table.obs[c][s].best for s in seeds] for c in ids])
+        within = values.var(axis=1, ddof=1).mean() / len(seeds)
+        noise_share = float(within / np.array([table.true_value(c) for c in ids]).var())
+    else:
+        noise_share = None
     all_pairs = np.column_stack([additive] + [design(space, ids, p) for p in itertools.combinations(MUTABLE_FIELDS, 2)])
     return {"additive_r2": base, "all_pairs_r2": explained(all_pairs, y),
             "main_effect_share": {f: explained(x, y) for f, x in main.items()},
-            "interaction_increment": dict(sorted(pairs.items(), key=lambda kv: -kv[1]))}
+            "conditional_share": conditional, "seed_noise_share_of_config_means": noise_share,
+            "interaction_increment": dict(sorted(pairs.items(), key=lambda kv: -kv[1])),
+            "interaction_increment_by_seed": by_seed or None}
 
 
 def cross_table(tables: dict[str, Table], spaces: dict[str, Space], shares: dict[str, dict]) -> dict:
@@ -113,10 +129,17 @@ def revin() -> dict:
                      "on_configs_best_epoch_at_cap": float(np.mean([source[on]["best_epoch"] >= source[on]["epochs_run"] for _, on in pairs])),
                      "advantage_per_pair": advantage.tolist()}
     a30, a100 = np.array(out["epochs_30"]["advantage_per_pair"]), np.array(out["epochs_100"]["advantage_per_pair"])
+    out["caveat"] = "E1 stops by patience 10 (RevIN-on runs there run 21 to 30 epochs); REVIN uses patience 100, so the 30-to-100 comparison mixes epochs and patience"
     out["shrinkage_30_to_100"] = {"mean_change": mean_ci(a100 - a30), "ratio_of_means": float(a100.mean() / a30.mean())}
     out["prediction"] = {k: v for k, v in json.loads((ROOT / "results/revin_prediction.json").read_text()).items()
                          if k in ("pairs", "off_advantage_by_month", "slope_per_month", "prediction", "windows_per_month")}
     return out
+
+
+def _spearman(va, vb) -> float:
+    from scipy.stats import spearmanr
+
+    return float(spearmanr(va, vb)[0])
 
 
 def main() -> int:
@@ -127,6 +150,8 @@ def main() -> int:
                                               "configs": len(tables[dataset].ids)}
     shares = {d: result["tables"][setting(d)]["main_effect_share"] for d in tables}
     result["cross_table"] = cross_table(tables, spaces, shares)
+    cond = {d: result["tables"][setting(d)]["conditional_share"] for d in tables}
+    result["cross_table"]["conditional_share_spearman"] = _spearman([cond["ILI"][f] for f in MUTABLE_FIELDS], [cond["ETTh1"][f] for f in MUTABLE_FIELDS])
     result["revin"] = revin()
     result["provenance"] = provenance(__file__, ["results/ledger.jsonl", "results/revin_prediction.json"])
     write_json(OUT / "RQ3.json", result)
