@@ -474,7 +474,7 @@ def history() -> list[str]:
             "of the three table seeds; whether results survive a different fidelity ladder or a common first configuration; BOHB and one-epoch-then-top-K baselines; and, for AB-L, how much of the ETTh1 slope the league contributes.",
             "* Mac LLM runs: the ILI prompted reference (ABL_P_ref_mps) ran at commit 31f9313 and every other Mac item at 0929d26; scripts/ablations/llm_mps.py and leaguetst/ are identical between the two. Every run file's commit and digest is in results/ablations/LLM.json. "
             "AB3 addendum 3 (policy-level and dose analyses) was committed before its outputs; addendum 4 (RevIN shares, paired gap, diagnostics) was written after a critic had reported them and its code was run once before the commit, as it says.",
-            "* Verifier and critic reports, verbatim, are in docs/verdicts/.", ""]
+            "* Verifier and critic reports (AI subagents), quoted in full, are in docs/verdicts/ablations_cpu_reviews.md and docs/verdicts/ablations_llm_reviews.md.", ""]
 
 
 def main() -> int:

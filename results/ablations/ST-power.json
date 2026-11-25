@@ -2,12 +2,13 @@
  "analysis": "ST detectable effects",
  "descriptive": true,
  "provenance": {
-  "git_hash": "d8364cd82874cda1d4d461612969416f14f17a0e",
+  "git_hash": "5abbd20c1b4acdcc11535be1b9ce62e3258549e9",
   "inputs_sha256": {
    "docs/claims/E3.json": "bf82ccda09ec9192708fe95cd5aa4a0327913196c4b1099c9e4bb3a6bd97b0d6",
    "results/ablations/AB-C.json": "9d0b005fb1fd09469f4c257acf4ac0c670cfe2f1748550e775468a6724c56b26",
    "results/ablations/AB-L.json": "b82641d9142f4496ed29cf32620589d281acb08130ae2035f9584e3e81b96ce2",
    "results/ablations/AB-X.json": "d0d7b62990e2ef5d9d41d4d22dd6a0e772394c05df5f74a9ee34d278e335e7b6",
+   "results/ablations/LLM.json": "75019f3a4e3401b6f85ff01ab5918136ed57f288f82e43c053e598a13cdb58d2",
    "results/e5/ETTh1_T336.json": "cf5d7a79de57ed6e35843696e7dad015e1d2aab8de98eb9db9ff15c4d4517dda",
    "results/e5/ILI_T24.json": "fde064fc71a561f17ecf3378ddc5d335b17326790c274793ad82f5381ae31b02",
    "results/independent/E4_soumitra.json": "f191b5e67bd1d1c9f00434c91fa461eb3bcd972bccc6d056675e5bb89eb611e8",
@@ -2279,6 +2280,40 @@
    ],
    "note": "",
    "p": 0.05269947300526995,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-P on the Mac (exploratory), ILI AUC: anon vs ref",
+   "detectable_80": 0.5114108858568568,
+   "diff": 0.30575812502012956,
+   "family": 3,
+   "mean": [
+    1.9592714895999572,
+    1.6535133645798277
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "",
+   "p": 0.058279417205827945,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-P on the Mac (exploratory), ILI AUC: repair vs ref",
+   "detectable_80": 0.48335630542559843,
+   "diff": -0.33262188362295353,
+   "family": 3,
+   "mean": [
+    1.3208914809568741,
+    1.6535133645798277
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "",
+   "p": 0.026789732102678973,
    "unit": "pooled seed SD"
   },
   {

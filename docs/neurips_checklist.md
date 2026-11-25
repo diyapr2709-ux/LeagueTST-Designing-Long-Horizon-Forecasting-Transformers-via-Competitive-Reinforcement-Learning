@@ -21,7 +21,7 @@ supports it. "Open" marks what the authors must still do or decide.
 | 13 | Are new assets documented? | Planned: the two result tables as a benchmark with a loader and Croissant metadata (Phase B item 3). Not part of this submission unless finished. | docs/prereg_ablations.md Phase B |
 | 14 | Crowdsourcing and human subjects: instructions and pay? | Not applicable. | |
 | 15 | IRB approval? | Not applicable. | |
-| 16 | Declaration of LLM usage? | Yes: Qwen2.5-1.5B-Instruct, prompted and GRPO-trained, is the method under study. Separately, AI coding assistants wrote and ran much of the code and drafted documents under the authors' direction; the verifier and critic passes were AI subagents too, not independent people. The authors decide how to state this under the call's policy. Verdict files exist only for AB-L and E4; those for the ablations are in docs/verdicts once the reviews end. | docs/prereg_E4.md; leaguetst/architect/; CLAUDE.md; docs/HANDOFF_*.md |
+| 16 | Declaration of LLM usage? | Yes: Qwen2.5-1.5B-Instruct, prompted and GRPO-trained, is the method under study. Separately, AI coding assistants wrote and ran much of the code and drafted documents under the authors' direction; the verifier and critic passes were AI subagents too, not independent people. The authors decide how to state this under the call's policy. Verdict files: AB-L and E4 (docs/verdicts), and the ablations' CPU and Mac LLM parts (docs/verdicts/ablations_cpu_reviews.md, docs/verdicts/ablations_llm_reviews.md). | docs/prereg_E4.md; leaguetst/architect/; CLAUDE.md; docs/HANDOFF_*.md |
 
 ## Open items for the authors
 

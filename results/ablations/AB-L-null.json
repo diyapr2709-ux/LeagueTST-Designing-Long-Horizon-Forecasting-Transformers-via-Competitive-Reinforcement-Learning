@@ -18,15 +18,17 @@
   }
  },
  "provenance": {
-  "git_hash": "d8364cd82874cda1d4d461612969416f14f17a0e",
+  "git_hash": "5abbd20c1b4acdcc11535be1b9ce62e3258549e9",
   "inputs_sha256": {
    "results/ablations/AB-L.json": "b82641d9142f4496ed29cf32620589d281acb08130ae2035f9584e3e81b96ce2",
+   "results/ablations/mps/ABL_P_ref_mps/ETTh1_T336/qwen_prompted_mps_runs.jsonl": "2129b14f39b0cdc7677f5e0a526086e2fe7c169683b61f30cf418f81a44d6f6b",
+   "results/ablations/mps/ABL_P_ref_mps/ILI_T24/qwen_prompted_mps_runs.jsonl": "f5d707c04ae0d1ff02f31669a452d07592e8c5f15d495757d25f048eb083693c",
    "results/ledger.jsonl": "b5e1b558718844daebc8225b9ac8557fd1aecfc47b34d32944c6b28a110a0f36",
    "results/search/E3/ETTh1_T336/qwen_prompted_runs.jsonl": "04aa248107a09839f84645ba1e2dfa8808dc33609b29024c9ae5a7374f9b8ba3",
    "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl": "d62b8bf00323eec52eb08ce40093a56498224c4488d700c2491a86cd0ec96ca0"
   },
   "script": "scripts/ablations/learning_null.py",
-  "script_sha256": "3a7a8e2db3414199a16996fa798d8b3983f2c6e8fbad27f06e9296312cb6aec8",
+  "script_sha256": "92d2204e916914b432355388b27363ed48c67d25da0bcef1a187a81379b6f09d",
   "versions": {
    "numpy": "2.5.4",
    "optuna": "5.1.0",
@@ -38,6 +40,26 @@
  },
  "tables": {
   "ETTh1": {
+   "ABL_P_ref_mps (Mac, exploratory)": {
+    "episodes": 30,
+    "position_adjusted": {
+     "mean_of_arm_means": -0.004961127527321155,
+     "observed_league_mean": 0.19394607207674358,
+     "p_one_sided_against_null": 0.001999000499750125,
+     "sd_of_arm_means": 0.06636861599803416
+    },
+    "raw": {
+     "false_positive_rate": {
+      "0.025": 0.237,
+      "0.05": 0.3385
+     },
+     "mean": 0.08530577245605034,
+     "observed_league_mean": 0.20212600466683953,
+     "p_one_sided_against_null": 0.009495252373813094,
+     "sd": 0.15330957658020825
+    },
+    "steps_per_episode": 15.433333333333334
+   },
    "E3_A10": {
     "episodes": 10,
     "position_adjusted": {
@@ -60,6 +82,26 @@
    }
   },
   "ILI": {
+   "ABL_P_ref_mps (Mac, exploratory)": {
+    "episodes": 30,
+    "position_adjusted": {
+     "mean_of_arm_means": -0.005103595385471337,
+     "observed_league_mean": 0.058748017032645906,
+     "p_one_sided_against_null": 0.14842578710644677,
+     "sd_of_arm_means": 0.061544001973617354
+    },
+    "raw": {
+     "false_positive_rate": {
+      "0.025": 0.094,
+      "0.05": 0.1745
+     },
+     "mean": 0.05845499107054752,
+     "observed_league_mean": 0.07716203864424358,
+     "p_one_sided_against_null": 0.3638180909545227,
+     "sd": 0.16053158512905918
+    },
+    "steps_per_episode": 21.433333333333334
+   },
    "E3_A10": {
     "episodes": 10,
     "position_adjusted": {
