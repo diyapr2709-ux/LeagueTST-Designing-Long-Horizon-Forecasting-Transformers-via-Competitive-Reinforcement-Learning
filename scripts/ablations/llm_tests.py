@@ -82,6 +82,23 @@ def mps_source(table) -> dict:
     return out
 
 
+def noise_free_prompted() -> dict | None:
+    """AB-Q beside the CPU methods: prompted Qwen on the table of 3-seed means (Mac)."""
+    from plateau import curve, noise_free_rows
+    from common import no_incumbent_value, runner
+
+    runs = runs_of(OUT / "mps" / "ABL_Q_prompted_mps" / "ILI_T24")
+    if not runs:
+        return None
+    from leaguetst.search.replay import Table
+
+    free = Table(noise_free_rows(runner.table_rows("ILI")))
+    sigma = load_table("ILI")[0].seed_sd()
+    fallback = no_incumbent_value(free)
+    values = [float(curve(r, free, fallback).mean() / sigma) for r in runs]
+    return {"n": len(values), "auc": mean_ci(values)}
+
+
 def diagnostics(runs: list[dict]) -> dict:
     total = sum(r["proposals"] for r in runs)
     return {"searches": len(runs), "steps": mean_ci([r["steps"] for r in runs]), "lookups": mean_ci([r["lookups"] for r in runs]),
@@ -136,6 +153,7 @@ def main() -> int:
               "provenance": provenance(__file__, ["results/ledger.jsonl"]), "registered": registered_source(table),
               "mps": mps_source(table), "hardware_check": hardware_check(table)}
     root = OUT / "mps"
+    result["mps"]["AB-Q_prompted"] = noise_free_prompted()
     result["mps"]["ETTh1_descriptive"] = {}
     for name in ("ref", "anon", "repair"):
         runs = runs_of(root / f"ABL_P_{name}_mps" / "ETTh1_T336")
