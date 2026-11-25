@@ -174,7 +174,7 @@ def permutation_p(a: list[float], b: list[float]) -> dict:
             s = x[list(idx)].sum()
             diff = s / n_a - (total - s) / (n - n_a)
             hits += abs(diff) >= abs(observed) - tol
-        return {"diff": observed, "p": hits / n_splits, "method": "exact", "splits": n_splits}
+        return {"diff": observed, "p": float(hits / n_splits), "method": "exact", "splits": n_splits}
     rng = np.random.default_rng(RNG_SEED)
     hits = 0
     for _ in range(N_RANDOM):
@@ -193,10 +193,10 @@ def holm(p_values: dict[str, float], alpha: float = ALPHA) -> dict[str, dict]:
     for rank, name in enumerate(order):
         adjusted = min(1.0, (m - rank) * p_values[name])
         running = max(running, adjusted)
-        reject = (not stop) and p_values[name] <= alpha / (m - rank)
+        reject = bool((not stop) and p_values[name] <= alpha / (m - rank))
         if not reject:
             stop = True
-        out[name] = {"p": p_values[name], "p_holm": running, "reject": reject}
+        out[name] = {"p": float(p_values[name]), "p_holm": float(running), "reject": reject}
     return out
 
 
