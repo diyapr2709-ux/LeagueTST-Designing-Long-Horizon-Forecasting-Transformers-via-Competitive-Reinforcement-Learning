@@ -1,0 +1,306 @@
+{
+  "above_tolerance": [
+    {
+      "abs_diff": 0.003016774598230132,
+      "independent": 0.6390468047659762,
+      "note": "Monte Carlo in both (200000 vs 100000 random splits, different streams; combined SE of the difference ~1.9e-03)",
+      "replay": 0.6420635793642063,
+      "statistic": "grpo_league_from_ETTh1 vs portfolio_from_ETTh1: p"
+    }
+  ],
+  "best_config_match": true,
+  "decisions": [
+    {
+      "agree": true,
+      "independent_holm_reject": false,
+      "independent_league_win": false,
+      "independent_lower_regret": "grpo_league_from_ETTh1",
+      "replay_claims_win": false,
+      "test": "F1 ILI AUC league vs portfolio"
+    },
+    {
+      "agree": true,
+      "independent_holm_reject": true,
+      "independent_league_win": false,
+      "independent_lower_regret": "tpe_warm_from_ETTh1",
+      "replay_claims_win": false,
+      "test": "F1 ILI AUC league vs tpe_warm"
+    },
+    {
+      "agree": true,
+      "independent_holm_reject": false,
+      "independent_league_win": false,
+      "independent_lower_regret": "grpo_league_from_ETTh1",
+      "replay_claims_win": false,
+      "test": "F2 ILI AUC league vs none"
+    }
+  ],
+  "decisions_agree": true,
+  "holm_families": {
+    "independent": "6 per family, pending tests as not rejected (A25, A30)",
+    "replay": "over the claims in docs/claims/E4.json: 2 in family 1, 1 in family 2"
+  },
+  "j3_decision_independent": {
+    "league_mean_auc": 3.142846099768888,
+    "none_mean_auc": 3.2333866496957717,
+    "p": 0.802528740609236,
+    "runs": false,
+    "test": "exact",
+    "threshold": 0.008333333333333333
+  },
+  "repo_head": "a730d1fddc1262e8e311f123ebe252cc7f05293a",
+  "rows": [
+    {
+      "abs_diff": 0.0,
+      "independent": 0.009786926438667494,
+      "note": "",
+      "replay": 0.009786926438667494,
+      "statistic": "ILI pooled seed SD"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 0.20229467250972485,
+      "note": "",
+      "replay": 0.20229467250972485,
+      "statistic": "ILI best 3-seed mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 10.0,
+      "note": "",
+      "replay": 10.0,
+      "statistic": "grpo_league_from_ETTh1 seeds"
+    },
+    {
+      "abs_diff": 1.3322676295501878e-15,
+      "independent": 3.142846099768888,
+      "note": "",
+      "replay": 3.142846099768889,
+      "statistic": "grpo_league_from_ETTh1 AUC mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.212999156298911,
+      "note": "",
+      "replay": 3.212999156298911,
+      "statistic": "grpo_league_from_ETTh1 regret b25 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.2961811525424953,
+      "note": "",
+      "replay": 3.2961811525424953,
+      "statistic": "grpo_league_from_ETTh1 regret b25 median"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.0069134791223804,
+      "note": "",
+      "replay": 3.0069134791223804,
+      "statistic": "grpo_league_from_ETTh1 regret b50 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.155128065210558,
+      "note": "",
+      "replay": 3.155128065210558,
+      "statistic": "grpo_league_from_ETTh1 regret b50 median"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 10.0,
+      "note": "",
+      "replay": 10.0,
+      "statistic": "grpo_none_from_ETTh1 seeds"
+    },
+    {
+      "abs_diff": 4.440892098500626e-16,
+      "independent": 3.2333866496957717,
+      "note": "",
+      "replay": 3.2333866496957713,
+      "statistic": "grpo_none_from_ETTh1 AUC mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.186421735245524,
+      "note": "",
+      "replay": 3.186421735245524,
+      "statistic": "grpo_none_from_ETTh1 regret b25 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 2.966729533735618,
+      "note": "",
+      "replay": 2.966729533735618,
+      "statistic": "grpo_none_from_ETTh1 regret b25 median"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.414704008190353,
+      "note": "",
+      "replay": 3.414704008190353,
+      "statistic": "grpo_none_from_ETTh1 regret b50 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.1665545489589935,
+      "note": "",
+      "replay": 3.1665545489589935,
+      "statistic": "grpo_none_from_ETTh1 regret b50 median"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 30.0,
+      "note": "",
+      "replay": 30.0,
+      "statistic": "portfolio_from_ETTh1 seeds"
+    },
+    {
+      "abs_diff": 1.3322676295501878e-15,
+      "independent": 3.27935636022483,
+      "note": "",
+      "replay": 3.2793563602248312,
+      "statistic": "portfolio_from_ETTh1 AUC mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 2.6501460491214672,
+      "note": "",
+      "replay": 2.6501460491214672,
+      "statistic": "portfolio_from_ETTh1 regret b25 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 2.0907801165591944,
+      "note": "",
+      "replay": 2.0907801165591944,
+      "statistic": "portfolio_from_ETTh1 regret b25 median"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 3.292184675517288,
+      "note": "",
+      "replay": 3.292184675517288,
+      "statistic": "portfolio_from_ETTh1 regret b50 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 2.9011792162365895,
+      "note": "",
+      "replay": 2.9011792162365895,
+      "statistic": "portfolio_from_ETTh1 regret b50 median"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 30.0,
+      "note": "",
+      "replay": 30.0,
+      "statistic": "tpe_warm_from_ETTh1 seeds"
+    },
+    {
+      "abs_diff": 6.661338147750939e-16,
+      "independent": 1.6471222075712406,
+      "note": "",
+      "replay": 1.64712220757124,
+      "statistic": "tpe_warm_from_ETTh1 AUC mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 1.6193755107316998,
+      "note": "",
+      "replay": 1.6193755107316998,
+      "statistic": "tpe_warm_from_ETTh1 regret b25 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 1.2841957599774538,
+      "note": "",
+      "replay": 1.2841957599774538,
+      "statistic": "tpe_warm_from_ETTh1 regret b25 median"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 1.4702361827195245,
+      "note": "",
+      "replay": 1.4702361827195245,
+      "statistic": "tpe_warm_from_ETTh1 regret b50 mean"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 1.2166518254774177,
+      "note": "",
+      "replay": 1.2166518254774177,
+      "statistic": "tpe_warm_from_ETTh1 regret b50 median"
+    },
+    {
+      "abs_diff": 2.6645352591003757e-15,
+      "independent": 2.6645352591003757e-15,
+      "note": "per-seed",
+      "replay": 0.0,
+      "statistic": "grpo_league_from_ETTh1 vs portfolio_from_ETTh1: max per-seed AUC diff, grpo_league_from_ETTh1"
+    },
+    {
+      "abs_diff": 2.220446049250313e-15,
+      "independent": 2.220446049250313e-15,
+      "note": "per-seed",
+      "replay": 0.0,
+      "statistic": "grpo_league_from_ETTh1 vs portfolio_from_ETTh1: max per-seed AUC diff, portfolio_from_ETTh1"
+    },
+    {
+      "abs_diff": 0.003016774598230132,
+      "independent": 0.6390468047659762,
+      "note": "Monte Carlo in both (200000 vs 100000 random splits, different streams; combined SE of the difference ~1.9e-03)",
+      "replay": 0.6420635793642063,
+      "statistic": "grpo_league_from_ETTh1 vs portfolio_from_ETTh1: p"
+    },
+    {
+      "abs_diff": 2.6645352591003757e-15,
+      "independent": 2.6645352591003757e-15,
+      "note": "per-seed",
+      "replay": 0.0,
+      "statistic": "grpo_league_from_ETTh1 vs tpe_warm_from_ETTh1: max per-seed AUC diff, grpo_league_from_ETTh1"
+    },
+    {
+      "abs_diff": 1.3322676295501878e-15,
+      "independent": 1.3322676295501878e-15,
+      "note": "per-seed",
+      "replay": 0.0,
+      "statistic": "grpo_league_from_ETTh1 vs tpe_warm_from_ETTh1: max per-seed AUC diff, tpe_warm_from_ETTh1"
+    },
+    {
+      "abs_diff": 4.9999250008339016e-11,
+      "independent": 9.999950000249999e-06,
+      "note": "Monte Carlo in both (200000 vs 100000 random splits, different streams; combined SE of the difference ~1.2e-05)",
+      "replay": 9.99990000099999e-06,
+      "statistic": "grpo_league_from_ETTh1 vs tpe_warm_from_ETTh1: p"
+    },
+    {
+      "abs_diff": 2.6645352591003757e-15,
+      "independent": 2.6645352591003757e-15,
+      "note": "per-seed",
+      "replay": 0.0,
+      "statistic": "grpo_league_from_ETTh1 vs grpo_none_from_ETTh1: max per-seed AUC diff, grpo_league_from_ETTh1"
+    },
+    {
+      "abs_diff": 1.7763568394002505e-15,
+      "independent": 1.7763568394002505e-15,
+      "note": "per-seed",
+      "replay": 0.0,
+      "statistic": "grpo_league_from_ETTh1 vs grpo_none_from_ETTh1: max per-seed AUC diff, grpo_none_from_ETTh1"
+    },
+    {
+      "abs_diff": 0.0,
+      "independent": 0.802528740609236,
+      "note": "exact in the independent analysis",
+      "replay": 0.802528740609236,
+      "statistic": "grpo_league_from_ETTh1 vs grpo_none_from_ETTh1: p"
+    }
+  ],
+  "tolerance": 1e-09,
+  "worktree_head": "c2dda8dfa49c6f090816f516285792a00585a79d",
+  "worktree_status": [
+    "M results/search/E4/ILI_T24/summary.json",
+    " M results/search/E4/ILI_T24/summary.md",
+    "?? docs/claims/E4.json"
+  ]
+}

@@ -48,3 +48,29 @@ The ETTh1-target tests, family 3's Holm composition, K3 and per-arm GPU-type rep
 * Family 3's Holm composition with the E3 CPU methods' comparisons.
 * The prompted-Qwen records carry no env block or git hash (CLAUDE.md rule 7);
   all ten report "NVIDIA A10".
+
+## L1 step 3: diff against scripts/replay.py (25 Nov)
+
+`scripts/replay.py --item E4 --table E1 --dataset ILI --horizon 24
+--summarize-only` was run in a scratch git worktree at c2dda8d (never
+committed) and compared by scripts/independent/diff_replay.py (a730d1f);
+output results/independent/E4_replay_diff.json, from which every value here
+is read.
+
+* 35 statistics compared (pooled SD, best config and mean, seed counts, AUC
+  and regret means and medians at 25 and 50 for the four ILI-target arms,
+  per-seed AUC in each claim, p-values). All agree within 1e-9 except one.
+* The one difference: league vs portfolio, p = 0.639047 (independent) vs
+  0.642064 (replay). Cause: both are Monte Carlo permutation tests with
+  different random streams and split counts (200,000 vs 100,000); the gap,
+  0.003, is about 1.6 combined standard errors (~1.9e-3). The exact league
+  vs none test (the A30 J3 test) is identical in both, p = 0.802528740609236.
+* Decisions agree on all three tests: neither analysis finds a league win.
+  League vs warm-started TPE is rejected by the independent two-sided test
+  with warm-started TPE lower; replay records claims_win false.
+* Procedure difference, no effect on any decision: replay applies Holm over
+  the claims in its file (2 in family 1, 1 in family 2); the independent
+  analysis uses the registered family size of 6 with pending tests counted
+  as not rejected (A25, A30).
+
+The J3 decision stands under both analyses.
