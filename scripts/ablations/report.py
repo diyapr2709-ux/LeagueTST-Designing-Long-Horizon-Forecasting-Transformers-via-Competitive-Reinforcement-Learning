@@ -305,12 +305,19 @@ def rq3() -> list[str]:
 def glance() -> list[str]:
     """The main readings, each built from the result files."""
     lines = ["## At a glance", ""]
-    q, x, c, n, r, a, g = (load(k) for k in ("AB-Q", "AB-X", "AB-C", "AB-L-null", "AB-R", "RQ3", "LLM"))
+    q, x, c, n, r, a, g, w = (load(k) for k in ("AB-Q", "AB-X", "AB-C", "AB-L-null", "AB-R", "RQ3", "LLM", "ST-power"))
     if q:
         s = q["separation"]
         above = [m for m in s if s[m]["noise_free_prob_better_than_random"] >= 0.7]
         lines.append(f"* Seed noise hides differences between methods on ILI. TPE beats random search in {s['tpe']['e3_prob_better_than_random']:.0%} of seed pairs with noisy lookups "
                      f"and {s['tpe']['noise_free_prob_better_than_random']:.0%} with noise-free ones; {len(above)} of {len(s)} methods reach 70% without noise ({', '.join(sorted(above))}) (AB-Q).")
+    if w:
+        picks = [v for v in w["rows"] if " picks: " in v["comparison"] and "@50" in v["comparison"] and v["p"] > 0.05]
+        sd = [v["detectable_80_sd"] for v in picks]
+        e4 = [v["detectable_80"] for v in w["rows"] if v["comparison"].startswith(("E4 family 1", "E4 family 2"))]
+        ratio = sorted(abs(v["diff"]) / v["detectable_80"] for v in picks)
+        lines.append(f"* The nulls have limited resolution. At budget 50 the pick reseeds could detect differences of {min(sd):.2f} to {max(sd):.2f} seed SD (80% power, Holm size in the table); the observed "
+                     f"non-significant differences are {ratio[0]:.0%} to {ratio[-1]:.0%} of that. E4's ILI comparisons with 10 policies could detect {min(e4):.2f} to {max(e4):.2f} SD (ST).")
     if x:
         t = x["tables"]["ILI_T24"]["tests"]
         wins = [k for k, v in t.items() if v["reject"]]
