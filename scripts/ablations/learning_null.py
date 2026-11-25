@@ -115,7 +115,8 @@ def sign_flip_observed(dataset: str) -> dict:
 def main() -> int:
     result = {"analysis": "AB-L calibration", "exploratory": "post hoc: written after AB-L's results were seen",
               "n_chains": N_CHAINS, "n_tests": N_TESTS, "tables": {},
-              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/ablations/AB-L.json", "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl", "results/search/E3/ETTh1_T336/qwen_prompted_runs.jsonl"])}
+              "provenance": provenance(__file__, ["results/ledger.jsonl", "results/ablations/AB-L.json", "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl", "results/search/E3/ETTh1_T336/qwen_prompted_runs.jsonl",
+                                                  *(str((OUT / "mps/ABL_P_ref_mps" / setting(ds) / "qwen_prompted_mps_runs.jsonl").relative_to(ROOT)) for ds, _ in SETTINGS if (OUT / "mps/ABL_P_ref_mps" / setting(ds) / "qwen_prompted_mps_runs.jsonl").exists())])}
     for dataset, _ in SETTINGS:
         table, _space = load_table(dataset)
         observed = observed_slopes(dataset)

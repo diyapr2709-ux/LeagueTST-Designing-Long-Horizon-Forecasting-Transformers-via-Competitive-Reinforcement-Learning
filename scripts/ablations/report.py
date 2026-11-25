@@ -208,7 +208,7 @@ def learned() -> list[str]:
         lines += table(["source table", "untrained runs", "episodes", "null slope, raw", "registered test's false-positive rate at 0.025 / 0.05",
                         "observed raw", "p against null, raw", "null slope, position-adjusted", "observed adjusted", "p against null, adjusted"], rows)
         lines += ["The position-adjusted slope (Soumitra's exploratory field) is centred on zero without learning, so it is the safer reading. "
-                  "The E3 source has ten searches per table and no recorded step boundaries, so the null is approximate.", ""]
+                  "The E3 source has ten searches per table and no recorded step boundaries, so the null is approximate. The Mac source has thirty searches and recorded steps but another machine and code, so the two sources differ for several reasons; both say the registered test is too liberal.", ""]
     return lines
 
 
@@ -225,17 +225,26 @@ def llm() -> list[str]:
     m = d["mps"]
     lines += ["Registered items (ABL_P_ref, ABL_P_anon, ABL_P_repair, ABL_G_steps30, ABL_G_steps120) are not launched by Anirudh (AB3); if none of them runs by 28 Nov 23:59 ET (AB1), their families keep their "
               "registered sizes and the missing tests count as not rejected. ", "Registered arms (Modal or CUDA): " + d["registered"]["note"] + (f" ({', '.join(d['registered']['items_found'])})" if d["registered"]["items_found"] else "") + ".", "",
-              "Everything below ran on an Apple M4 Pro (torch MPS), with every reference on the same machine. It is exploratory (AB1, AB3): "
+              "Everything below ran on an Apple M4 Pro (torch MPS), each Mac arm against its own reference on the same machine (the A10 columns of the hardware check are committed runs). It is exploratory (AB1, AB3): "
               "it replaces no registered family. " + provenance_line(d), ""]
     p = m["AB-P"]
     lines += ["### AB-P on the Mac: prompted Qwen, ILI held-out AUC", "", "Finished searches: " + ", ".join(f"{k} {v}" for k, v in p["complete"].items()) + ".", ""]
     if p["tests"]:
         lines += family(p["tests"], 3, "test not part of this exploratory set: the scale trend (moved to Soumitra by AB1)")
     if p["diagnostics"]:
-        lines += table(["arm", "searches", "lookups", "repeat rate", "repaired rate", "invalid rate"],
+        rep = p["diagnostics"].get("repair")
+        lines += ["ILI diagnostics:", ""] + table(["arm", "searches", "lookups", "repeat rate", "repaired rate", "invalid rate"],
                        [[a, str(x["searches"]), f"{x['lookups']['mean']:.0f}", f"{x['repeat_rate']:.2f}", f"{x['repaired_rate']:.2f}", f"{x['invalid_rate']:.2f}"] for a, x in p["diagnostics"].items()])
+        if rep:
+            lines += [f"The repair arm's comparison is confounded by design: {rep['repaired_rate']:.0%} of its ILI proposals are replaced by the nearest unseen config (its repeat rate is "
+                      f"{rep['repeat_rate']:.2f}, against {p['diagnostics']['ref']['repeat_rate']:.2f} for ref), so it measures removing the constrained decoding together with that replacement.", ""]
     if m.get("ETTh1_descriptive"):
         lines += ["ETTh1 (descriptive, in-sample):", ""]
+        if m.get("ETTh1_differences"):
+            d_ = m["ETTh1_differences"]
+            lines += table(["ETTh1 arm", "AUC difference from ref (SD units, no test)"],
+                           [[k, f"{v['diff']:+.2f} [{v['low']:+.2f}, {v['high']:+.2f}] (30 seeds per arm)"] for k, v in d_.items()])
+            lines += ["Both signs are the reverse of ILI: on ETTh1 the anonymised prompt does slightly better and repair worse. ETTh1 has one seed per config, so these are in-sample and no test or p value is given; no mechanism is claimed.", ""]
         rows = []
         for arm, x in m["ETTh1_descriptive"].items():
             for method, s in x["summary"].items():
@@ -247,15 +256,31 @@ def llm() -> list[str]:
         t = g["tests"]["step trend"]
         lines += table(["steps", "runs", "ILI held-out AUC"], [[k, str(v["n"]), ci(v)] for k, v in sorted(t["levels"].items(), key=lambda kv: int(kv[0]))])
         u, dose = m["policy_level"]["trained_vs_untrained"], m["policy_level"]["dose"]
-        lines += [f"Trained at all: the ten policies' AUC, averaged over their three checkpoints, is {u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] against the 30 untrained searches "
-                  f"(permutation p {pfmt(u['p'])}; detectable {u['detectable_80']:.2f} SD). Positive is worse. It is a comparison with the untrained model, not a trend.",
-                  f"Dose: the per-policy Spearman correlation of AUC with 30, 60, 120 steps averages {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f} (three ordered points, little power). "
-                  "Both of these are exploratory and post hoc (AB3 addendum 3).",
-                  f"Registered step trend (60 values, levels of one policy dependent): Spearman rho {t['rho']:+.2f}, p {pfmt(t['p'])}, Holm over 2 {pfmt(t['p_holm'])}, {'rejected' if t['reject'] else 'not rejected'}; "
-                  "positive means higher (worse) regret on the target table at later levels. Level 0 drives it (see the trained-levels row). "
-                  f"With 10 seeds per level: rho {m['step_trend_10_per_level']['rho']:+.2f}, p {pfmt(m['step_trend_10_per_level']['p'])}. "
-                  f"Trained levels only (30, 60, 120): rho {m['step_trend_trained_levels_only']['rho']:+.2f}, p {m['step_trend_trained_levels_only']['p']:.4f}. "
-                  "The levels of one policy share its training run, so they are dependent.", ""]
+        u, dose, pair = m["policy_level"]["trained_vs_untrained"], m["policy_level"]["dose"], m["paired"]
+        lines += [f"Trained at all (exploratory, AB3 addendum 3): the ten policies' AUC, averaged over their three checkpoints, is {u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] against the 30 untrained searches "
+                  f"(permutation p {pfmt(u['p'])}; the test could detect {u['detectable_80']:.2f} SD). Positive is worse. Against the untrained search of the same deployment seed the gap is {ci(pair['gap'])} SD, "
+                  f"worse for {pair['worse']} of {pair['policies']} policies (addendum 4).", ""]
+        lines += ["Scope: policies trained with league rivals on the ETTh1 table (one seed per config) and deployed on ILI. It shows that they do worse on ILI than the untrained model. It does not show that GRPO or the league is harmful: "
+                  "there is no ILI-source arm, no same-table deployment and no uniform or none arm on the Mac. Policies' checkpoints are dependent (one training run each).", ""]
+        rv = m["revin"]
+        lines += ["RevIN preference (descriptive, addendum 4). The table gives the share of the lookups on ILI with RevIN off, and the AUC of the same committed runs beside it.", ""]
+        rows = [[f"level {k}", f"{v:.0%}", "", ""] for k, v in sorted(rv["mac_share_off_ILI"].items(), key=lambda kv: int(kv[0].split()[0]))] + \
+               [[k, f"{v['share_off']:.0%}", ci(v["auc"]), str(v["runs"])] for k, v in rv["committed_ILI"].items()]
+        lines += table(["runs", "RevIN-off share of ILI lookups", "ILI AUC (committed runs)", "runs in group"], rows)
+        b = rv["best_regret_by_revin"]
+        lines += [f"The best RevIN-off config on ILI has regret {b['ILI_T24']['revin_off']:.2f} SD (RevIN-on best: {b['ILI_T24']['revin_on']:.2f}), and on ETTh1 the best RevIN-on config has {b['ETTh1_T336']['revin_on']:.1f} SD "
+                  f"(RevIN-off best: {b['ETTh1_T336']['revin_off']:.2f}). Trained policies, at 30 steps already, look up almost only RevIN-off configs, so a preference that is right on ETTh1 costs on ILI. "
+                  "This is consistent with the transfer loss but is not tested: no arm removes the preference while keeping the training.", ""]
+        lines += [f"Dose (exploratory, addendum 3): the per-policy Spearman correlation of AUC with 30, 60, 120 steps averages {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f} "
+                  "(three ordered points, little power).", ""]
+        sd = m["step_diagnostics"]
+        lines += table(["checkpoint", "searches", "lookups", "repeat rate", "invalid rate", "logged updates per policy"],
+                       [[k, str(v["searches"]), f"{v['lookups']['mean']:.0f}", f"{v['repeat_rate']:.2f}", f"{v['invalid_rate']:.2f}", ci(v["logged_updates"], 1)] for k, v in sorted(sd.items(), key=lambda kv: int(kv[0]))])
+        lines += ["A step with no budget left logs no update, so the levels are about 29, 57 and 113 updates at 30, 60 and 120 steps.", ""]
+        lines += [f"AB-G's registered statistic, computed on these Mac runs (Spearman of the level with AUC over 60 values): rho {t['rho']:+.2f}, p {pfmt(t['p'])}, Holm over 2 {pfmt(t['p_holm'])}. "
+                  "This p is not valid (AB3 addendum 3): levels 30, 60 and 120 are checkpoints of the same policies, and level 0 (untrained) drives the rank correlation. It is therefore not reported as a rejection. "
+                  f"With 10 seeds per level: rho {m['step_trend_10_per_level']['rho']:+.2f}, p {pfmt(m['step_trend_10_per_level']['p'])} (same caveat). "
+                  f"Trained levels only (30, 60, 120): rho {m['step_trend_trained_levels_only']['rho']:+.2f}, p {m['step_trend_trained_levels_only']['p']:.3f} (same caveat). ", ""]
     if g["training"]["policies"]:
         tr = g["training"]
         lines += [f"Training: {tr['policies']} policies, largest mean on-policy gap {tr['onpolicy_mean_max']:.4f} (limit 0.05), mean unique rate "
@@ -264,6 +289,12 @@ def llm() -> list[str]:
         lines += ["### Hardware check (no test)", ""]
         rows = [[k, str(v["seeds"]), ci(v["mps"]), ci(v.get("a10_E3") or v.get("a10_J2")), ci(v["diff"])] for k, v in d["hardware_check"].items()]
         lines += table(["run", "shared seeds", "Mac", "A10", "Mac minus A10"], rows)
+        h = d["hardware_check"]
+        if "prompted_ILI" in h and "grpo_league_60_steps" in h:
+            gap_a10 = h["grpo_league_60_steps"]["a10_J2"]["mean"] - h["prompted_ILI"]["a10_E3"]["mean"]
+            gap_mac = h["grpo_league_60_steps"]["mps"]["mean"] - h["prompted_ILI"]["mps"]["mean"]
+            lines += ["This is not a hardware test: E3 predates the A25 environment record, the samplers and random streams differ (equal seeds share only the Oracle draws), and J2 ran on five A10 and five A10G cards. "
+                      f"No conclusion rests on it: the trained-minus-untrained gap on ILI is {gap_a10:+.2f} SD in the committed runs and {gap_mac:+.2f} SD on the Mac for the same seeds.", ""]
     return lines
 
 
@@ -400,21 +431,26 @@ def glance() -> list[str]:
                      f"{max(v['detectable_80'] for v in t.values()):.2f} SD (AB-C).")
     if g and g["mps"]["AB-P"]["tests"]:
         t = g["mps"]["AB-P"]["tests"]
-        lines.append("* Prompted Qwen on the Mac (exploratory): " + "; ".join(f"{k} {v['diff']:+.2f} SD [{v['low']:+.2f}, {v['high']:+.2f}], Holm p {v['p_holm']:.3f}" for k, v in t.items()) + " (AB-P).")
+        etth1_d = g["mps"].get("ETTh1_differences", {})
+        opposite = "; on ETTh1 (in-sample, descriptive) the signs reverse: " + ", ".join(f"{k} {v['diff']:+.2f}" for k, v in etth1_d.items()) if etth1_d else ""
+        lines.append("* Prompted Qwen on the Mac (exploratory; unadjusted 95% intervals, none is rejected after Holm): " + "; ".join(f"{k} {v['diff']:+.2f} SD [{v['low']:+.2f}, {v['high']:+.2f}], Holm p {v['p_holm']:.3f}" for k, v in t.items()) + opposite + " (AB-P).")
     if g and g["mps"]["AB-G"]["tests"]:
         t = g["mps"]["AB-G"]["tests"]["step trend"]
-        u, dose = g["mps"]["policy_level"]["trained_vs_untrained"], g["mps"]["policy_level"]["dose"]
-        lines.append(f"* GRPO training on the Mac (exploratory): policies trained on ETTh1 are {u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] worse on ILI than the untrained model "
-                     f"(policy-level, post hoc); among 30, 60 and 120 steps no dose effect is detected (sign flip p {dose['p_sign_flip']:.2f}). The registered trend over all levels is rho {t['rho']:+.2f} (Holm p {pfmt(t['p_holm'])}), "
-                     "but it is the untrained level that drives it (AB-G).")
+        u, dose, rv = g["mps"]["policy_level"]["trained_vs_untrained"], g["mps"]["policy_level"]["dose"], g["mps"]["revin"]
+        mac = rv["mac_share_off_ILI"]
+        lines.append(f"* GRPO training on the Mac (exploratory): ten league policies trained on ETTh1 are {u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] worse on ILI than the untrained model (post hoc; all 10 worse than the same-seed untrained search). "
+                     f"Trained policies look up RevIN-off configs {mac['120 (Mac)']:.0%} of the time on ILI (untrained {mac['0 (untrained, Mac)']:.0%}; the best RevIN-off ILI config has regret {rv['best_regret_by_revin']['ILI_T24']['revin_off']:.2f} SD), "
+                     "which is consistent with a source-table preference that does not transfer; it is not evidence that GRPO or the league is harmful, and the cause is not tested. "
+                     f"No dose effect is detected among 30, 60 and 120 steps (sign flip p {dose['p_sign_flip']:.2f}). The registered step-trend statistic is rho {t['rho']:+.2f} on these runs, but its p is not valid (dependent checkpoints), so it is not a rejection (AB-G).")
     if n:
         e, i = n["tables"]["ETTh1"]["E3_A10"], n["tables"]["ILI"]["E3_A10"]
         o = n["observed_adjusted_slopes"]
         none = load("AB-L")["by_source"]["ETTh1"]["arms"]["none"]["mean_slope"]
         mac = n["tables"]["ILI"].get("ABL_P_ref_mps (Mac, exploratory)")
+        mac_e = n["tables"]["ETTh1"].get("ABL_P_ref_mps (Mac, exploratory)")
         lines.append(f"* On the ETTh1 source GRPO raised the league policies' mean reward and on ILI no trend was detected. The no-league arm's ETTh1 slope is {none:+.3f}, at least as large, so nothing here says the league did it. The registered AB-L test is too liberal (false-positive rate {e['raw']['false_positive_rate']['0.025']:.2f} and "
                      f"{i['raw']['false_positive_rate']['0.025']:.2f} at the 0.025 level for a model that never learns, from a null of ten searches per table"
-                     + (f"; ILI from thirty Mac searches {mac['raw']['false_positive_rate']['0.025']:.2f}, exploratory" if mac else "") + "), but the position-adjusted slopes give the same reading: "
+                     + (f"; from thirty Mac searches (exploratory) {mac_e['raw']['false_positive_rate']['0.025']:.2f} on ETTh1 and {mac['raw']['false_positive_rate']['0.025']:.2f} on ILI" if mac else "") + "), but the position-adjusted slopes give the same reading: "
                      f"exact sign flip of the {o['ETTh1']['n']} adjusted ETTh1 slopes p {o['ETTh1']['p_sign_flip']:.3f} (uncorrected; Holm over the two tables {min(1.0, 2 * o['ETTh1']['p_sign_flip']):.3f}), ILI p {o['ILI']['p_sign_flip']:.2f}; exploratory, post hoc.")
     if r:
         t = r["tables"]["ILI_T24"]
@@ -436,6 +472,8 @@ def history() -> list[str]:
             "were produced by scripts unchanged since 31f9313 except where addendum 1 and 2 say otherwise, and their first outputs are not kept.",
             "* Not answered here: why TPE wins E3's held-out replay but not the pick reseeds (an effect-size question, no equivalence test exists yet); whether rankings survive resampling "
             "of the three table seeds; whether results survive a different fidelity ladder or a common first configuration; BOHB and one-epoch-then-top-K baselines; and, for AB-L, how much of the ETTh1 slope the league contributes.",
+            "* Mac LLM runs: the ILI prompted reference (ABL_P_ref_mps) ran at commit 31f9313 and every other Mac item at 0929d26; scripts/ablations/llm_mps.py and leaguetst/ are identical between the two. Every run file's commit and digest is in results/ablations/LLM.json. "
+            "AB3 addendum 3 (policy-level and dose analyses) was committed before its outputs; addendum 4 (RevIN shares, paired gap, diagnostics) was written after a critic had reported them and its code was run once before the commit, as it says.",
             "* Verifier and critic reports, verbatim, are in docs/verdicts/.", ""]
 
 

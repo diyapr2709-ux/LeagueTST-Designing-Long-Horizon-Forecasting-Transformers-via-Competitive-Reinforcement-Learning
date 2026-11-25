@@ -280,3 +280,26 @@ def test_incumbent_value_optimism_is_zero_without_bias(rows, table):
     reported, heldout, gap = one_seed_bias.score(run, strict, table, table.seed_sd())
     assert len(reported) == len(heldout) == len(gap) == 100
     assert heldout[0] == pytest.approx(gap[0] + reported[0] - (table.best_true - strict.best_true) / table.seed_sd())
+
+
+def test_revin_parse_matches_every_config():
+    for cid, config in configs_by_id().items():
+        assert llm_tests.revin_off(cid) == (not config.instance_norm)
+
+
+def test_policy_level_uses_policies_as_units():
+    levels = {0: [1.0, 2.0] * 15}
+    for step, shift in ((30, 1.0), (60, 1.1), (120, 1.2)):  # every policy the same shift, rising with steps
+        levels[step] = [1.5 + shift + 0.01 * p for p in range(10)]
+    out = llm_tests.policy_level(levels)
+    assert out["trained_vs_untrained"]["n"] == [10, 30]
+    assert out["trained_vs_untrained"]["mean"][0] == pytest.approx(1.5 + 1.1 + 0.045)
+    assert out["dose"]["mean_rho"] == pytest.approx(1.0)
+    assert out["dose"]["p_sign_flip"] == pytest.approx(2 / 1024)
+
+
+def test_paired_gap_matches_the_same_seed():
+    levels = {0: [1.0] * 30, 30: [2.0] * 10, 60: [2.0] * 10, 120: [2.0] * 10}
+    out = llm_tests.paired(levels)
+    assert out["policies"] == 10 and out["worse"] == 10
+    assert out["gap"]["mean"] == pytest.approx(1.0)

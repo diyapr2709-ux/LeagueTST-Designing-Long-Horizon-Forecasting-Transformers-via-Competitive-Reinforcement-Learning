@@ -324,3 +324,28 @@ family size or endpoint, and their outputs do not exist yet.
   ordered points carry little power, so a null here is weak.
 * The report states both beside the registered trend. Wording: the Mac p values
   are written as "< 0.0001" when they sit at the Monte Carlo floor.
+
+### AB3 addendum 4 (2026-11-25, exploratory, after the critic's review of the Mac LLM runs)
+
+Post hoc: the critic's report gave the RevIN-off shares, the paired gap and the
+ETTh1 differences below before this was written, and the code below was run once
+before this commit to check that it works, so its outputs were seen. This
+records them rather than predicts them. The committed outputs are written by the
+committed code after this commit; the runs themselves are unchanged. Nothing
+changes a registered test, family size or endpoint.
+
+* RevIN preference (descriptive): the share of each arm's lookups on ILI with
+  RevIN off, for the Mac levels (0, 30, 60, 120) and for the committed E3 and E4
+  ILI runs; and, per table, the best config's regret among RevIN-on and among
+  RevIN-off configs. If the trained policies' lookups are almost all RevIN-off,
+  the transfer loss can come from a preference learned on ETTh1 (where RevIN off
+  wins) rather than from GRPO or the league, which this data cannot separate.
+* Paired gap (descriptive): each policy's AUC averaged over its three
+  checkpoints minus the untrained search of the same deployment seed
+  (seeds 0 to 9), and how many policies are worse.
+* ETTh1 AB-P differences (descriptive, in-sample): anon and repair against ref,
+  with Welch intervals and no p values.
+* Diagnostics per checkpoint: lookups, repeat and invalid rates, and the number
+  of logged updates (a step whose episode had no budget left logs nothing).
+* Provenance: the digest of every Mac, E3 and E4 run file that the analyses read
+  and the commits that ran each Mac item.

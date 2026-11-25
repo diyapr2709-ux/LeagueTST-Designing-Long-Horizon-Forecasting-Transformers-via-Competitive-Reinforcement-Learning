@@ -21,6 +21,7 @@ seeds, with no test.
 from __future__ import annotations
 
 import sys
+import re
 from pathlib import Path
 
 import numpy as np
@@ -73,6 +74,63 @@ def policy_level(levels: dict[int, list[float]]) -> dict:
             "dose": {"policies": len(rhos), "mean_rho": float(rhos.mean()), "rhos": [float(r) for r in rhos], "p_sign_flip": p}}
 
 
+REVIN = re.compile(r"n([01])[a-z]*$")  # config id ends r{dropout}n{0,1}{mode}
+
+
+def revin_off(cid: str) -> bool:
+    return REVIN.search(cid).group(1) == "0"
+
+
+def revin_off_share(runs: list[dict]) -> float:
+    """Share of looked-up configs (distinct lookups, not proposals) with RevIN off, pooled over runs."""
+    flags = [revin_off(c[0]) for r in runs for c in r["charges"]]
+    return float(np.mean(flags)) if flags else float("nan")
+
+
+def revin_regret(table) -> dict:
+    """Best config's regret (seed-SD units) among RevIN-on and among RevIN-off configs."""
+    sigma = table.seed_sd()
+    best = min(table.true_value(c) for c in table.ids)
+    return {name: float((min(table.true_value(c) for c in table.ids if revin_off(c) == off) - best) / sigma)
+            for name, off in (("revin_on", False), ("revin_off", True))}
+
+
+def revin_block(table, etth1, levels: dict[int, list[float]], g_runs: list[dict], ref_runs: list[dict]) -> dict:
+    """AB3 addendum 4 (exploratory): RevIN-off shares of ILI lookups and the best regret per RevIN setting."""
+    shares = {"0 (untrained, Mac)": revin_off_share(ref_runs)}
+    for step in STEP_LEVELS[1:]:
+        shares[f"{step} (Mac)"] = revin_off_share([r for r in g_runs if r["method"].endswith(f"steps{step}_mps")])
+    committed = {}
+    for path in (ROOT / "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl", ROOT / "results/search/E3/ILI_T24/cpu_runs.jsonl",
+                 ROOT / "results/search/E4/ILI_T24/grpo_league_from_ETTh1_runs.jsonl",
+                 ROOT / "results/search/E4/ILI_T24/grpo_none_from_ETTh1_runs.jsonl"):
+        for method in sorted({r["method"] for r in read_runs(path)}):
+            runs = [r for r in read_runs(path) if r["method"] == method]
+            if method in ("random", "qwen_prompted") or path.parent.parent.name == "E4":
+                committed[f"{method} ({path.parent.parent.name})"] = {"share_off": revin_off_share(runs), "auc": mean_ci(by_seed(runs, method, table).values()), "runs": len(runs)}
+    return {"mac_share_off_ILI": shares, "committed_ILI": committed,
+            "best_regret_by_revin": {"ETTh1_T336": revin_regret(etth1), "ILI_T24": revin_regret(table)}}
+
+
+def paired(levels: dict[int, list[float]]) -> dict:
+    """AB3 addendum 4: policy mean over checkpoints minus the untrained search of the same deployment seed."""
+    trained = np.array([levels[s] for s in STEP_LEVELS[1:]]).mean(axis=0)
+    diff = trained - np.array(levels[0][: len(trained)])
+    return {"policies": len(diff), "worse": int((diff > 0).sum()), "gap": mean_ci(diff)}
+
+
+def step_diagnostics(runs: list[dict], training_rows: list[dict]) -> dict:
+    """Lookups, repeats and invalid rates per checkpoint, and logged updates per policy up to that step."""
+    out = {}
+    for step in STEP_LEVELS[1:]:
+        chosen = [r for r in runs if r["method"].endswith(f"steps{step}_mps")]
+        out[str(step)] = {"searches": len(chosen), "lookups": mean_ci([r["lookups"] for r in chosen]),
+                          "repeat_rate": sum(r["repeats"] for r in chosen) / sum(r["proposals"] for r in chosen),
+                          "invalid_rate": sum(r["invalid"] for r in chosen) / sum(r["proposals"] for r in chosen),
+                          "logged_updates": mean_ci([sum(1 for row in r["log"] if row["step"] <= step) for r in training_rows])}
+    return out
+
+
 def mps_source(table) -> dict:
     root = OUT / "mps"
     ili = {name: runs_of(root / f"ABL_P_{name}_mps" / "ILI_T24") for name in ("ref", "anon", "repair")}
@@ -94,6 +152,8 @@ def mps_source(table) -> dict:
         out["step_trend_10_per_level"] = spearman_trend({s: levels[s][:10] for s in STEP_LEVELS})
         out["step_trend_trained_levels_only"] = spearman_trend({s: levels[s] for s in STEP_LEVELS[1:]})
         out["policy_level"] = policy_level(levels)
+        out["paired"] = paired(levels)
+        out["step_diagnostics"] = step_diagnostics(g_runs, read_runs(root / "ABL_G_steps_mps" / "ILI_T24" / "training.jsonl"))
         out["step_pairs"] = {f"{s} vs 0": {k: v for k, v in compare(levels[s], levels[0], 2).items() if k != "p"} for s in STEP_LEVELS[1:]}
     out["AB-G"] = {"complete": {str(s): len(v) for s, v in levels.items()}, "tests": apply_holm(g, 2),
                    "not_run": ["KL trend (moved to Soumitra by AB1)"], "training": training(root / "ABL_G_steps_mps" / "ILI_T24")}
@@ -167,16 +227,29 @@ def registered_source(table) -> dict:
 def main() -> int:
     table, _ = load_table("ILI")
     etth1, _ = load_table("ETTh1")
+    inputs = ["results/ledger.jsonl", *(str(p.relative_to(ROOT)) for p in sorted((OUT / "mps").glob("*/*/*.jsonl"))),
+              "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl", "results/search/E3/ILI_T24/cpu_runs.jsonl",
+              "results/search/E4/ILI_T24/grpo_league_from_ETTh1_runs.jsonl", "results/search/E4/ILI_T24/grpo_none_from_ETTh1_runs.jsonl"]
     result = {"exploratory": "the mps block is exploratory (AB1, AB3); it never replaces a registered family",
-              "provenance": provenance(__file__, ["results/ledger.jsonl"]), "registered": registered_source(table),
+              "provenance": provenance(__file__, inputs), "registered": registered_source(table),
               "mps": mps_source(table), "hardware_check": hardware_check(table)}
     root = OUT / "mps"
     result["mps"]["AB-Q_prompted"] = noise_free_prompted()
+    result["mps"]["run_commits"] = {str(p.parent.relative_to(OUT / "mps")): sorted({r["env"]["git_hash"] for r in read_runs(p) if "env" in r})
+                                        for p in sorted((OUT / "mps").glob("*/*/*.jsonl")) if p.name != "errors.jsonl"}
+    g_runs = runs_of(root / "ABL_G_steps_mps" / "ILI_T24")
+    ref_runs = runs_of(root / "ABL_P_ref_mps" / "ILI_T24")
+    result["mps"]["revin"] = revin_block(table, etth1, {}, g_runs, ref_runs)
+    result["mps"]["ETTh1_differences"] = {}
     result["mps"]["ETTh1_descriptive"] = {}
     for name in ("ref", "anon", "repair"):
         runs = runs_of(root / f"ABL_P_{name}_mps" / "ETTh1_T336")
         if runs:
             result["mps"]["ETTh1_descriptive"][name] = {"summary": summarise(runs, etth1), "diagnostics": diagnostics(runs)}
+    ref_e = aucs(runs_of(root / "ABL_P_ref_mps" / "ETTh1_T336"), etth1, "qwen_prompted_mps")
+    for name, method in (("anon", "qwen_prompted_anon_mps"), ("repair", "qwen_prompted_repair_mps")):
+        runs = aucs(runs_of(root / f"ABL_P_{name}_mps" / "ETTh1_T336"), etth1, method)
+        result["mps"]["ETTh1_differences"][f"{name} vs ref"] = {k: v for k, v in compare(runs, ref_e, 1).items() if k != "p"}
     write_json(OUT / "LLM.json", result)
     return 0
 
