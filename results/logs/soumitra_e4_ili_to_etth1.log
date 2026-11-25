@@ -1,0 +1,439 @@
+Note that running a local entrypoint in detached mode only keeps the last triggered Modal function alive after the parent process has been killed or disconnected.
+✓ Initialized. View run at 
+https://modal.com/apps/soumitrachavan/main/ap-WaWrATnLQBG5jfSWoWlti1
+✓ Created objects.
+├── ✓ Uploaded /home/soumitra/LeagueTST-e4/scripts/modal_llm.py
+├── ✓ Uploaded /home/soumitra/LeagueTST-e4/configs
+├── ✓ Uploaded PythonPackage:leaguetst
+├── ✓ Created Function llm_batch.
+├── ✓ Created Function driver.
+└── ✓ Created Function image_versions.
+25 training runs on ILI, deployed on ETTh1
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 677.19it/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  10%|▉         | 33/338 [00:00<00:01, 277.53it/s]
+[1ALoading weights:  22%|██▏       | 76/338 [00:00<00:00, 355.92it/s]
+[1ALoading weights:  36%|███▋      | 123/338 [00:00<00:00, 391.60it/s]
+[1ALoading weights:  48%|████▊     | 163/338 [00:00<00:00, 335.92it/s]
+[1ALoading weights:  62%|██████▏   | 209/338 [00:00<00:00, 373.99it/s]
+[1ALoading weights:  77%|███████▋  | 260/338 [00:00<00:00, 393.52it/s]
+[1ALoading weights:  89%|████████▉ | 301/338 [00:00<00:00, 378.24it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 392.95it/s]
+/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py:3204: FutureWarning: `gradient_checkpointing_enable` is deprecated and will be removed in v6. Use `activation_checkpointing_enable` instead.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+/root/leaguetst/architect/llm.py:260: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:820.)
+  rows.append({"step": step, "episode": episodes, "loss": float(loss), "kl": float((kl * mask).sum() / mask.sum()),
+{'step': 1, 'episode': 1, 'loss': -0.0109, 'kl': 0.0, 'reward_mean': 1.435, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 0, 'best_in_history': 0.2191, 'onpolicy_gap': 0.1328, 'onpolicy_mean': 0.0039, 'seconds': 5.3619, 'peak_gb': 4.437, 'training_epochs': 189}
+{'step': 2, 'episode': 1, 'loss': 0.0044, 'kl': 0.0003, 'reward_mean': 1.4467, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.2191, 'onpolicy_gap': 0.101, 'onpolicy_mean': 0.0019, 'seconds': 7.4087, 'peak_gb': 5.2142, 'training_epochs': 334}
+{'step': 3, 'episode': 1, 'loss': 0.0183, 'kl': 0.0009, 'reward_mean': 1.4684, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2076, 'onpolicy_gap': 0.1504, 'onpolicy_mean': 0.0036, 'seconds': 11.8237, 'peak_gb': 6.3057, 'training_epochs': 518}
+{'step': 4, 'episode': 1, 'loss': -0.0008, 'kl': 0.0024, 'reward_mean': 1.482, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2076, 'onpolicy_gap': 0.1075, 'onpolicy_mean': 0.0039, 'seconds': 17.2361, 'peak_gb': 7.4916, 'training_epochs': 670}
+{'step': 5, 'episode': 1, 'loss': -0.0066, 'kl': 0.0698, 'reward_mean': 1.4366, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2076, 'onpolicy_gap': 0.2492, 'onpolicy_mean': 0.0027, 'seconds': 19.4502, 'peak_gb': 7.6364, 'training_epochs': 819}
+{'step': 6, 'episode': 1, 'loss': 0.0342, 'kl': 0.013, 'reward_mean': 1.4981, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2076, 'onpolicy_gap': 0.1198, 'onpolicy_mean': 0.0024, 'seconds': 20.1523, 'peak_gb': 7.6364, 'training_epochs': 1019}
+{'step': 7, 'episode': 1, 'loss': -0.0046, 'kl': 0.0164, 'reward_mean': 1.4681, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2076, 'onpolicy_gap': 0.1163, 'onpolicy_mean': 0.0038, 'seconds': 20.1123, 'peak_gb': 7.6387, 'training_epochs': 1167}
+{'step': 8, 'episode': 1, 'loss': -0.0043, 'kl': 0.0239, 'reward_mean': 1.5152, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2076, 'onpolicy_gap': 0.1204, 'onpolicy_mean': 0.0026, 'seconds': 20.0001, 'peak_gb': 7.6409, 'training_epochs': 1347}
+{'step': 9, 'episode': 1, 'loss': -0.0052, 'kl': 0.0238, 'reward_mean': 1.5063, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.1998, 'onpolicy_gap': 0.118, 'onpolicy_mean': 0.0015, 'seconds': 20.2179, 'peak_gb': 7.6456, 'training_epochs': 1472}
+{'step': 10, 'episode': 1, 'loss': -0.0149, 'kl': 0.1198, 'reward_mean': 1.4746, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.375, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.1998, 'onpolicy_gap': 0.0874, 'onpolicy_mean': 0.0012, 'seconds': 20.2571, 'peak_gb': 7.6545, 'training_epochs': 1546}
+{'step': 11, 'episode': 1, 'loss': -0.0041, 'kl': 0.0214, 'reward_mean': 1.5166, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.1998, 'onpolicy_gap': 0.1221, 'onpolicy_mean': 0.0016, 'seconds': 20.4447, 'peak_gb': 7.6545, 'training_epochs': 1652}
+{'step': 12, 'episode': 1, 'loss': 0.0007, 'kl': 0.0309, 'reward_mean': 1.5089, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.375, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1998, 'onpolicy_gap': 0.0892, 'onpolicy_mean': 0.0025, 'seconds': 20.3532, 'peak_gb': 7.6568, 'training_epochs': 1766}
+{'step': 13, 'episode': 1, 'loss': -0.0046, 'kl': 0.0392, 'reward_mean': 1.5015, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.5, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1998, 'onpolicy_gap': 0.1635, 'onpolicy_mean': 0.0027, 'seconds': 20.429, 'peak_gb': 7.659, 'training_epochs': 1861}
+{'step': 14, 'episode': 1, 'loss': -0.0015, 'kl': 0.0309, 'reward_mean': 1.5388, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.375, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1974, 'onpolicy_gap': 0.1093, 'onpolicy_mean': 0.0031, 'seconds': 18.074, 'peak_gb': 7.4872, 'training_epochs': 1988}
+{'step': 15, 'episode': 1, 'loss': -0.0169, 'kl': 0.0059, 'reward_mean': 1.5009, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1974, 'onpolicy_gap': 0.1002, 'onpolicy_mean': 0.0033, 'seconds': 20.3802, 'peak_gb': 7.6568, 'training_epochs': 2147}
+{'step': 16, 'episode': 1, 'loss': -0.0255, 'kl': 0.0042, 'reward_mean': 1.4801, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1974, 'onpolicy_gap': 0.1109, 'onpolicy_mean': 0.0027, 'seconds': 20.2757, 'peak_gb': 7.6523, 'training_epochs': 2280}
+{'step': 17, 'episode': 1, 'loss': -0.0466, 'kl': 0.0102, 'reward_mean': 1.4779, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1974, 'onpolicy_gap': 0.1109, 'onpolicy_mean': 0.0039, 'seconds': 20.5193, 'peak_gb': 7.6568, 'training_epochs': 2453}
+{'step': 18, 'episode': 1, 'loss': -0.0223, 'kl': 0.0093, 'reward_mean': 1.5131, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1974, 'onpolicy_gap': 0.0851, 'onpolicy_mean': 0.0031, 'seconds': 20.4381, 'peak_gb': 7.6568, 'training_epochs': 2598}
+{'step': 19, 'episode': 1, 'loss': -0.0172, 'kl': 0.0141, 'reward_mean': 1.4966, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1974, 'onpolicy_gap': 0.1033, 'onpolicy_mean': 0.0034, 'seconds': 20.4836, 'peak_gb': 7.6545, 'training_epochs': 2758}
+{'step': 20, 'episode': 1, 'loss': -0.045, 'kl': 0.0145, 'reward_mean': 1.457, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.375, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.1974, 'onpolicy_gap': 0.1012, 'onpolicy_mean': 0.0037, 'seconds': 20.4141, 'peak_gb': 7.6545, 'training_epochs': 2851}
+{'step': 22, 'episode': 2, 'loss': 0.0179, 'kl': 0.0146, 'reward_mean': 1.4936, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 0, 'best_in_history': 0.2128, 'onpolicy_gap': 0.1661, 'onpolicy_mean': 0.0039, 'seconds': 4.6886, 'peak_gb': 4.6027, 'training_epochs': 3164}
+{'step': 23, 'episode': 2, 'loss': -0.0116, 'kl': 0.0124, 'reward_mean': 1.4663, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2128, 'onpolicy_gap': 0.1109, 'onpolicy_mean': 0.0037, 'seconds': 7.9506, 'peak_gb': 5.2719, 'training_epochs': 3342}
+{'step': 24, 'episode': 2, 'loss': -0.0034, 'kl': 0.0109, 'reward_mean': 1.47, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2102, 'onpolicy_gap': 0.0743, 'onpolicy_mean': 0.0028, 'seconds': 12.5833, 'peak_gb': 6.4491, 'training_epochs': 3514}
+{'step': 25, 'episode': 2, 'loss': -0.0525, 'kl': 0.0126, 'reward_mean': 1.4574, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2102, 'onpolicy_gap': 0.1023, 'onpolicy_mean': 0.004, 'seconds': 18.4495, 'peak_gb': 7.6342, 'training_epochs': 3671}
+{'step': 26, 'episode': 2, 'loss': -0.0112, 'kl': 0.0075, 'reward_mean': 1.4654, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2102, 'onpolicy_gap': 0.0832, 'onpolicy_mean': 0.0024, 'seconds': 20.5256, 'peak_gb': 7.6409, 'training_epochs': 3835}
+{'step': 27, 'episode': 2, 'loss': -0.0004, 'kl': 0.0057, 'reward_mean': 1.467, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2102, 'onpolicy_gap': 0.1037, 'onpolicy_mean': 0.0036, 'seconds': 20.439, 'peak_gb': 7.6456, 'training_epochs': 3999}
+{'step': 28, 'episode': 2, 'loss': -0.0107, 'kl': 0.0075, 'reward_mean': 1.4599, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2092, 'onpolicy_gap': 0.0838, 'onpolicy_mean': 0.0023, 'seconds': 20.4989, 'peak_gb': 7.6456, 'training_epochs': 4169}
+{'step': 29, 'episode': 2, 'loss': -0.0094, 'kl': 0.0073, 'reward_mean': 1.4776, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2092, 'onpolicy_gap': 0.1031, 'onpolicy_mean': 0.0024, 'seconds': 20.5242, 'peak_gb': 7.6478, 'training_epochs': 4368}
+{'step': 30, 'episode': 2, 'loss': -0.0156, 'kl': 0.009, 'reward_mean': 1.462, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.206, 'onpolicy_gap': 0.0985, 'onpolicy_mean': 0.0041, 'seconds': 20.5406, 'peak_gb': 7.6501, 'training_epochs': 4504}
+{'step': 31, 'episode': 2, 'loss': -0.0229, 'kl': 0.0085, 'reward_mean': 1.4788, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.206, 'onpolicy_gap': 0.1114, 'onpolicy_mean': 0.0047, 'seconds': 20.5279, 'peak_gb': 7.6478, 'training_epochs': 4678}
+{'step': 32, 'episode': 2, 'loss': -0.0598, 'kl': 0.0133, 'reward_mean': 1.4619, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2047, 'onpolicy_gap': 0.092, 'onpolicy_mean': 0.0016, 'seconds': 20.1969, 'peak_gb': 7.6478, 'training_epochs': 4849}
+{'step': 33, 'episode': 2, 'loss': -0.0246, 'kl': 0.0186, 'reward_mean': 1.4482, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2047, 'onpolicy_gap': 0.1207, 'onpolicy_mean': 0.003, 'seconds': 20.5136, 'peak_gb': 7.6456, 'training_epochs': 4956}
+{'step': 34, 'episode': 2, 'loss': -0.0275, 'kl': 0.0133, 'reward_mean': 1.4781, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.375, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2047, 'onpolicy_gap': 0.082, 'onpolicy_mean': 0.0015, 'seconds': 20.2265, 'peak_gb': 7.6456, 'training_epochs': 5083}
+{'step': 35, 'episode': 2, 'loss': 0.0217, 'kl': 0.0086, 'reward_mean': 1.4876, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2047, 'onpolicy_gap': 0.0963, 'onpolicy_mean': 0.0027, 'seconds': 20.5111, 'peak_gb': 7.6478, 'training_epochs': 5285}
+{'step': 36, 'episode': 2, 'loss': -0.021, 'kl': 0.0111, 'reward_mean': 1.474, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.2047, 'onpolicy_gap': 0.0992, 'onpolicy_mean': 0.004, 'seconds': 20.5664, 'peak_gb': 7.6501, 'training_epochs': 5424}
+{'step': 37, 'episode': 2, 'loss': -0.0191, 'kl': 0.0127, 'reward_mean': 1.4782, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2047, 'onpolicy_gap': 0.0853, 'onpolicy_mean': 0.0024, 'seconds': 20.4908, 'peak_gb': 7.6501, 'training_epochs': 5596}
+{'step': 38, 'episode': 2, 'loss': -0.0075, 'kl': 0.0142, 'reward_mean': 1.4929, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2047, 'onpolicy_gap': 0.1013, 'onpolicy_mean': 0.0018, 'seconds': 20.4739, 'peak_gb': 7.6501, 'training_epochs': 5734}
+{'step': 39, 'episode': 2, 'loss': -0.0167, 'kl': 0.0136, 'reward_mean': 1.4938, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2033, 'onpolicy_gap': 0.098, 'onpolicy_mean': 0.0027, 'seconds': 20.501, 'peak_gb': 7.6523, 'training_epochs': 5885}
+{'step': 41, 'episode': 3, 'loss': -0.0118, 'kl': 0.0651, 'reward_mean': 1.5153, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 0, 'best_in_history': 0.2006, 'onpolicy_gap': 0.0984, 'onpolicy_mean': 0.0021, 'seconds': 4.5463, 'peak_gb': 4.6026, 'training_epochs': 6164}
+{'step': 42, 'episode': 3, 'loss': -0.0186, 'kl': 0.0342, 'reward_mean': 1.5213, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1161, 'onpolicy_mean': 0.0047, 'seconds': 8.0836, 'peak_gb': 5.2787, 'training_epochs': 6376}
+{'step': 43, 'episode': 3, 'loss': -0.0541, 'kl': 0.0117, 'reward_mean': 1.4896, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1109, 'onpolicy_mean': 0.0039, 'seconds': 12.7112, 'peak_gb': 6.4625, 'training_epochs': 6551}
+{'step': 44, 'episode': 3, 'loss': -0.0068, 'kl': 0.0086, 'reward_mean': 1.5443, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1679, 'onpolicy_mean': 0.0024, 'seconds': 18.5503, 'peak_gb': 7.6612, 'training_epochs': 6759}
+{'step': 45, 'episode': 3, 'loss': -0.0629, 'kl': 0.023, 'reward_mean': 1.4693, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1953, 'onpolicy_mean': 0.0025, 'seconds': 20.2494, 'peak_gb': 7.659, 'training_epochs': 6896}
+{'step': 46, 'episode': 3, 'loss': -0.01, 'kl': 0.0156, 'reward_mean': 1.4817, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.0917, 'onpolicy_mean': 0.002, 'seconds': 20.5161, 'peak_gb': 7.659, 'training_epochs': 7016}
+{'step': 47, 'episode': 3, 'loss': -0.0159, 'kl': 0.0097, 'reward_mean': 1.4885, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.5, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1124, 'onpolicy_mean': 0.0027, 'seconds': 20.4235, 'peak_gb': 7.6568, 'training_epochs': 7125}
+{'step': 48, 'episode': 3, 'loss': -0.0061, 'kl': 0.0154, 'reward_mean': 1.4995, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1188, 'onpolicy_mean': 0.0024, 'seconds': 20.6272, 'peak_gb': 7.6568, 'training_epochs': 7307}
+{'step': 49, 'episode': 3, 'loss': -0.0154, 'kl': 0.026, 'reward_mean': 1.4775, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.375, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.0869, 'onpolicy_mean': 0.0029, 'seconds': 20.5401, 'peak_gb': 7.6545, 'training_epochs': 7413}
+{'step': 50, 'episode': 3, 'loss': -0.0107, 'kl': 0.011, 'reward_mean': 1.5074, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1096, 'onpolicy_mean': 0.0033, 'seconds': 20.5438, 'peak_gb': 7.6568, 'training_epochs': 7585}
+{'step': 51, 'episode': 3, 'loss': -0.017, 'kl': 0.0229, 'reward_mean': 1.469, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.0898, 'onpolicy_mean': 0.0021, 'seconds': 20.5627, 'peak_gb': 7.6568, 'training_epochs': 7743}
+{'step': 52, 'episode': 3, 'loss': -0.0167, 'kl': 0.0245, 'reward_mean': 1.4767, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.375, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.085, 'onpolicy_mean': 0.0018, 'seconds': 20.3925, 'peak_gb': 7.6545, 'training_epochs': 7855}
+{'step': 53, 'episode': 3, 'loss': -0.0191, 'kl': 0.0193, 'reward_mean': 1.5029, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.0762, 'onpolicy_mean': 0.003, 'seconds': 20.5802, 'peak_gb': 7.6545, 'training_epochs': 7960}
+{'step': 54, 'episode': 3, 'loss': -0.0275, 'kl': 0.0148, 'reward_mean': 1.5151, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.5, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1009, 'onpolicy_mean': 0.0016, 'seconds': 20.6184, 'peak_gb': 7.6545, 'training_epochs': 8054}
+{'step': 55, 'episode': 3, 'loss': -0.0169, 'kl': 0.0443, 'reward_mean': 1.444, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.117, 'onpolicy_mean': 0.0033, 'seconds': 20.3947, 'peak_gb': 7.6568, 'training_epochs': 8205}
+{'step': 56, 'episode': 3, 'loss': -0.0161, 'kl': 0.0681, 'reward_mean': 1.4324, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1226, 'onpolicy_mean': 0.0037, 'seconds': 20.5033, 'peak_gb': 7.6568, 'training_epochs': 8327}
+{'step': 57, 'episode': 3, 'loss': -0.0116, 'kl': 0.0495, 'reward_mean': 1.4414, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1019, 'onpolicy_mean': 0.0031, 'seconds': 20.5446, 'peak_gb': 7.659, 'training_epochs': 8463}
+{'step': 58, 'episode': 3, 'loss': -0.002, 'kl': 0.0459, 'reward_mean': 1.4678, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.125, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1033, 'onpolicy_mean': 0.0037, 'seconds': 20.4405, 'peak_gb': 7.659, 'training_epochs': 8627}
+{'step': 59, 'episode': 3, 'loss': -0.0353, 'kl': 0.0453, 'reward_mean': 1.4382, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.0, 'unique_rate': 0.875, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1192, 'onpolicy_mean': 0.0033, 'seconds': 20.5816, 'peak_gb': 7.6568, 'training_epochs': 8776}
+{'step': 60, 'episode': 3, 'loss': -0.0131, 'kl': 0.0438, 'reward_mean': 1.4689, 'invalid_rate': 0.0, 'repaired_rate': 0.0, 'repeat_rate': 0.25, 'unique_rate': 1.0, 'rivals': 4, 'best_in_history': 0.2006, 'onpolicy_gap': 0.1109, 'onpolicy_mean': 0.0039, 'seconds': 20.5991, 'peak_gb': 7.6568, 'training_epochs': 8921}
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 1584.61it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 646.08it/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 620.50it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 782.46it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 669.92it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 316.70it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 447.96it/s]
+
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 403.01it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 360.96it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 372.07it/s]
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  10%|▉         | 33/338 [00:00<00:01, 301.37it/s]
+[1ALoading weights:  21%|██        | 71/338 [00:00<00:00, 668.10it/s]
+[1ALoading weights:  24%|██▍       | 81/338 [00:00<00:00, 383.10it/s]
+[1ALoading weights:  36%|███▌      | 120/338 [00:00<00:00, 375.16it/s]
+[1ALoading weights:  41%|████      | 138/338 [00:00<00:00, 453.75it/s]
+[1ALoading weights:  50%|█████     | 170/338 [00:00<00:00, 396.38it/s]
+[1ALoading weights:  56%|█████▌    | 188/338 [00:00<00:00, 377.61it/s]
+[1ALoading weights:  62%|██████▏   | 210/338 [00:00<00:00, 387.69it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:  71%|███████   | 240/338 [00:00<00:00, 410.51it/s]
+[1ALoading weights:  74%|███████▎  | 249/338 [00:00<00:00, 369.07it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:  84%|████████▍ | 284/338 [00:00<00:00, 356.79it/s]
+[1ALoading weights:  85%|████████▍ | 286/338 [00:00<00:00, 318.25it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 410.60it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 449.52it/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   9%|▊         | 29/338 [00:00<00:01, 260.80it/s]
+[1ALoading weights:  12%|█▏        | 40/338 [00:00<00:00, 320.17it/s]
+[1ALoading weights:  24%|██▍       | 81/338 [00:00<00:00, 349.86it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  24%|██▍       | 81/338 [00:00<00:00, 356.30it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:   8%|▊         | 28/338 [00:00<00:01, 275.42it/s]
+[1ALoading weights:  35%|███▍      | 117/338 [00:00<00:00, 342.20it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:  19%|█▊        | 63/338 [00:00<00:00, 490.26it/s]
+[1ALoading weights:  35%|███▌      | 119/338 [00:00<00:00, 325.59it/s]
+[1ALoading weights:  46%|████▌     | 155/338 [00:00<00:00, 345.91it/s]
+[1ALoading weights:  22%|██▏       | 76/338 [00:00<00:00, 382.13it/s]
+[1ALoading weights:  50%|████▉     | 168/338 [00:00<00:00, 359.32it/s]
+[1ALoading weights:  60%|██████    | 203/338 [00:00<00:00, 372.97it/s]
+[1ALoading weights:  35%|███▍      | 117/338 [00:00<00:00, 354.78it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:  64%|██████▎   | 215/338 [00:00<00:00, 385.31it/s]
+[1ALoading weights:  33%|███▎      | 113/338 [00:00<00:00, 324.62it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:  72%|███████▏  | 245/338 [00:00<00:00, 385.56it/s]
+[1ALoading weights:  47%|████▋     | 160/338 [00:00<00:00, 367.99it/s]
+[1ALoading weights:  75%|███████▌  | 254/338 [00:00<00:00, 380.27it/s]
+[1ALoading weights:  44%|████▍     | 148/338 [00:00<00:00, 314.96it/s]
+[1ALoading weights:  88%|████████▊ | 298/338 [00:00<00:00, 426.90it/s]
+[1ALoading weights:  59%|█████▊    | 198/338 [00:00<00:00, 363.40it/s]
+[1ALoading weights:  57%|█████▋    | 191/338 [00:00<00:00, 331.69it/s]
+[1ALoading weights:  90%|████████▉ | 303/338 [00:00<00:00, 413.26it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 423.48it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 423.05it/s]
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  70%|██████▉   | 235/338 [00:00<00:00, 339.31it/s]
+[1ALoading weights:  78%|███████▊  | 262/338 [00:00<00:00, 416.21it/s]
+[1ALoading weights:  80%|████████  | 271/338 [00:00<00:00, 329.72it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   6%|▌         | 19/338 [00:00<00:01, 165.68it/s][transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights:  90%|█████████ | 305/338 [00:00<00:00, 409.94it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 416.93it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 410.20it/s]
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  10%|█         | 35/338 [00:00<00:01, 288.21it/s]
+[1ALoading weights:  18%|█▊        | 62/338 [00:00<00:00, 300.83it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  12%|█▏        | 40/338 [00:00<00:00, 359.13it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:  24%|██▎       | 80/338 [00:00<00:00, 341.30it/s]
+[1ALoading weights:  32%|███▏      | 109/338 [00:00<00:00, 366.05it/s]
+[1ALoading weights:  40%|███▉      | 135/338 [00:00<00:00, 414.44it/s][transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:  12%|█▏        | 39/338 [00:00<00:00, 345.90it/s]
+[1ALoading weights:  24%|██▎       | 80/338 [00:00<00:00, 380.74it/s]
+[1ALoading weights:  47%|████▋     | 158/338 [00:00<00:00, 400.68it/s]
+[1ALoading weights:  52%|█████▏    | 177/338 [00:00<00:00, 396.71it/s]
+[1ALoading weights:  22%|██▏       | 74/338 [00:00<00:00, 281.69it/s]
+[1ALoading weights:  35%|███▌      | 119/338 [00:00<00:00, 319.99it/s]
+[1ALoading weights:  36%|███▌      | 120/338 [00:00<00:00, 342.35it/s]
+[1ALoading weights:  60%|█████▉    | 202/338 [00:00<00:00, 397.92it/s]
+[1ALoading weights:  64%|██████▍   | 217/338 [00:00<00:00, 370.13it/s]
+[1ALoading weights:  73%|███████▎  | 246/338 [00:00<00:00, 407.48it/s]
+[1ALoading weights:  46%|████▌     | 154/338 [00:00<00:00, 330.07it/s]
+[1ALoading weights:  49%|████▉     | 165/338 [00:00<00:00, 365.02it/s]
+[1ALoading weights:  75%|███████▌  | 255/338 [00:00<00:00, 373.12it/s]
+[1ALoading weights:  85%|████████▌ | 288/338 [00:00<00:00, 381.60it/s]
+[1ALoading weights:  61%|██████    | 205/338 [00:00<00:00, 386.36it/s]
+[1ALoading weights:  60%|██████    | 203/338 [00:00<00:00, 359.66it/s]
+[1ALoading weights:  74%|███████▎  | 249/338 [00:00<00:00, 401.58it/s]
+[1ALoading weights:  87%|████████▋ | 293/338 [00:00<00:00, 371.99it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 404.22it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 417.37it/s]
+
+[1ALoading weights:  73%|███████▎  | 248/338 [00:00<00:00, 363.49it/s]
+[1ALoading weights:  86%|████████▌ | 290/338 [00:00<00:00, 397.01it/s]
+[1ALoading weights:  91%|█████████ | 308/338 [00:00<00:00, 430.51it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 394.14it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 406.45it/s]
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   6%|▌         | 21/338 [00:00<00:01, 182.24it/s]
+[1ALoading weights:   8%|▊         | 28/338 [00:00<00:01, 233.78it/s]
+[1ALoading weights:   5%|▍         | 16/338 [00:00<00:02, 119.34it/s]
+[1ALoading weights:   6%|▌         | 19/338 [00:00<00:01, 164.61it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   9%|▊         | 29/338 [00:00<00:01, 287.18it/s]
+[1ALoading weights:   9%|▉         | 31/338 [00:00<00:00, 309.11it/s]
+[1ALoading weights:  15%|█▌        | 52/338 [00:00<00:01, 214.50it/s]
+[1ALoading weights:  17%|█▋        | 56/338 [00:00<00:01, 225.97it/s]
+[1ALoading weights:  14%|█▎        | 46/338 [00:00<00:01, 187.57it/s]
+[1ALoading weights:  18%|█▊        | 62/338 [00:00<00:00, 281.28it/s]
+[1ALoading weights:  17%|█▋        | 59/338 [00:00<00:01, 242.34it/s][transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights:  22%|██▏       | 74/338 [00:00<00:01, 199.78it/s]
+[1ALoading weights:  17%|█▋        | 58/338 [00:00<00:01, 227.63it/s]
+[1ALoading weights:  27%|██▋       | 90/338 [00:00<00:00, 275.98it/s]
+[1ALoading weights:  27%|██▋       | 90/338 [00:00<00:01, 239.55it/s]
+[1ALoading weights:  26%|██▌       | 88/338 [00:00<00:00, 253.36it/s]
+[1ALoading weights:  27%|██▋       | 91/338 [00:00<00:00, 262.41it/s]
+[1ALoading weights:  26%|██▌       | 88/338 [00:00<00:01, 230.98it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  33%|███▎      | 112/338 [00:00<00:00, 227.68it/s]
+[1ALoading weights:  31%|███       | 105/338 [00:00<00:01, 213.80it/s]
+[1ALoading weights:  37%|███▋      | 126/338 [00:00<00:00, 279.09it/s]
+[1ALoading weights:  34%|███▎      | 114/338 [00:00<00:01, 197.29it/s]
+[1ALoading weights:   8%|▊         | 28/338 [00:00<00:01, 241.86it/s]
+[1ALoading weights:  35%|███▍      | 118/338 [00:00<00:00, 246.59it/s]
+[1ALoading weights:  35%|███▌      | 119/338 [00:00<00:00, 262.45it/s]
+[1ALoading weights:   7%|▋         | 22/338 [00:00<00:02, 156.29it/s]
+[1ALoading weights:  41%|████      | 139/338 [00:00<00:00, 241.05it/s]
+[1ALoading weights:  43%|████▎     | 146/338 [00:00<00:00, 255.44it/s]
+[1ALoading weights:  47%|████▋     | 159/338 [00:00<00:00, 285.34it/s]
+[1ALoading weights:  38%|███▊      | 127/338 [00:00<00:01, 195.90it/s]
+[1ALoading weights:  16%|█▌        | 54/338 [00:00<00:01, 251.33it/s]
+[1ALoading weights:  46%|████▌     | 155/338 [00:00<00:00, 252.38it/s]
+[1ALoading weights:  46%|████▌     | 156/338 [00:00<00:00, 237.31it/s]
+[1ALoading weights:  14%|█▍        | 49/338 [00:00<00:01, 188.32it/s]
+[1ALoading weights:  46%|████▌     | 156/338 [00:00<00:00, 205.90it/s]
+[1ALoading weights:  53%|█████▎    | 178/338 [00:00<00:00, 274.34it/s]
+[1ALoading weights:  24%|██▎       | 80/338 [00:00<00:01, 241.96it/s]
+[1ALoading weights:  57%|█████▋    | 193/338 [00:00<00:00, 284.86it/s]
+[1ALoading weights:  56%|█████▌    | 189/338 [00:00<00:00, 280.98it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s][transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights:  54%|█████▎    | 181/338 [00:00<00:00, 238.70it/s]
+[1ALoading weights:  54%|█████▎    | 181/338 [00:00<00:00, 244.59it/s]
+[1ALoading weights:  22%|██▏       | 76/338 [00:00<00:01, 218.66it/s]
+[1ALoading weights:  64%|██████▍   | 217/338 [00:00<00:00, 291.41it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  54%|█████▍    | 183/338 [00:00<00:00, 219.44it/s]
+[1ALoading weights:  67%|██████▋   | 225/338 [00:00<00:00, 289.65it/s]
+[1ALoading weights:  31%|███       | 105/338 [00:00<00:01, 226.18it/s]
+[1ALoading weights:  64%|██████▍   | 218/338 [00:00<00:00, 267.12it/s]
+[1ALoading weights:  62%|██████▏   | 209/338 [00:00<00:00, 237.91it/s]
+[1ALoading weights:   7%|▋         | 24/338 [00:00<00:01, 186.26it/s]
+[1ALoading weights:  61%|██████    | 206/338 [00:00<00:00, 224.49it/s]
+[1ALoading weights:  32%|███▏      | 107/338 [00:00<00:00, 243.92it/s]
+[1ALoading weights:  75%|███████▌  | 255/338 [00:00<00:00, 312.31it/s]
+[1ALoading weights:  66%|██████▌   | 223/338 [00:00<00:00, 253.02it/s]
+[1ALoading weights:   8%|▊         | 26/338 [00:00<00:01, 190.68it/s]
+[1ALoading weights:  75%|███████▌  | 255/338 [00:00<00:00, 282.11it/s]
+[1ALoading weights:  72%|███████▏  | 245/338 [00:00<00:00, 262.14it/s]
+[1ALoading weights:  38%|███▊      | 128/338 [00:00<00:01, 208.31it/s]
+[1ALoading weights:  17%|█▋        | 56/338 [00:00<00:01, 250.89it/s]
+[1ALoading weights:  69%|██████▉   | 234/338 [00:01<00:00, 225.63it/s]
+[1ALoading weights:  69%|██████▊   | 232/338 [00:00<00:00, 226.24it/s]
+[1ALoading weights:  41%|████      | 137/338 [00:00<00:00, 242.40it/s]
+[1ALoading weights:  87%|████████▋ | 295/338 [00:01<00:00, 306.75it/s]
+[1ALoading weights:  21%|██▏       | 72/338 [00:00<00:00, 285.31it/s][transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights:  74%|███████▎  | 249/338 [00:01<00:00, 239.22it/s]
+[1ALoading weights:  84%|████████▍ | 284/338 [00:01<00:00, 261.26it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 303.62it/s]
+
+[1ALoading weights:  24%|██▍       | 82/338 [00:00<00:01, 241.63it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 303.35it/s]
+
+[1ALoading weights:  80%|████████  | 272/338 [00:01<00:00, 247.65it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 309.79it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 302.98it/s]
+
+[1ALoading weights:  46%|████▌     | 154/338 [00:00<00:00, 223.74it/s]
+[1ALoading weights:  78%|███████▊  | 262/338 [00:01<00:00, 244.66it/s]
+[1ALoading weights:  31%|███       | 105/338 [00:00<00:00, 302.05it/s][transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 305.83it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 301.77it/s]
+
+[1ALoading weights:  48%|████▊     | 162/338 [00:00<00:00, 225.14it/s]
+[1ALoading weights:  52%|█████▏    | 177/338 [00:00<00:00, 225.10it/s]
+[1ALoading weights:  35%|███▍      | 118/338 [00:00<00:00, 261.42it/s]
+[1ALoading weights:  40%|████      | 136/338 [00:00<00:00, 293.55it/s]
+[1ALoading weights:  55%|█████▍    | 185/338 [00:00<00:00, 198.64it/s]
+[1ALoading weights:  61%|██████    | 205/338 [00:00<00:00, 228.67it/s]
+[1ALoading weights:  47%|████▋     | 158/338 [00:00<00:00, 283.61it/s][transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights:  53%|█████▎    | 178/338 [00:00<00:00, 307.06it/s]
+[1ALoading weights:  66%|██████▌   | 222/338 [00:01<00:00, 222.00it/s]
+[1ALoading weights:  55%|█████▌    | 187/338 [00:00<00:00, 259.84it/s]
+[1ALoading weights:  68%|██████▊   | 229/338 [00:01<00:00, 209.41it/s][transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 308.74it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 303.64it/s]
+
+[1ALoading weights:  62%|██████▏   | 211/338 [00:00<00:00, 297.39it/s]
+[1ALoading weights:  65%|██████▌   | 221/338 [00:00<00:00, 270.33it/s]
+[1ALoading weights:  72%|███████▏  | 244/338 [00:00<00:00, 303.11it/s]
+[1ALoading weights:  74%|███████▎  | 249/338 [00:00<00:00, 252.94it/s]
+[1ALoading weights:  81%|████████▏ | 275/338 [00:00<00:00, 294.42it/s]
+[1ALoading weights:  81%|████████▏ | 275/338 [00:01<00:00, 234.38it/s]
+[1ALoading weights:  90%|█████████ | 305/338 [00:01<00:00, 253.29it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 306.06it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:01<00:00, 296.19it/s]
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 1444.72it/s]
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 1176.26it/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1AFetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+[1AFetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 1339.22it/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  33%|███▎      | 110/338 [00:00<00:00, 1081.68it/s]
+[1ALoading weights:  37%|███▋      | 124/338 [00:00<00:00, 1195.21it/s]
+[1ALoading weights:  84%|████████▎ | 283/338 [00:00<00:00, 1419.55it/s]
+[1ALoading weights:  84%|████████▍ | 284/338 [00:00<00:00, 1460.56it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 1387.16it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 1374.33it/s]
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  49%|████▉     | 167/338 [00:00<00:00, 1669.77it/s]
+[1ALoading weights:  60%|██████    | 203/338 [00:00<00:00, 2010.30it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 2162.37it/s]
+
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 2133.59it/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+
+[1ALoading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+[1ALoading weights:  21%|██        | 70/338 [00:00<00:00, 595.92it/s]
+[1ALoading weights:  41%|████      | 137/338 [00:00<00:00, 626.30it/s]
+[1ALoading weights:  64%|██████▎   | 215/338 [00:00<00:00, 661.96it/s]
+[1ALoading weights: 100%|██████████| 338/338 [00:00<00:00, 792.62it/s]
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Passing `generation_config` together with generation-related arguments=({'return_dict_in_generate', 'output_scores'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 2 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 3 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/local/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 2 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+results in /runs/E4/ETTh1_T336
+✓ App completed. View run at 
+https://modal.com/apps/soumitrachavan/main/ap-WaWrATnLQBG5jfSWoWlti1
