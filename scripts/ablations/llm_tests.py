@@ -53,7 +53,24 @@ def runs_of(folder: Path) -> list[dict]:
 
 
 def aucs(runs: list[dict], table, method: str) -> list[float]:
-    return list(by_seed(runs, method, table).values())
+    """AUC per search seed, in seed order (so a policy has the same position at every checkpoint)."""
+    return [value for _, value in sorted(by_seed(runs, method, table).items())]
+
+
+def policy_level(levels: dict[int, list[float]]) -> dict:
+    """AB3 addendum 3 (post hoc, exploratory): units are policies, so the dependent checkpoints are not pooled."""
+    import itertools
+
+    from scipy.stats import rankdata
+
+    trained = np.array([levels[s] for s in STEP_LEVELS[1:]])  # checkpoints x policies, same policy order in each
+    policy_means = trained.mean(axis=0)
+    ranks = rankdata(STEP_LEVELS[1:])
+    rhos = np.array([float(np.corrcoef(ranks, rankdata(column))[0, 1]) if len(set(column)) > 1 else 0.0 for column in trained.T])
+    signs = np.array(list(itertools.product((-1.0, 1.0), repeat=len(rhos))))
+    p = float(np.mean(np.abs(signs @ rhos / len(rhos)) >= abs(rhos.mean()) - 1e-12))
+    return {"trained_vs_untrained": {k: v for k, v in compare(policy_means, levels[0], 1).items()},
+            "dose": {"policies": len(rhos), "mean_rho": float(rhos.mean()), "rhos": [float(r) for r in rhos], "p_sign_flip": p}}
 
 
 def mps_source(table) -> dict:
@@ -76,6 +93,7 @@ def mps_source(table) -> dict:
         # Sensitivity (AB3): level 0 is 30 of the 60 runs, so the trend is repeated on the first 10 seeds of each level.
         out["step_trend_10_per_level"] = spearman_trend({s: levels[s][:10] for s in STEP_LEVELS})
         out["step_trend_trained_levels_only"] = spearman_trend({s: levels[s] for s in STEP_LEVELS[1:]})
+        out["policy_level"] = policy_level(levels)
         out["step_pairs"] = {f"{s} vs 0": {k: v for k, v in compare(levels[s], levels[0], 2).items() if k != "p"} for s in STEP_LEVELS[1:]}
     out["AB-G"] = {"complete": {str(s): len(v) for s, v in levels.items()}, "tests": apply_holm(g, 2),
                    "not_run": ["KL trend (moved to Soumitra by AB1)"], "training": training(root / "ABL_G_steps_mps" / "ILI_T24")}

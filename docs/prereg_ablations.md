@@ -301,3 +301,26 @@ size or endpoint.
   labelled as such, and ETTh1 detectable differences are also given in robust
   seed SD. AB-N's split, AB-R's independent-seed target and RQ3's conditional
   shares are labelled exploratory in the report.
+
+### AB3 addendum 3 (2026-11-25, exploratory, after the Mac LLM results were seen)
+
+Written after the first run of scripts/ablations/llm_tests.py on the finished
+Mac runs: its level means, p values and the step trend were seen. The two
+analyses below are post hoc and exploratory; they change no registered test,
+family size or endpoint, and their outputs do not exist yet.
+
+* Why. The step trend's 60 values include three checkpoints of the same ten
+  policies, and the untrained level (30 searches) differs from the trained
+  levels by training at all, not only by more of it. The registered permutation
+  p treats the values as exchangeable, so it is not valid across the dependent
+  checkpoints, and a trend that includes level 0 cannot separate "trained at
+  all" from "trained longer".
+* Training at all: each policy's ILI held-out AUC averaged over its three
+  checkpoints (10 values, one per policy) against the 30 untrained searches;
+  permutation p, Welch interval and the detectable difference, as
+  common.compare.
+* Dose: per policy, the Spearman correlation of AUC with the checkpoint (30, 60,
+  120); exact two-sided sign flip over the ten policies, uncorrected. Three
+  ordered points carry little power, so a null here is weak.
+* The report states both beside the registered trend. Wording: the Mac p values
+  are written as "< 0.0001" when they sit at the Monte Carlo floor.

@@ -212,6 +212,11 @@ def learned() -> list[str]:
     return lines
 
 
+def pfmt(p: float) -> str:
+    """p to 4 decimals; the Monte Carlo floor is shown as an inequality."""
+    return "< 0.0001" if p < 1e-4 else f"{p:.4f}"
+
+
 def llm() -> list[str]:
     d = load("LLM")
     lines = ["## AB-P and AB-G: LLM arms", ""]
@@ -241,9 +246,14 @@ def llm() -> list[str]:
     if g["tests"]:
         t = g["tests"]["step trend"]
         lines += table(["steps", "runs", "ILI held-out AUC"], [[k, str(v["n"]), ci(v)] for k, v in sorted(t["levels"].items(), key=lambda kv: int(kv[0]))])
-        lines += [f"Step trend: Spearman rho {t['rho']:+.2f}, p {t['p']:.5f}, Holm over 2 {t['p_holm']:.5f}, {'rejected' if t['reject'] else 'not rejected'}; "
-                  "positive means more training gives higher (worse) regret on the target table. "
-                  f"With 10 seeds per level: rho {m['step_trend_10_per_level']['rho']:+.2f}, p {m['step_trend_10_per_level']['p']:.5f}. "
+        u, dose = m["policy_level"]["trained_vs_untrained"], m["policy_level"]["dose"]
+        lines += [f"Trained at all: the ten policies' AUC, averaged over their three checkpoints, is {u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] against the 30 untrained searches "
+                  f"(permutation p {pfmt(u['p'])}; detectable {u['detectable_80']:.2f} SD). Positive is worse. It is a comparison with the untrained model, not a trend.",
+                  f"Dose: the per-policy Spearman correlation of AUC with 30, 60, 120 steps averages {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f} (three ordered points, little power). "
+                  "Both of these are exploratory and post hoc (AB3 addendum 3).",
+                  f"Registered step trend (60 values, levels of one policy dependent): Spearman rho {t['rho']:+.2f}, p {pfmt(t['p'])}, Holm over 2 {pfmt(t['p_holm'])}, {'rejected' if t['reject'] else 'not rejected'}; "
+                  "positive means higher (worse) regret on the target table at later levels. Level 0 drives it (see the trained-levels row). "
+                  f"With 10 seeds per level: rho {m['step_trend_10_per_level']['rho']:+.2f}, p {pfmt(m['step_trend_10_per_level']['p'])}. "
                   f"Trained levels only (30, 60, 120): rho {m['step_trend_trained_levels_only']['rho']:+.2f}, p {m['step_trend_trained_levels_only']['p']:.4f}. "
                   "The levels of one policy share its training run, so they are dependent.", ""]
     if g["training"]["policies"]:
@@ -393,7 +403,10 @@ def glance() -> list[str]:
         lines.append("* Prompted Qwen on the Mac (exploratory): " + "; ".join(f"{k} {v['diff']:+.2f} SD [{v['low']:+.2f}, {v['high']:+.2f}], Holm p {v['p_holm']:.3f}" for k, v in t.items()) + " (AB-P).")
     if g and g["mps"]["AB-G"]["tests"]:
         t = g["mps"]["AB-G"]["tests"]["step trend"]
-        lines.append(f"* GRPO training steps on the Mac (exploratory): Spearman rho {t['rho']:+.2f} between steps and target-table regret, Holm p {t['p_holm']:.4f} (AB-G).")
+        u, dose = g["mps"]["policy_level"]["trained_vs_untrained"], g["mps"]["policy_level"]["dose"]
+        lines.append(f"* GRPO training on the Mac (exploratory): policies trained on ETTh1 are {u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] worse on ILI than the untrained model "
+                     f"(policy-level, post hoc); among 30, 60 and 120 steps no dose effect is detected (sign flip p {dose['p_sign_flip']:.2f}). The registered trend over all levels is rho {t['rho']:+.2f} (Holm p {pfmt(t['p_holm'])}), "
+                     "but it is the untrained level that drives it (AB-G).")
     if n:
         e, i = n["tables"]["ETTh1"]["E3_A10"], n["tables"]["ILI"]["E3_A10"]
         o = n["observed_adjusted_slopes"]
