@@ -212,6 +212,26 @@ def learned() -> list[str]:
     return lines
 
 
+LEVEL_UNITS = {"scale trend": lambda k: {"0.5": "0.5B", "1.5": "1.5B", "3.0": "3B"}.get(k, k),
+               "KL trend": lambda k: f"beta {float(k):g}",
+               "steps trend": lambda k: f"{k} steps"}
+
+
+def ci_signed(e: dict, digits: int = 2) -> str:
+    return f"{e['mean']:+.{digits}f} [{e['low']:+.{digits}f}, {e['high']:+.{digits}f}]"
+
+
+def p3(p: float) -> str:
+    """p to 3 decimals; below 0.001 as an inequality, never as 0.000."""
+    return "< 0.001" if p < 1e-3 else f"{p:.3f}"
+
+
+def trend_words(name: str, test: dict) -> str:
+    """A trend's levels in words, with units, lowest level first."""
+    unit = LEVEL_UNITS.get(name, str)
+    return ", ".join(f"{unit(k)} {v['mean']:.2f}" for k, v in test["levels"].items())
+
+
 def pfmt(p: float) -> str:
     """p to 4 decimals; the Monte Carlo floor is shown as an inequality."""
     return "< 0.0001" if p < 1e-4 else f"{p:.4f}"
@@ -225,15 +245,23 @@ def registered_llm() -> list[str]:
         return lines + [MISSING, ""]
     g = d["registered"]
     src = g["source"]
-    state = "final" if g["final"] else ("provisional (" + "; ".join(g.get("provisional_reasons") or ["not final"]) + "): the missing tests count as not rejected for now and nothing is decided from these tables")
-    caveat = "" if g["final"] else "A rejection now stays a rejection when the missing tests land (Holm counts them as p = 1), but a non-rejection can still become one. "
-    lines += [f"Status: {state}. {caveat}Deadline for every arm: 28 Nov 23:59 ET (AB1). "
-              f"Registered in AB2 (c2dda8d) and AB4 (15db163) on origin/soumitra-leg2; run files read from {src['ref']} at {str(src['commit'])[:12]} "
+    if g["final"]:
+        status_text = "Status: final."
+    else:
+        status_text = ("Status: provisional. Reasons: " + "; ".join(g.get("provisional_reasons") or ["not final"]) + ". "
+                       "The pending tests count as not rejected for now (Holm treats them as p = 1). A rejection shown here holds whatever they show; "
+                       "only the pending tests, and the decisions of tests not rejected, are still open.")
+    rejected_scale = g["families"]["AB-P"]["tests"].get("scale trend")
+    lines += [f"{status_text} Deadline for every arm: 28 Nov 23:59 ET (AB1). "
+              f"Registered in AB2 (c2dda8d) and AB4 (15db163) on origin/soumitra-leg2; the scale trend's statistic (Spearman of model-size rank with AUC, two-sided permutation p) "
+              "was fixed in AB5 (510633d, this branch), after the AB2 runs existed and before Anirudh had seen any AB2 value. "
+              f"Run files read from {src['ref']} at {str(src['commit'])[:12]} "
               f"({len(src['files'])} files, each with its source, commit and sha256 in results/ablations/LLM.json; AB2's move manifest matches for "
               f"{sum(src['ab2_manifest_matches'].values())} of {len(src['ab2_manifest_matches'])} files). Every reference is local to the same card (AB1, AB4). "
               "ILI held-out AUC, pooled seed-SD units, lower is better. For a trend, positive rho means a higher (worse) AUC at the higher level: more steps, a larger KL weight, a larger model.", ""]
     rows = [[v["item"] + (" ILI" if kind == "prompted" else ""), str(v.get("searches", v.get("deployed", ""))), ", ".join(map(str, v.get("stopped", []))) or "-",
-             ", ".join(v.get("gpu", [])) or "-", "yes" if v["complete"] else "no", "; ".join(v["problems"]) or "none"]
+             ", ".join(v.get("gpu", [])) or "-", "yes" if v["complete"] else "no",
+             ("; ".join(v["problems"]) or "all pass") if v.get("searches", v.get("deployed", 0)) else "not checked (no runs)"]
             for kind in ("prompted", "transfer") for v in g["status"][kind].values()]
     lines += table(["item", "searches or deployed policies", "on-policy stops", "GPU", "complete", "checks (method, backend, revision, registration order, launcher, frozen files, settings)"], rows)
     lines += [f"Teammate branch: local tip {str(src.get('tip'))[:12]} (committed {src.get('tip_time')}); this clone last fetched at {src.get('fetch_time')}.", ""]
@@ -244,16 +272,32 @@ def registered_llm() -> list[str]:
         rows = []
         for name, test in f["tests"].items():
             if "rho" in test:
-                levels = "; ".join(f"{k}: {ci(v)}" for k, v in test["levels"].items())
-                stat = f"rho {test['rho']:+.2f} over {test['n']} values ({levels})"
+                unit = LEVEL_UNITS.get(name, str)
+                levels = "; ".join(f"{unit(k)}: {ci(v)}" for k, v in test["levels"].items())
+                det = next((r["detectable_80"] for r in (load("ST-power") or {}).get("rows", []) if r["comparison"].startswith(f"{fam} {name} on the RTX")), None)
+                stat = f"rho {test['rho']:+.2f} over {test['n']} values ({levels})" + (f"; detectable rho at 80% about {det:.2f} (Fisher z, approximate)" if det else "")
             else:
                 stat = f"{test['diff']:+.3f} [{test['low']:+.3f}, {test['high']:+.3f}] ({test['n'][0]} / {test['n'][1]} seeds; detectable {test['detectable_80']:.2f})"
             rows.append([name, stat, pfmt(test["p"]), pfmt(test["p_holm"]), "yes" if test["reject"] else "no"])
         rows += [[name, f["missing_reasons"][name], "", "", "no (counted)"] for name in f["missing"]]
         lines += [f"{fam}, Holm over {size}:", ""] + table(["test", "result", "p", "p, Holm", "rejected"], rows)
+    sc = g["families"]["AB-P"]["tests"].get("scale trend")
+    if sc:
+        lv = [sc["levels"][k]["mean"] for k in ("0.5", "1.5", "3.0")]
+        e = {k: next(iter(x["summary"].values()))["auc"] for k, x in g.get("ETTh1_descriptive", {}).items()}
+        order = ", ".join(f"{ {'ref': '1.5B'}.get(k, k)} {v['mean']:.2f}" for k, v in sorted(e.items(), key=lambda kv: kv[1]["mean"]))
+        lines += ["Scope of the scale trend: the three levels are three Qwen2.5-Instruct checkpoints (0.5B, 1.5B, 3B) under one fixed protocol "
+                  "(the same prompt, temperature 1.0, constrained decoding, one card); they differ in more than size, so the test does not isolate size, "
+                  f"and three points allow no extrapolation. The rise is {lv[1] - lv[0]:+.2f} SD from 0.5B to 1.5B and {lv[2] - lv[1]:+.2f} SD from 1.5B to 3B; no pair was tested. "
+                  "The levels share search seeds 0 to 29; the unpaired permutation test ignores that pairing. "
+                  + (f"On ETTh1 (in-sample, descriptive, no test) the order by AUC is {order}, with overlapping intervals, so nothing is said about ETTh1. " if order else "")
+                  + "The 3B checkpoint is under the Qwen Research License (non-commercial; docs/neurips_checklist.md, item 12); releasing its generated proposals may need that licence's notice.", ""]
     if g["families"]["AB-G"]["tests"]:
         lines += ["The AB-G levels share training seeds 100 to 109 and deployment seeds 0 to 9 (and the steps levels share level 0), so they are dependent (AB4); "
-                  "the permutation p treats the values as exchangeable and is reported with that caveat.", ""]
+                  "the permutation p treats the values as exchangeable and is reported with that caveat. The detectable rho values are Fisher-z approximations, optimistic with tied levels.", ""]
+    rnd = d.get("mps", {}).get("revin", {}).get("committed_ILI", {}).get("random (E3)")
+    if rnd:
+        lines += [f"For context (post hoc, no test): E3's random search has ILI AUC {ci(rnd['auc'])} on the same scale.", ""]
     pl = g["families"]["AB-G"].get("exploratory_policy_level")
     if pl:
         u, dose = pl["trained_vs_untrained"], pl["dose"]
@@ -262,24 +306,30 @@ def registered_llm() -> list[str]:
                   f"dose, the per-policy Spearman correlation of AUC with 30, 60, 120 steps, mean {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f}.", ""]
     desc = g["descriptive"]
     rows = []
-    for key, label in (("hardware_G_ref_local_vs_J2", "ABL_G_ref_local (RTX) minus J2 league (A10/A10G), AB2"),
+    for key, label in (("hardware_G_ref_local_vs_J2", "ABL_G_ref_local (RTX) minus J2 league (A10/A10G), AB1 hardware check"),
                        ("prompted_ref_local_vs_mac", "ABL_P_ref_local (RTX) minus ABL_P_ref_mps (Mac), AB5"),
                        ("prompted_ref_local_vs_E3_A10", "ABL_P_ref_local (RTX) minus E3 prompted (A10), AB5")):
         v = desc.get(key)
         if v:
-            rows.append([label, str(v["seeds"]), ci(v["a"]), ci(v["b"]), ci(v["diff"])])
+            rows.append([label, str(v["seeds"]), ci(v["a"]), ci(v["b"]), ci_signed(v["diff"])])
     if rows:
-        lines += ["Descriptive comparisons on shared seeds (no test; different hardware and samplers, so not a hardware test):", ""]
+        lines += ["AB1 hardware check and AB5 comparisons (descriptive, on shared seeds, no test). Intervals this wide do not show that the RTX matches the other machines; "
+                  "the samplers differ, and the E3 searches predate the A25 environment pins.", ""]
         lines += table(["comparison", "seeds", "first", "second", "difference"], rows)
     if desc.get("revin_off_share_ILI"):
-        lines += ["RevIN-off share of ILI lookups (descriptive, AB5): " + "; ".join(f"{k} {v:.0%}" for k, v in desc["revin_off_share_ILI"].items()) + ".", ""]
+        sh = desc["revin_off_share_ILI"]
+        sizes = [sh.get(f"prompted {k}") for k in ("0.5B", "ref", "3B")]
+        monotone = None not in sizes and (sizes == sorted(sizes) or sizes == sorted(sizes, reverse=True))
+        lines += ["RevIN-off share of ILI lookups (descriptive, AB5): " + "; ".join(f"{k} {v:.0%}" for k, v in sh.items()) + "."
+                  + ("" if monotone or None in sizes else " Among the prompted models the share does not follow model size, so it does not explain the scale trend."), ""]
     if g.get("ETTh1_descriptive"):
         lines += ["ETTh1 (descriptive, in-sample):", ""]
         lines += table(["arm", "AUC", *(f"@{b}" for b in BUDGETS)],
-                       [[arm, ci(next(iter(x["summary"].values()))["auc"]), *(ci(next(iter(x["summary"].values()))[str(b)]) for b in BUDGETS)] for arm, x in g["ETTh1_descriptive"].items()])
+                       [[{"ref": "1.5B (ref)"}.get(arm, arm), ci(next(iter(x["summary"].values()))["auc"]), *(ci(next(iter(x["summary"].values()))[str(b)]) for b in BUDGETS)]
+                        for arm, x in g["ETTh1_descriptive"].items()])
     tr = [(v["item"], v["training"]) for v in g["status"]["transfer"].values() if v.get("training", {}).get("policies")]
     if tr:
-        lines += ["Training (RTX transfer items): " + "; ".join(f"{k} {x['policies']} policies, largest on-policy gap {x['onpolicy_mean_max']:.4f}, errors {len(x['errors'])}" for k, x in tr) + ".", ""]
+        lines += ["Training (RTX transfer items): " + "; ".join(f"{k} {x['policies']} policies, largest mean on-policy gap {x['onpolicy_mean_max']:.4f} (limit 0.05), errors {len(x['errors'])}" for k, x in tr) + ".", ""]
     return lines
 
 
@@ -387,7 +437,7 @@ def power() -> list[str]:
             digits = 4 if "MSE" in r["unit"] else 2
             shown = f"{r['detectable_80']:.{digits}f}" if r.get("detectable_80") is not None else f"half width {r['half_width']:.3f}"
             body.append([r["comparison"], " / ".join(str(x) for x in r["n"]), f"{r['diff']:+.{digits}f}" if r.get("diff") is not None else "", shown, str(r["family"]),
-                         f"{r['p']:.3f}" if r.get("p") is not None else ""])
+                         p3(r["p"]) if r.get("p") is not None else ""])
         lines += table(["comparison", "n", "observed difference", "detectable at 80%", "Holm size", "p"], body)
     return lines
 
@@ -496,8 +546,18 @@ def glance() -> list[str]:
                      f"{max(v['detectable_80'] for v in t.values()):.2f} SD (AB-C).")
     if g and "families" in g.get("registered", {}):
         reg = g["registered"]
-        done = [f"{fam} {name}: {('rho %+.2f' % v['rho']) if 'rho' in v else ('%+.2f SD' % v['diff'])}, Holm p {pfmt(v['p_holm'])}, {'rejected' if v['reject'] else 'not rejected'}"
-                for fam in ("AB-P", "AB-G") for name, v in reg["families"][fam]["tests"].items()]
+        def said(fam: str, name: str, v: dict) -> str:
+            decision = f"Holm p {pfmt(v['p_holm'])}, {'rejected' if v['reject'] else 'not rejected'}"
+            if "rho" not in v:
+                return f"{fam} {name}: {v['diff']:+.2f} SD, {decision}"
+            det = next((r["detectable_80"] for r in (load("ST-power") or {}).get("rows", []) if r["comparison"].startswith(f"{fam} {name} on the RTX")), None)
+            could = f", could detect |rho| of about {det:.2f}" if det else ""
+            if name == "scale trend":
+                way = "a larger model gave a higher, that is worse," if v["rho"] > 0 else "a larger model gave a lower, that is better,"
+                return f"{fam} {name}: {way} ILI held-out AUC ({trend_words(name, v)} SD; rho {v['rho']:+.2f}, {decision}{could}; ILI only, three checkpoints, size not isolated)"
+            return f"{fam} {name}: ILI held-out AUC {trend_words(name, v)} SD (rho {v['rho']:+.2f}, {decision}{could})"
+
+        done = [said(fam, name, v) for fam in ("AB-P", "AB-G") for name, v in reg["families"][fam]["tests"].items()]
         missing = [name for fam in ("AB-P", "AB-G") for name in reg["families"][fam]["missing"]]
         lines.append("* Registered LLM ablations on Soumitra's RTX (" + ("final" if reg["final"] else "provisional") + "): " + ("; ".join(done) or "none complete")
                      + (f"; missing so far, counted as not rejected: {', '.join(missing)}" if missing else "") + " (AB2, AB4).")
