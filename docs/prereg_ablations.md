@@ -399,3 +399,20 @@ data.
   finish.
 * Launch order: the queue is launched only with HEAD at the commit that
   adds AB4 or a descendant of it.
+
+### AB4 addendum 1 (2026-11-26, the AB2 move; before any AB4 result exists)
+
+AB4 asks that AB2's six items move from results/search/ABL_*_local to
+results/ablations/rtx/ "before soumitra-leg2 is pushed". That could not be
+met: the branch was already pushed on 25 Nov (13:51 ET, d8582c0), before
+AB4 was written. From then until the move commit, origin/soumitra-leg2 held
+the nine run files at the old path. Neither origin/main (575b4a4) nor
+origin/anirudh-ablations contains them. The move commit renames them
+unchanged (git reports every one as a 100% rename) and adds
+results/ablations/rtx/AB2_move.sha256, whose digests were taken at the old
+path before the move. History is not rewritten. The other conditions
+stand: the move precedes any picks.py, e5_referee.py, report or L5 run on
+this branch. The training records under results/runs/ABL_G_*_local/ stay
+where they are, because neither picks.py nor e5_referee.py reads
+results/runs/. Nothing in the move changes a test, a reference, a setting
+or a run file.
