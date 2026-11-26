@@ -286,11 +286,12 @@ def registered_llm() -> list[str]:
         lv = [sc["levels"][k]["mean"] for k in ("0.5", "1.5", "3.0")]
         e = {k: next(iter(x["summary"].values()))["auc"] for k, x in g.get("ETTh1_descriptive", {}).items()}
         order = ", ".join(f"{ {'ref': '1.5B'}.get(k, k)} {v['mean']:.2f}" for k, v in sorted(e.items(), key=lambda kv: kv[1]["mean"]))
+        overlap = bool(e) and max(v["low"] for v in e.values()) <= min(v["high"] for v in e.values())
         lines += ["Scope of the scale trend: the three levels are three Qwen2.5-Instruct checkpoints (0.5B, 1.5B, 3B) under one fixed protocol "
                   "(the same prompt, temperature 1.0, constrained decoding, one card); they differ in more than size, so the test does not isolate size, "
-                  f"and three points allow no extrapolation. The rise is {lv[1] - lv[0]:+.2f} SD from 0.5B to 1.5B and {lv[2] - lv[1]:+.2f} SD from 1.5B to 3B; no pair was tested. "
+                  f"and three points allow no extrapolation. The change is {lv[1] - lv[0]:+.2f} SD from 0.5B to 1.5B and {lv[2] - lv[1]:+.2f} SD from 1.5B to 3B; no pair was tested. "
                   "The levels share search seeds 0 to 29; the unpaired permutation test ignores that pairing. "
-                  + (f"On ETTh1 (in-sample, descriptive, no test) the order by AUC is {order}, with overlapping intervals, so nothing is said about ETTh1. " if order else "")
+                  + (f"On ETTh1 (in-sample, descriptive, no test) the order by AUC is {order}" + (", and every pair of intervals overlaps" if overlap else "") + "; no test is made on ETTh1. " if order else "")
                   + "The 3B checkpoint is under the Qwen Research License (non-commercial; docs/neurips_checklist.md, item 12); releasing its generated proposals may need that licence's notice.", ""]
     if g["families"]["AB-G"]["tests"]:
         lines += ["The AB-G levels share training seeds 100 to 109 and deployment seeds 0 to 9 (and the steps levels share level 0), so they are dependent (AB4); "
@@ -313,7 +314,8 @@ def registered_llm() -> list[str]:
         if v:
             rows.append([label, str(v["seeds"]), ci(v["a"]), ci(v["b"]), ci_signed(v["diff"])])
     if rows:
-        lines += ["AB1 hardware check and AB5 comparisons (descriptive, on shared seeds, no test). Intervals this wide do not show that the RTX matches the other machines; "
+        widest = max((desc[k]["diff"]["high"] - desc[k]["diff"]["low"]) / 2 for k in ("hardware_G_ref_local_vs_J2", "prompted_ref_local_vs_mac", "prompted_ref_local_vs_E3_A10") if desc.get(k))
+        lines += [f"AB1 hardware check and AB5 comparisons (descriptive, on shared seeds, no test; interval half-widths up to {widest:.2f} SD). These intervals do not show that the RTX matches the other machines; "
                   "the samplers differ, and the E3 searches predate the A25 environment pins.", ""]
         lines += table(["comparison", "seeds", "first", "second", "difference"], rows)
     if desc.get("revin_off_share_ILI"):
@@ -321,7 +323,7 @@ def registered_llm() -> list[str]:
         sizes = [sh.get(f"prompted {k}") for k in ("0.5B", "ref", "3B")]
         monotone = None not in sizes and (sizes == sorted(sizes) or sizes == sorted(sizes, reverse=True))
         lines += ["RevIN-off share of ILI lookups (descriptive, AB5): " + "; ".join(f"{k} {v:.0%}" for k, v in sh.items()) + "."
-                  + ("" if monotone or None in sizes else " Among the prompted models the share does not follow model size, so it does not explain the scale trend."), ""]
+                  + ("" if monotone or None in sizes else " Among the prompted models the share does not follow model size, so it does not follow the scale trend's order."), ""]
     if g.get("ETTh1_descriptive"):
         lines += ["ETTh1 (descriptive, in-sample):", ""]
         lines += table(["arm", "AUC", *(f"@{b}" for b in BUDGETS)],
