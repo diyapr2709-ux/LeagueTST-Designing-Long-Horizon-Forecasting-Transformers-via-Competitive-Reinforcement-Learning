@@ -1,0 +1,127 @@
+{
+ "analysis": "AB-L calibration",
+ "exploratory": "post hoc: written after AB-L's results were seen",
+ "n_chains": 4000,
+ "n_tests": 2000,
+ "observed_adjusted_slopes": {
+  "ETTh1": {
+   "mean": 0.19394607207674358,
+   "n": 10,
+   "p_sign_flip": 0.013671875,
+   "sd": 0.20792559625489054
+  },
+  "ILI": {
+   "mean": 0.058748017032645906,
+   "n": 10,
+   "p_sign_flip": 0.533203125,
+   "sd": 0.27107996830512726
+  }
+ },
+ "provenance": {
+  "git_hash": "5abbd20c1b4acdcc11535be1b9ce62e3258549e9",
+  "inputs_sha256": {
+   "results/ablations/AB-L.json": "b82641d9142f4496ed29cf32620589d281acb08130ae2035f9584e3e81b96ce2",
+   "results/ablations/mps/ABL_P_ref_mps/ETTh1_T336/qwen_prompted_mps_runs.jsonl": "2129b14f39b0cdc7677f5e0a526086e2fe7c169683b61f30cf418f81a44d6f6b",
+   "results/ablations/mps/ABL_P_ref_mps/ILI_T24/qwen_prompted_mps_runs.jsonl": "f5d707c04ae0d1ff02f31669a452d07592e8c5f15d495757d25f048eb083693c",
+   "results/ledger.jsonl": "b5e1b558718844daebc8225b9ac8557fd1aecfc47b34d32944c6b28a110a0f36",
+   "results/search/E3/ETTh1_T336/qwen_prompted_runs.jsonl": "04aa248107a09839f84645ba1e2dfa8808dc33609b29024c9ae5a7374f9b8ba3",
+   "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl": "d62b8bf00323eec52eb08ce40093a56498224c4488d700c2491a86cd0ec96ca0"
+  },
+  "script": "scripts/ablations/learning_null.py",
+  "script_sha256": "92d2204e916914b432355388b27363ed48c67d25da0bcef1a187a81379b6f09d",
+  "versions": {
+   "numpy": "2.5.4",
+   "optuna": "5.1.0",
+   "python": "3.12.16",
+   "scikit-learn": "1.9.1",
+   "scipy": "1.18.1",
+   "torch": "2.15.0"
+  }
+ },
+ "tables": {
+  "ETTh1": {
+   "ABL_P_ref_mps (Mac, exploratory)": {
+    "episodes": 30,
+    "position_adjusted": {
+     "mean_of_arm_means": -0.004961127527321155,
+     "observed_league_mean": 0.19394607207674358,
+     "p_one_sided_against_null": 0.001999000499750125,
+     "sd_of_arm_means": 0.06636861599803416
+    },
+    "raw": {
+     "false_positive_rate": {
+      "0.025": 0.237,
+      "0.05": 0.3385
+     },
+     "mean": 0.08530577245605034,
+     "observed_league_mean": 0.20212600466683953,
+     "p_one_sided_against_null": 0.009495252373813094,
+     "sd": 0.15330957658020825
+    },
+    "steps_per_episode": 15.433333333333334
+   },
+   "E3_A10": {
+    "episodes": 10,
+    "position_adjusted": {
+     "mean_of_arm_means": -0.006117144364666447,
+     "observed_league_mean": 0.19394607207674358,
+     "p_one_sided_against_null": 0.0009995002498750624,
+     "sd_of_arm_means": 0.06361866705560737
+    },
+    "raw": {
+     "false_positive_rate": {
+      "0.025": 0.357,
+      "0.05": 0.486
+     },
+     "mean": 0.09734790381872316,
+     "observed_league_mean": 0.20212600466683953,
+     "p_one_sided_against_null": 0.01249375312343828,
+     "sd": 0.14596403908767386
+    },
+    "steps_per_episode": 15.1
+   }
+  },
+  "ILI": {
+   "ABL_P_ref_mps (Mac, exploratory)": {
+    "episodes": 30,
+    "position_adjusted": {
+     "mean_of_arm_means": -0.005103595385471337,
+     "observed_league_mean": 0.058748017032645906,
+     "p_one_sided_against_null": 0.14842578710644677,
+     "sd_of_arm_means": 0.061544001973617354
+    },
+    "raw": {
+     "false_positive_rate": {
+      "0.025": 0.094,
+      "0.05": 0.1745
+     },
+     "mean": 0.05845499107054752,
+     "observed_league_mean": 0.07716203864424358,
+     "p_one_sided_against_null": 0.3638180909545227,
+     "sd": 0.16053158512905918
+    },
+    "steps_per_episode": 21.433333333333334
+   },
+   "E3_A10": {
+    "episodes": 10,
+    "position_adjusted": {
+     "mean_of_arm_means": -0.0031535123947758364,
+     "observed_league_mean": 0.058748017032645906,
+     "p_one_sided_against_null": 0.13793103448275862,
+     "sd_of_arm_means": 0.0566866385060903
+    },
+    "raw": {
+     "false_positive_rate": {
+      "0.025": 0.1845,
+      "0.05": 0.297
+     },
+     "mean": 0.07989332396792354,
+     "observed_league_mean": 0.07716203864424358,
+     "p_one_sided_against_null": 0.5322338830584707,
+     "sd": 0.15239831889049849
+    },
+    "steps_per_episode": 21.1
+   }
+  }
+ }
+}
