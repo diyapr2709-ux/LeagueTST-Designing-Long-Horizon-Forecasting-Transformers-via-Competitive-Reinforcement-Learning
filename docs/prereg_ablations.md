@@ -455,3 +455,137 @@ changes a registered test, family size or endpoint.
   of logged updates (a step whose episode had no budget left logs nothing).
 * Provenance: the digest of every Mac, E3 and E4 run file that the analyses read
   and the commits that ran each Mac item.
+
+## Amendment AB4 (2026-11-26, Diya's side, before any run of the items below)
+
+Revised the same day after the critic's and the verifier's reviews, before
+any run. Critic's verdict: docs/verdicts/AB4_registration.md.
+
+What existed. No run of ABL_P_anon_local, ABL_P_repair_local,
+ABL_G_steps30_local or ABL_G_steps120_local exists in git; Soumitra confirms
+in his launch commit that results/runs/llm_local/ holds none of them, and
+that his side computed no AUC, regret or test of any AB2 item (or names what
+it computed). No registered AB-P or AB-G test has been computed on the RTX or
+on Modal. The same tests were computed, exploratory, on the Mac (AB3), and
+Anirudh saw their values. The author opened no Mac result file and no search
+result of the AB2 items (of the AB2 records it read counts and settings
+only), but read parts of AB3 addenda 3 and 4 and the Mac commit messages,
+which describe the Mac step analyses qualitatively. The author has also seen
+the E4 ILI results through the J3 re-score; the J2 league arm against E3
+prompted Qwen is the 60-against-0 analogue on another card.
+
+* Why, and why these references. AB1 gave ABL_P_ref, ABL_P_anon,
+  ABL_P_repair, ABL_G_steps30 and ABL_G_steps120 to Anirudh on Modal. He did
+  not launch them (AB3, 25 Nov 00:58 ET, before his Mac results), and they
+  are never launched anywhere. docs/LEG2_anirudh.md and docs/LEG2_soumitra.md
+  (committed 24 Nov in 7c2cb76, before any ablation result) send them to
+  Soumitra's RTX queue with the local references, and the shared rule above
+  (an arm and its reference run on the same backend and code digests) and
+  AB1 ("local references serve only local arms") force those references. The
+  J2 league arm ran on A10 and A10G cards (AB1), so it leaves the step trend
+  and stays in the descriptive hardware check. Modal could not have run them
+  anyway: about $8.15 of free credit (AB2) against about $11 and $13 plus $5.
+* Items, on the AB2 card (NVIDIA GeForce RTX 4080 Laptop GPU), one job at a
+  time, queue scripts/ablations/run_wp3_rtx_queue.sh, sha256 dc08a6404b4ffd9aad6af81bb206a40f2314d14b981677422dd9a25752b86e12,
+  in this order:
+
+| Item | Table | Command (scripts/ablate_llm.py ... --per-gpu 1) | Method |
+|---|---|---|---|
+| ABL_P_anon_local | ILI | prompted --dataset ILI --seeds 30 --model Qwen/Qwen2.5-1.5B-Instruct --anonymous | qwen_prompted_anon_1.5b_local |
+| ABL_P_repair_local | ILI | the same with --no-constrained in place of --anonymous | qwen_prompted_repair_1.5b_local |
+| ABL_G_steps30_local | ILI | transfer --source ETTh1 --target ILI --arms league:10 --steps 30 | grpo_league_from_ETTh1 |
+| ABL_G_steps120_local | ILI | the same with --steps 120 | grpo_league_from_ETTh1 |
+| ABL_P_anon_local | ETTh1 | as on ILI, --dataset ETTh1 | qwen_prompted_anon_1.5b_local |
+| ABL_P_repair_local | ETTh1 | as on ILI, --dataset ETTh1 | qwen_prompted_repair_1.5b_local |
+
+* Everything else as AB2: launcher scripts/ablate_llm.py unchanged (sha256
+  3919d683..., commit 79977de), pins, packages, search seeds 0 to 29,
+  training seeds 100 to 109 deployed at seeds 0 to 9, budget 100, the E4
+  recipe apart from the steps, and the hand-stop, stale-lock, retried-run,
+  completion, relaunch and per-table rules. The queue takes the AB2 queue's
+  lock, refuses unless HEAD contains AB4 and the run-path code (leaguetst/,
+  the launcher, llm_local.py, requirements-llm.txt) equals the AB2 commit
+  c2dda8d, and logs the card and driver at start.
+* Deadline for these arms: 28 Nov 18:00 ET. The queue starts no job after
+  it and stops a running one at it; an arm unfinished then counts as not run
+  (AB1). This leaves 18:00 to 23:59 ET for the analysis and the push, so the
+  owner's 28 Nov 23:59 ET deadline for all teammate work stands.
+* Where records live. results/ablations/rtx/<item>/<table>/, with any
+  errors.jsonl and a retried.txt naming retried policies (one run name per
+  line, written in the item's bring-back commit, never edited later). The
+  queue copies the record files there after each item. In this commit the
+  nine AB2 items move there with git mv, contents unchanged, from
+  results/search/<item>/ and (training.jsonl) results/runs/<item>/ILI_T24/:
+  AB2 registered results/runs/llm_local/, and docs/LEG2_soumitra.md L4 told
+  Soumitra to copy records into results/search/, which scripts/picks.py and
+  scripts/e5_referee.py read in full (docs/ISSUES.md, 25 Nov). No committed
+  pick, K4 or E5 output was written while they were there. Their digests
+  are frozen in results/ablations/rtx/AB2_records.sha256.
+* References and tests, replacing AB2's Holm bullet for these arms. AB-P on
+  ILI held-out AUC, Holm over 3: anon against ABL_P_ref_local, repair against
+  ABL_P_ref_local, the scale trend (as AB2). AB-G on ILI held-out AUC, Holm
+  over 2: the step trend with levels 0 (ABL_P_ref_local on ILI, 30
+  searches), 30, 60 (ABL_G_ref_local) and 120, and the KL trend (as AB2).
+  The tests are those defined above (AB-G, AB-P); trends are two-sided.
+* Failures. Policies stopped by the on-policy check have no value and are
+  left out of a trend (A26). Retried policies stay in it as they finished
+  (AB1, AB2, A29). Beside each trend with a stopped or retried policy, every
+  such value is set to the lowest and, separately, the highest value
+  observed in that trend. These fills illustrate; they are not bounds.
+  leaguetst/sensitivity.py is not used: it needs an arm under test, which a
+  two-sided trend does not have. A trend with a level of fewer than two
+  values is not run.
+* Dependence (found in review, before any step arm runs). Training has no
+  step-dependent schedule (constant-rate AdamW seeded by the training seed,
+  leaguetst/architect/llm.py), and the levels share training and deployment
+  seeds, so the 30-step policy of a seed is, up to GPU nondeterminism, a
+  prefix of its 60- and 120-step policies. The registered step-trend p is
+  then anti-conservative; it and its Holm decision are reported as
+  registered, with this caveat. Registered secondary analyses, policy as
+  unit, no Holm: (i) each policy's mean AUC over the trained levels it
+  completed against the 30 untrained searches (common.compare); (ii) per
+  policy with all three trained levels, the Spearman correlation of AUC
+  with 30, 60 and 120 steps, exact two-sided sign flip over policies; (iii)
+  diagnostic, the share of each 30- and 120-step policy's first 30
+  training-log rows equal to the 60-step log of the same seed. The report
+  calls the step result a dose-response only if (ii) has the same sign as
+  the registered trend and its p is at most 0.05; otherwise, if (i) shows a
+  difference, it says trained policies differ from the untrained model. The
+  KL levels share seeds too (at step 1 the update does not depend on beta);
+  with balanced levels this makes that test conservative, and the report
+  says so.
+* Code. scripts/ablations/llm_registered.py, sha256 0c101110afa8a46e0afd2fc831f6aec5822b257ee088c2cae1f819a4b70e583e (tests in
+  tests/test_llm_registered.py), computes both families with common.compare
+  (sha256 46aef3c196864a1f835505e58e2b1bef22940ca03219bb60887514039efa310b) for the pairs and, for the trends,
+  llm_tests.spearman_trend (scripts/ablations/llm_tests.py,
+  sha256 08c72a4c46dded669ebff913a45887ffe215caed24d10005fd27f808b34e9239; 100,000 permutations, seed 0, the observed
+  labelling counted), the function of the Mac analysis. It checks every
+  record's card, backend, pin, and commit (descending from AB2, and
+  containing AB4 for the AB4 arms), and the frozen AB2 digests, per arm.
+* When, enforced by the script. The families are computed once: when
+  --check shows all 15 arms complete, or with --final only after 28 Nov
+  18:00 ET (missing arms then count as not run, AB1; an unfinished ETTh1
+  table does not make its ILI table not run, AB2). The script refuses
+  --final before the deadline, refuses if results/ablations/LLM-registered.json
+  exists, refuses on uncommitted records or code, refuses if common.py or
+  llm_tests.py differ from the digests above, and stamps the time. No AB-P or
+  AB-G value is computed before then, including the scale and KL trends,
+  whose arms are already complete.
+* Verification. A verifier re-scores both families with its own script,
+  committed before llm_registered.py is run, and a critic attacks the
+  result. If a bug is found after the run, the fix is a dated amendment, the
+  families are recomputed once, both outputs are kept, and the report
+  discloses it.
+* Hardware check, descriptive. ABL_G_ref_local against the J2 league arm, as
+  AB2. ABL_P_ref_local against Modal ABL_P_ref cannot be made (ABL_P_ref
+  never ran); the E3 A10 prompted runs on the shared seeds are shown instead,
+  labelled as not the registered check (E3 predates the pins).
+* Anirudh's Mac items (AB3) stay exploratory. They are never pooled with
+  these arms and never replace one.
+* Report disclosure, fixed now: "The RTX AB-P and AB-G arms were registered
+  on 26 Nov (AB4), after one author had analysed exploratory Mac runs of the
+  same questions (AB3), and after the E4 results, which include an A10 and
+  A10G analogue of the 60-step level, were known. Arms, references and tests
+  follow rules written on 24 Nov before any ablation result; AB4 fixed the
+  analysis code, the failure handling and the secondary step analyses. The
+  Mac runs are exploratory and never pooled."

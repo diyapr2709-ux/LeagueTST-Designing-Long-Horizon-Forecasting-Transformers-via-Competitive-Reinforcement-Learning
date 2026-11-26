@@ -2,8 +2,8 @@
 
 Two sources, never mixed:
 
-* registered: results/search/ABL_P_* and ABL_G_* (Modal or the RTX, AB1 and AB2).
-  Step trend reference: the E4 J2 league arm.
+* registered: results/ablations/rtx/ABL_*_local (the local RTX, AB2 and AB4), computed by
+  scripts/ablations/llm_registered.py, not here. Nothing registered ran on Modal (AB3, AB4).
 * mps (exploratory, AB3): results/ablations/mps/ABL_*_mps, every arm and every
   reference run on the same Mac.
 
@@ -217,11 +217,10 @@ def hardware_check(table) -> dict:
 
 
 def registered_source(table) -> dict:
-    """Registered items, if any landed (Modal or RTX); missing ones are listed, not imputed."""
-    root = ROOT / "results" / "search"
-    items = sorted(p.name for p in root.glob("ABL_*"))
-    return {"items_found": items, "note": "none launched by Anirudh on Modal (AB3)" if not items else
-            "found; their families are computed by the owner of the items (AB1, AB2)"}
+    """Registered items that landed: all ran on the local RTX (AB2, AB4) and live under results/ablations/rtx/."""
+    items = sorted(p.name for p in (OUT / "rtx").glob("ABL_*"))
+    return {"items_found": items, "note": "none launched on Modal (AB3); the registered AB-P and AB-G families are "
+            "computed by scripts/ablations/llm_registered.py (AB4) into results/ablations/LLM-registered.json"}
 
 
 def main() -> int:

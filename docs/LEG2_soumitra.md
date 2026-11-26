@@ -181,6 +181,8 @@ out-of-memory, on-policy stops reported and never retrained). Commit, push,
 and tell Anirudh, whose scripts/ablations/llm_tests.py computes the trends
 from origin/soumitra-leg2.
 
+(Superseded 26 Nov by amendment AB4: ablation records go to results/ablations/rtx/<item>/<name>/, never to results/search/ or results/runs/<item>/, which scripts/picks.py and scripts/e5_referee.py read. The nine AB2 items were moved there in the AB4 commit.)
+
 ## L5: fresh-clone reproduction audit (CPU, 27 to 28 Nov)
 
 1. Clone origin/main at its newest commit on 27 Nov into a new folder. Set
