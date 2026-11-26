@@ -349,3 +349,75 @@ changes a registered test, family size or endpoint.
   of logged updates (a step whose episode had no budget left logs nothing).
 * Provenance: the digest of every Mac, E3 and E4 run file that the analyses read
   and the commits that ran each Mac item.
+
+## Amendment AB5 (2026-11-26, Anirudh, before any AB2 or AB4 result is computed or seen by Anirudh)
+
+What existed: AB2's nine run files (complete, on origin/soumitra-leg2 under
+results/ablations/rtx/ since 7fd5085) and AB4 registered (15db163), not yet run.
+Anirudh's session has read the AB2 and AB4 text, counted rows and read field
+names in the RTX files, the training job settings (seeds, steps, KL weight,
+learning rate, run names, backend) and the AB2 queue status lines, and computed
+no AUC, regret or test from them. Its
+direction reviewer (an AI subagent) printed the three headings of
+docs/verdicts/AB2.md, which is the critic's verdict on the AB2 registration,
+committed at c2dda8d before any AB2 run, so it holds no result. Nothing below
+changes a test, family size, reference or endpoint of AB1, AB2 or AB4.
+
+* How the registered families are computed: scripts/ablations/llm_tests.py
+  reads the RTX run files from the working tree when a merge has put them
+  there, otherwise through git from a pinned commit of origin/soumitra-leg2
+  (now 7fd5085; moved forward by a commit of the script when AB4 lands), and
+  records each file's source, commit and sha256. It stops if AB2's nine run
+  files differ from results/ablations/rtx/AB2_move.sha256. The branch is not
+  merged into anirudh-ablations; Diya merges both. spearman_trend, aucs,
+  policy_level and N_PERM are unchanged from 5abbd20 (AB4); a test keeps them
+  so, and the source digest of spearman_trend is recorded beside the results.
+* The scale trend, which AB-P names without a statistic: the Spearman
+  correlation of model-size rank (0.5B < 1.5B < 3B) with ILI held-out AUC over
+  30 + 30 + 30 values, two-sided permutation p (spearman_trend, 100,000
+  permutations, seed 0), as the KL and steps trends.
+* Pairing for AB4's exploratory addendum 3 analyses: policy s is the one
+  trained at seed 100 + s and deployed at seed s (leaguetst/architect/runner.py),
+  matched across the three separate steps items; they run only when all three
+  hold the same ten deployment seeds.
+* After the deadline, an arm finished in time if its queue status line
+  (DONE ... rc=0 in results/logs/l4_queue_status.txt or ab4_queue_status.txt)
+  is at or before 28 Nov 23:59 ET, otherwise if the last commit of its files
+  is; an arm with neither counts as not run.
+* Completeness as AB2 defines it (30 distinct seeds per prompted table; every
+  policy deployed or stopped by the on-policy check). Until every arm is
+  complete or 28 Nov 23:59 ET has passed, the family tables are labelled
+  provisional and the missing tests count as not rejected (p = 1): a
+  provisional rejection cannot be undone by the missing tests, a
+  non-rejection can. After the deadline the AB1 rule applies as written.
+* Blinding: the AB2 numbers are not pushed while AB4 runs, because AB2's
+  ABL_P_ref_local and ABL_G_ref_local are also levels of AB4's steps trend.
+* Which arm is the registered one: an arm counts only if its runs carry the
+  item's method, backend local with one job per GPU, the registered model
+  revision, no duplicate (method, seed), and commits that are clean, descend
+  from the item's registration (c2dda8d for AB2, 15db163 for AB4) and hold the
+  registered launcher (3919d683); for transfer items also the ten frozen files
+  at those commits, compared with the digests of main's docs/e4_rerun.sha256 at
+  a1751ae, never with the run commit's own copy (AB1), and training records with
+  the item's steps, KL weight, learning rate 1e-4, league rivals, ETTh1 source,
+  the 1.5B revision and seeds 100 to 109. An arm that fails any of these is not
+  the registered arm and counts as not run; the reason is reported. A working-
+  tree copy that differs from the pinned commit stops the script. The results
+  stay provisional while the pin is not the local tip of origin/soumitra-leg2.
+  After the deadline they are final only when the pin is that tip as fetched
+  after the deadline: FETCH_HEAD must list soumitra-leg2 at the tip and be
+  dated after 28 Nov 23:59 ET.
+* The finished-in-time rule is conservative: an arm committed after the
+  deadline without a DONE line counts as not run even if it finished in time,
+  and the AB4 queue writes DONE only when errors.jsonl is empty, so an arm
+  with an on-policy stop relies on its commit time. Soumitra is asked to
+  commit results/logs/ab4_queue_status.txt with the runs.
+* Descriptive only, no tests, and only for arms that pass the checks: the ILI
+  RevIN-off share of the lookups of every RTX arm (as AB3 addendum 4 defines
+  it for the Mac runs); ABL_P_ref_local against the Mac reference
+  ABL_P_ref_mps (30 shared seeds) and against E3's ten A10 searches, on the
+  same seeds; AB2's ETTh1 tables of the prompted RTX arms; search diagnostics
+  (lookups, repeat, repaired and invalid rates) and training diagnostics of the
+  RTX items; the GPU name per arm (AB1).
+* Report: in docs/ablations.md the registered RTX families come before the Mac
+  arms, which stay exploratory beside them, whether or not they agree (AB4).

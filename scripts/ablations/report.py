@@ -217,14 +217,79 @@ def pfmt(p: float) -> str:
     return "< 0.0001" if p < 1e-4 else f"{p:.4f}"
 
 
+def registered_llm() -> list[str]:
+    """AB2 and AB4: the registered AB-P and AB-G families on Soumitra's RTX items."""
+    d = load("LLM")
+    lines = ["## AB-P and AB-G: registered families (Soumitra's RTX, AB2 and AB4)", ""]
+    if not d or "families" not in d.get("registered", {}):
+        return lines + [MISSING, ""]
+    g = d["registered"]
+    src = g["source"]
+    state = "final" if g["final"] else ("provisional (" + "; ".join(g.get("provisional_reasons") or ["not final"]) + "): the missing tests count as not rejected for now and nothing is decided from these tables")
+    caveat = "" if g["final"] else "A rejection now stays a rejection when the missing tests land (Holm counts them as p = 1), but a non-rejection can still become one. "
+    lines += [f"Status: {state}. {caveat}Deadline for every arm: 28 Nov 23:59 ET (AB1). "
+              f"Registered in AB2 (c2dda8d) and AB4 (15db163) on origin/soumitra-leg2; run files read from {src['ref']} at {str(src['commit'])[:12]} "
+              f"({len(src['files'])} files, each with its source, commit and sha256 in results/ablations/LLM.json; AB2's move manifest matches for "
+              f"{sum(src['ab2_manifest_matches'].values())} of {len(src['ab2_manifest_matches'])} files). Every reference is local to the same card (AB1, AB4). "
+              "ILI held-out AUC, pooled seed-SD units, lower is better. For a trend, positive rho means a higher (worse) AUC at the higher level: more steps, a larger KL weight, a larger model.", ""]
+    rows = [[v["item"] + (" ILI" if kind == "prompted" else ""), str(v.get("searches", v.get("deployed", ""))), ", ".join(map(str, v.get("stopped", []))) or "-",
+             ", ".join(v.get("gpu", [])) or "-", "yes" if v["complete"] else "no", "; ".join(v["problems"]) or "none"]
+            for kind in ("prompted", "transfer") for v in g["status"][kind].values()]
+    lines += table(["item", "searches or deployed policies", "on-policy stops", "GPU", "complete", "checks (method, backend, revision, registration order, launcher, frozen files, settings)"], rows)
+    lines += [f"Teammate branch: local tip {str(src.get('tip'))[:12]} (committed {src.get('tip_time')}); this clone last fetched at {src.get('fetch_time')}.", ""]
+    if not src.get("pinned_is_tip", True):
+        lines += [f"The pinned commit {str(src['commit'])[:12]} is not the local tip of origin/soumitra-leg2 ({str(src.get('tip'))[:12]}), so these results stay provisional until the pin is moved.", ""]
+    for fam, size in (("AB-P", 3), ("AB-G", 2)):
+        f = g["families"][fam]
+        rows = []
+        for name, test in f["tests"].items():
+            if "rho" in test:
+                levels = "; ".join(f"{k}: {ci(v)}" for k, v in test["levels"].items())
+                stat = f"rho {test['rho']:+.2f} over {test['n']} values ({levels})"
+            else:
+                stat = f"{test['diff']:+.3f} [{test['low']:+.3f}, {test['high']:+.3f}] ({test['n'][0]} / {test['n'][1]} seeds; detectable {test['detectable_80']:.2f})"
+            rows.append([name, stat, pfmt(test["p"]), pfmt(test["p_holm"]), "yes" if test["reject"] else "no"])
+        rows += [[name, f["missing_reasons"][name], "", "", "no (counted)"] for name in f["missing"]]
+        lines += [f"{fam}, Holm over {size}:", ""] + table(["test", "result", "p", "p, Holm", "rejected"], rows)
+    if g["families"]["AB-G"]["tests"]:
+        lines += ["The AB-G levels share training seeds 100 to 109 and deployment seeds 0 to 9 (and the steps levels share level 0), so they are dependent (AB4); "
+                  "the permutation p treats the values as exchangeable and is reported with that caveat.", ""]
+    pl = g["families"]["AB-G"].get("exploratory_policy_level")
+    if pl:
+        u, dose = pl["trained_vs_untrained"], pl["dose"]
+        lines += [f"Exploratory (AB4, as AB3 addendum 3): trained at all, the ten policies' AUC averaged over their three steps levels against the 30 untrained searches, "
+                  f"{u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] (permutation p {pfmt(u['p'])}; the test could detect {u['detectable_80']:.2f} SD; positive is worse); "
+                  f"dose, the per-policy Spearman correlation of AUC with 30, 60, 120 steps, mean {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f}.", ""]
+    desc = g["descriptive"]
+    rows = []
+    for key, label in (("hardware_G_ref_local_vs_J2", "ABL_G_ref_local (RTX) minus J2 league (A10/A10G), AB2"),
+                       ("prompted_ref_local_vs_mac", "ABL_P_ref_local (RTX) minus ABL_P_ref_mps (Mac), AB5"),
+                       ("prompted_ref_local_vs_E3_A10", "ABL_P_ref_local (RTX) minus E3 prompted (A10), AB5")):
+        v = desc.get(key)
+        if v:
+            rows.append([label, str(v["seeds"]), ci(v["a"]), ci(v["b"]), ci(v["diff"])])
+    if rows:
+        lines += ["Descriptive comparisons on shared seeds (no test; different hardware and samplers, so not a hardware test):", ""]
+        lines += table(["comparison", "seeds", "first", "second", "difference"], rows)
+    if desc.get("revin_off_share_ILI"):
+        lines += ["RevIN-off share of ILI lookups (descriptive, AB5): " + "; ".join(f"{k} {v:.0%}" for k, v in desc["revin_off_share_ILI"].items()) + ".", ""]
+    if g.get("ETTh1_descriptive"):
+        lines += ["ETTh1 (descriptive, in-sample):", ""]
+        lines += table(["arm", "AUC", *(f"@{b}" for b in BUDGETS)],
+                       [[arm, ci(next(iter(x["summary"].values()))["auc"]), *(ci(next(iter(x["summary"].values()))[str(b)]) for b in BUDGETS)] for arm, x in g["ETTh1_descriptive"].items()])
+    tr = [(v["item"], v["training"]) for v in g["status"]["transfer"].values() if v.get("training", {}).get("policies")]
+    if tr:
+        lines += ["Training (RTX transfer items): " + "; ".join(f"{k} {x['policies']} policies, largest on-policy gap {x['onpolicy_mean_max']:.4f}, errors {len(x['errors'])}" for k, x in tr) + ".", ""]
+    return lines
+
+
 def llm() -> list[str]:
     d = load("LLM")
-    lines = ["## AB-P and AB-G: LLM arms", ""]
+    lines = ["## AB-P and AB-G on the Mac (exploratory, AB3)", ""]
     if not d:
         return lines + [MISSING, ""]
     m = d["mps"]
-    lines += ["Registered items (ABL_P_ref, ABL_P_anon, ABL_P_repair, ABL_G_steps30, ABL_G_steps120) are not launched by Anirudh (AB3); if none of them runs by 28 Nov 23:59 ET (AB1), their families keep their "
-              "registered sizes and the missing tests count as not rejected. ", "Registered arms (Modal or CUDA): " + d["registered"]["note"] + (f" ({', '.join(d['registered']['items_found'])})" if d["registered"]["items_found"] else "") + ".", "",
+    lines += ["The Modal items (ABL_P_ref, ABL_P_anon, ABL_P_repair, ABL_G_steps30, ABL_G_steps120) were never launched (AB3); their questions are registered on the RTX (AB4, previous section). ",
               "Everything below ran on an Apple M4 Pro (torch MPS), each Mac arm against its own reference on the same machine (the A10 columns of the hardware check are committed runs). It is exploratory (AB1, AB3): "
               "it replaces no registered family. " + provenance_line(d), ""]
     p = m["AB-P"]
@@ -429,6 +494,13 @@ def glance() -> list[str]:
         t = c["tables"]["ILI_T24"]["tests"]
         lines.append(f"* Controller ablations: none of the {len(t)} league settings is rejected against the reference; the test could detect about "
                      f"{max(v['detectable_80'] for v in t.values()):.2f} SD (AB-C).")
+    if g and "families" in g.get("registered", {}):
+        reg = g["registered"]
+        done = [f"{fam} {name}: {('rho %+.2f' % v['rho']) if 'rho' in v else ('%+.2f SD' % v['diff'])}, Holm p {pfmt(v['p_holm'])}, {'rejected' if v['reject'] else 'not rejected'}"
+                for fam in ("AB-P", "AB-G") for name, v in reg["families"][fam]["tests"].items()]
+        missing = [name for fam in ("AB-P", "AB-G") for name in reg["families"][fam]["missing"]]
+        lines.append("* Registered LLM ablations on Soumitra's RTX (" + ("final" if reg["final"] else "provisional") + "): " + ("; ".join(done) or "none complete")
+                     + (f"; missing so far, counted as not rejected: {', '.join(missing)}" if missing else "") + " (AB2, AB4).")
     if g and g["mps"]["AB-P"]["tests"]:
         t = g["mps"]["AB-P"]["tests"]
         etth1_d = g["mps"].get("ETTh1_differences", {})
@@ -470,6 +542,7 @@ def history() -> list[str]:
             "* AB-X ran three times: once with a provenance stamp marked dirty (the report generator had been added to the tree, not the code that ran), once from a clean commit, and once more after run records "
             "gained a git hash. The first two run files were byte-identical; the third differs only by the added field. The CPU analyses were re-run once after the verifier's fixes; the registered numbers "
             "were produced by scripts unchanged since 31f9313 except where addendum 1 and 2 say otherwise, and their first outputs are not kept.",
+            "* Not done from WP6: regret curves with intervals as figures (docs/ablations.md gives tables at fixed budgets only).",
             "* Not answered here: why TPE wins E3's held-out replay but not the pick reseeds (an effect-size question, no equivalence test exists yet); whether rankings survive resampling "
             "of the three table seeds; whether results survive a different fidelity ladder or a common first configuration; BOHB and one-epoch-then-top-K baselines; and, for AB-L, how much of the ETTh1 slope the league contributes.",
             "* Mac LLM runs: the ILI prompted reference (ABL_P_ref_mps) ran at commit 31f9313 and every other Mac item at 0929d26; scripts/ablations/llm_mps.py and leaguetst/ are identical between the two. Every run file's commit and digest is in results/ablations/LLM.json. "
@@ -480,10 +553,10 @@ def history() -> list[str]:
 def main() -> int:
     lines = ["# Ablations, robustness and external validity", "",
              "Generated by scripts/ablations/report.py from results/ablations/*.json. Do not edit by hand. Registered in "
-             "docs/prereg_ablations.md (AB1, AB3); every result here is secondary to the primary endpoints. Regret is in pooled "
+             "docs/prereg_ablations.md (AB1, AB3 and AB5 on this branch; AB2 and AB4 on origin/soumitra-leg2); every result here is secondary to the primary endpoints. Regret is in pooled "
              "seed-SD units unless stated; lower is better. ILI regret is scored on seeds the search never saw; ETTh1 has one seed per config, "
              "so ETTh1 replays are in-sample and descriptive.", ""]
-    lines += glance() + noise_free() + external() + controller() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power() + history()
+    lines += glance() + noise_free() + external() + controller() + registered_llm() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power() + history()
     TARGET.write_text("\n".join(lines).rstrip() + "\n")
     print(f"wrote {TARGET.relative_to(ROOT)} ({len(lines)} lines)")
     return 0

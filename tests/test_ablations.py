@@ -303,3 +303,344 @@ def test_paired_gap_matches_the_same_seed():
     out = llm_tests.paired(levels)
     assert out["policies"] == 10 and out["worse"] == 10
     assert out["gap"]["mean"] == pytest.approx(1.0)
+
+
+def _levels(n, base, step=0.0):
+    return [base + step * i for i in range(n)]
+
+
+def test_registered_families_full_and_holm_sizes():
+    prompted = {"ref": _levels(30, 1.0, 0.01), "anon": _levels(30, 1.2, 0.01), "repair": _levels(30, 0.9, 0.01),
+                "0.5B": _levels(30, 1.5, 0.01), "3B": _levels(30, 0.8, 0.01)}
+    transfer = {k: _levels(10, 2.0 + j, 0.01) for j, k in enumerate(("steps30", "ref", "steps120", "beta0", "beta01"))}
+    out = llm_tests.registered_families(prompted, transfer, aligned=True)
+    assert set(out["AB-P"]["tests"]) == {"anon vs ref_local", "repair vs ref_local", "scale trend"} and not out["AB-P"]["missing"]
+    assert set(out["AB-G"]["tests"]) == {"steps trend", "KL trend"} and not out["AB-G"]["missing"]
+    scale = out["AB-P"]["tests"]["scale trend"]
+    assert list(scale["levels"]) == ["0.5", "1.5", "3.0"] and scale["rho"] < 0  # 0.5B worst, 3B best in this fixture
+    assert out["AB-G"]["tests"]["KL trend"]["levels"]["0.04"]["mean"] == pytest.approx(np.mean(transfer["ref"]))
+    assert "exploratory_policy_level" in out["AB-G"]
+
+
+def test_registered_families_missing_arms_keep_family_size():
+    prompted = {"ref": _levels(30, 1.0, 0.01), "anon": None, "repair": None, "0.5B": _levels(30, 1.5, 0.01), "3B": _levels(30, 0.8, 0.01)}
+    transfer = {"steps30": None, "ref": _levels(10, 2.0, 0.01), "steps120": None, "beta0": _levels(10, 1.0, 0.01), "beta01": _levels(10, 3.0, 0.01)}
+    out = llm_tests.registered_families(prompted, transfer, aligned=False)
+    assert out["AB-P"]["missing"] == ["anon vs ref_local", "repair vs ref_local"]
+    assert out["AB-G"]["missing"] == ["steps trend"] and "exploratory_policy_level" not in out["AB-G"]
+    p = out["AB-P"]["tests"]["scale trend"]["p"]
+    assert out["AB-P"]["tests"]["scale trend"]["p_holm"] == pytest.approx(min(1.0, 3 * p))  # alone, it is the smallest of 3
+    k = out["AB-G"]["tests"]["KL trend"]
+    assert k["p_holm"] == pytest.approx(min(1.0, 2 * k["p"]))
+
+
+def test_completeness_rules():
+    runs = [{"method": "m", "seed": s} for s in range(30)]
+    assert llm_tests.prompted_complete(runs, "m") and not llm_tests.prompted_complete(runs[:29], "m")
+    assert not llm_tests.prompted_complete(runs, "other")
+    from leaguetst.architect.runner import ON_POLICY_STOP
+    errors = [{"error": f"x {ON_POLICY_STOP} y", "run_names": ["grpo_league_ETTh1_seed107"]}, {"error": "out of memory", "run_names": ["grpo_league_ETTh1_seed101"]}]
+    assert llm_tests.stopped_seeds(errors) == {7}
+    deployed = [{"method": llm_tests.TRANSFER_METHOD, "seed": s} for s in range(10) if s != 7]
+    assert llm_tests.transfer_complete(deployed, {7}) and not llm_tests.transfer_complete(deployed, set())
+    assert not llm_tests.transfer_complete(deployed + [{"method": llm_tests.TRANSFER_METHOD, "seed": 7}], {7})
+
+
+def test_rtx_source_prefers_the_working_tree(tmp_path, monkeypatch):
+    folder = tmp_path / "results/ablations/rtx/ABL_P_ref_local/ILI_T24"
+    folder.mkdir(parents=True)
+    (folder / "qwen_prompted_1.5b_local_runs.jsonl").write_text('{"method": "m", "seed": 0}\n')
+    monkeypatch.setattr(llm_tests, "ROOT", tmp_path)
+    src = llm_tests.RtxSource(ref="no-such-ref")
+    assert src.commit is None
+    assert src.runs("ABL_P_ref_local", "ILI_T24") == [{"method": "m", "seed": 0}]
+    assert src.files[0]["source"] == "working tree" and len(src.files[0]["sha256"]) == 64
+    assert src.runs("ABL_P_3b_local", "ILI_T24") == []
+
+
+def test_registered_functions_are_unchanged_since_ab4():
+    """AB4 registers spearman_trend (with aucs, policy_level, N_PERM) as committed at 5abbd20; the file may grow around them."""
+    import subprocess
+
+    try:
+        old = subprocess.run(["git", "show", "5abbd20:scripts/ablations/llm_tests.py"], cwd=ROOT, capture_output=True, check=True, text=True).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("commit 5abbd20 not available")
+    import ast
+
+    old_defs = {n.name: ast.get_source_segment(old, n) for n in ast.parse(old).body if isinstance(n, ast.FunctionDef)}
+    for name in ("spearman_trend", "aucs", "policy_level"):
+        assert inspect.getsource(getattr(llm_tests, name)).rstrip() == old_defs[name].rstrip(), name
+    assert "N_PERM = 100_000" in old and llm_tests.N_PERM == 100_000
+
+
+class _FakeSource:
+    """Stands in for RtxSource: every run commit descends from the registration and has the registered launcher."""
+
+    def __init__(self, ok=True):
+        self.ok, self.files, self.commit, self.ref = ok, [], None, "fake"
+
+    def descends(self, run_hash, registered):
+        return self.ok
+
+    def launcher_sha256(self, run_hash):
+        return llm_tests.LAUNCHER_SHA256 if self.ok else "0" * 64
+
+    def frozen_ok(self, run_hash):
+        return self.ok
+
+    def _read(self, rel):
+        return None
+
+
+def _env(revision=None, git="a" * 40, backend="local"):
+    return {"git_hash": git, "model_revision": revision or llm_tests.REVISIONS["1.5B"], "backend": backend, "per_gpu": 1, "gpu_name": "RTX"}
+
+
+def _run(method, seed, revision=None, git="a" * 40, backend="local"):
+    return {"method": method, "seed": seed, "env": _env(revision, git, backend)}
+
+
+def test_check_runs_flags_revision_order_launcher_and_duplicates():
+    rev = llm_tests.REVISIONS["1.5B"]
+    check = lambda src, runs, item="ABL_P_ref_local", revision=rev, method="m", frozen=False: llm_tests.check_runs(src, item, runs, revision, method, frozen)
+    runs = [_run("m", s) for s in range(30)]
+    assert check(_FakeSource(), runs) == []
+    assert any("revisions" in p for p in check(_FakeSource(), runs, "ABL_P_3b_local", llm_tests.REVISIONS["3B"]))
+    assert any("does not descend" in p for p in check(_FakeSource(ok=False), runs))
+    assert any("duplicate" in p for p in check(_FakeSource(), runs + runs[:1]))
+    assert not llm_tests.prompted_complete(runs + runs[:1], "m")
+    assert any("dirty" in p for p in check(_FakeSource(), [_run("m", s, git="a" * 40 + "-dirty") for s in range(30)]))
+    assert any("methods" in p for p in check(_FakeSource(), runs + [_run("wrong", 0)]))
+    assert any("backend" in p for p in check(_FakeSource(), [_run("m", s, backend="modal") for s in range(30)]))
+
+
+def test_check_training_matches_the_item_settings():
+    def rec(seed, steps=60, beta=0.04):
+        return {"job": {"seed": seed, "steps": steps, "beta": beta, "lr": 1e-4, "rivals": "league", "dataset": "ETTh1",
+                        "revision": llm_tests.REVISIONS["1.5B"], "run_name": f"grpo_league_ETTh1_seed{seed}"}}
+
+    good = [rec(100 + s) for s in range(10)]
+    assert llm_tests.check_training(good, 60, 0.04, set()) == []
+    assert llm_tests.check_training(good, 30, 0.04, set())  # wrong steps for steps30
+    assert llm_tests.check_training(good, 60, 0.1, set())  # wrong beta for beta01
+    assert llm_tests.check_training(good[:9], 60, 0.04, {9}) == []  # a stopped policy has no record
+    assert llm_tests.check_training(good[:9], 60, 0.04, set())
+
+
+def test_finished_in_time_uses_queue_done_then_commit_time():
+    from datetime import datetime
+
+    deadline = datetime.fromisoformat(llm_tests.DEADLINE)
+    assert llm_tests.finished_in_time("x", [], {"x": "2026-11-28T20:00:00-05:00"}, deadline) is True
+    assert llm_tests.finished_in_time("x", [], {"x": "2026-11-29T00:30:00-05:00"}, deadline) is False
+    assert llm_tests.finished_in_time("x", [{"last_commit_time": "2026-11-27T10:00:00-05:00"}], {}, deadline) is True
+    assert llm_tests.finished_in_time("x", [{"last_commit_time": None}], {}, deadline) is None
+
+
+def _fake_llm(final: bool) -> dict:
+    trend = {"rho": 0.1, "p": 0.4, "n": 90, "p_holm": 1.0, "reject": False,
+             "levels": {k: {"mean": 1.0, "low": 0.9, "high": 1.1, "n": 30, "sd": 0.1, "median": 1.0} for k in ("0.5", "1.5", "3.0")}}
+    test = {"n": [30, 30], "mean": [1.1, 1.0], "diff": 0.1, "low": -0.1, "high": 0.3, "p": 0.3, "p_holm": 0.9, "reject": False, "detectable_80": 0.5}
+    p_tests = {"scale trend": trend, **({"anon vs ref_local": test, "repair vs ref_local": test} if final else {})}
+    g_tests = {"KL trend": {**trend, "n": 30}, **({"steps trend": {**trend, "n": 60}} if final else {})}
+    status = {"prompted": {"ref": {"item": "ABL_P_ref_local", "searches": 30, "gpu": ["RTX"], "complete": True, "problems": []}},
+              "transfer": {"ref": {"item": "ABL_G_ref_local", "deployed": 10, "stopped": [], "gpu": ["RTX"], "complete": True, "problems": [],
+                                   "training": {"policies": 10, "onpolicy_mean_max": 0.004, "errors": []}}}}
+    reasons = {"anon vs ref_local": "ABL_P_anon_local: pending (AB4 running)", "repair vs ref_local": "ABL_P_repair_local: pending (AB4 running)",
+               "steps trend": "ABL_G_steps30_local: pending (AB4 running)"}
+    return {"registered": {"source": {"ref": "origin/x", "commit": "c" * 40, "tip": "c" * 40, "tip_time": "t", "fetch_time": "f",
+                                      "pinned_is_tip": True, "files": [], "ab2_manifest_matches": {"a": True}},
+                           "final": final, "provisional_reasons": [] if final else ["some arms are still running (AB4)"], "status": status, "descriptive": {},
+                           "families": {"AB-P": {"tests": p_tests, "missing": [] if final else ["anon vs ref_local", "repair vs ref_local"],
+                                                 "missing_reasons": reasons},
+                                        "AB-G": {"tests": g_tests, "missing": [] if final else ["steps trend"], "missing_reasons": reasons}}},
+            "mps": {"AB-P": {"tests": {}}, "AB-G": {"tests": {}}}}
+
+
+@pytest.mark.parametrize("final", [False, True])
+def test_report_renders_registered_section(monkeypatch, final):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("ablations_report", ROOT / "scripts" / "ablations" / "report.py")
+    report = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(report)  # by path: scripts/report.py is also importable as "report"
+    monkeypatch.setattr(report, "load", lambda name: _fake_llm(final) if name == "LLM" else None)
+    text = "\n".join(report.registered_llm())
+    assert ("Status: final" in text) == final and ("provisional" in text) != final
+    assert "scale trend" in text and "KL trend" in text and "positive rho means a higher (worse) AUC" in text
+    assert ("pending" in text) != final
+    assert "Training (RTX transfer items): ABL_G_ref_local 10 policies" in text
+
+
+
+def test_rtx_source_reads_git_and_stops_on_a_differing_copy(tmp_path, monkeypatch):
+    import subprocess
+
+    rel = "results/ablations/rtx/ABL_P_ref_local/ILI_T24/qwen_prompted_1.5b_local_runs.jsonl"
+    (tmp_path / rel).parent.mkdir(parents=True)
+    (tmp_path / rel).write_text('{"method": "m", "seed": 1}\n')
+    git = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True, text=True).stdout.strip()
+    git("init", "-q")
+    git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "add", ".")
+    git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-q", "-m", "x")
+    commit = git("rev-parse", "HEAD")
+    (tmp_path / rel).unlink()
+    monkeypatch.setattr(llm_tests, "ROOT", tmp_path)
+    src = llm_tests.RtxSource(ref=commit)
+    assert src.commit == commit and src.runs("ABL_P_ref_local", "ILI_T24") == [{"method": "m", "seed": 1}]
+    assert src.files[0]["source"] == "git" and src.files[0]["commit"] == commit and src.files[0]["last_commit_time"]
+    (tmp_path / rel).write_text('{"method": "m", "seed": 2}\n')
+    with pytest.raises(SystemExit):
+        llm_tests.RtxSource(ref=commit).runs("ABL_P_ref_local", "ILI_T24")
+
+
+class _FakeRtx:
+    """A whole RTX branch in memory: AB2 arms complete, AB4 arms absent unless given."""
+
+    def __init__(self, with_ab4=False, manifest_ok=True, bad_method_item=None, tip_ok=True, done_lines=True,
+                 commit_time="2026-11-25T03:00:00-05:00", fetch_time="2026-11-29T08:00:00-05:00"):
+        import hashlib
+
+        self.files, self.commit, self.ref = [], "c" * 40, "fake"
+        self.tip = self.commit if tip_ok else "d" * 40
+        self.tip_time, self.fetch_time, self.commit_time = "2026-11-26T01:38:00-05:00", fetch_time, commit_time
+        self.arm_runs, self.table_rows, self.data, done = {}, {}, {}, []
+        for arm, (item, method) in llm_tests.PROMPTED.items():
+            if llm_tests.ITEM_AMENDMENT[item] == "AB4" and not with_ab4:
+                continue
+            m = "wrong" if item == bad_method_item else method
+            self.arm_runs[(item, "ILI_T24")] = [{"method": m, "seed": s, "env": _env(llm_tests.REVISIONS[llm_tests.PROMPTED_MODEL[arm]])} for s in range(30)]
+            done.append(f"2026-11-25T01:00:00-05:00 DONE {item.lower()}_ILI rc=0")
+        for arm, item in llm_tests.TRANSFER.items():
+            if llm_tests.ITEM_AMENDMENT[item] == "AB4" and not with_ab4:
+                continue
+            steps, beta = llm_tests.TRANSFER_JOB[arm]
+            self.arm_runs[(item, "ILI_T24")] = [{"method": llm_tests.TRANSFER_METHOD, "seed": s, "env": _env()} for s in range(10)]
+            self.table_rows[f"results/runs/{item}/ILI_T24/training.jsonl"] = [
+                {"job": {"seed": 100 + s, "steps": steps, "beta": beta, "lr": 1e-4, "rivals": "league", "dataset": "ETTh1",
+                         "revision": llm_tests.REVISIONS["1.5B"], "run_name": f"grpo_league_ETTh1_seed{100 + s}"},
+                 "env": _env(), "log": [{"onpolicy_mean": 0.001, "unique_rate": 1.0}], "seconds": 60.0} for s in range(10)]
+            done.append(f"2026-11-25T02:00:00-05:00 DONE {item.lower()} rc=0")
+        self.data["results/logs/l4_queue_status.txt"] = "\n".join(done if done_lines else []).encode()
+        paths = [f"results/ablations/rtx/X{i}/f.jsonl" for i in range(9)]
+        for path in paths:
+            self.data[path] = path.encode()
+        lines = [f"{hashlib.sha256(p.encode()).hexdigest() if manifest_ok or i else '0' * 64}  {p}" for i, p in enumerate(paths)]
+        self.data[f"{llm_tests.RTX_DIR}/AB2_move.sha256"] = "\n".join(lines).encode()
+
+    def _read(self, rel):
+        return self.data.get(rel)
+
+    def runs(self, item, setting_dir):
+        runs = self.arm_runs.get((item, setting_dir), [])
+        if runs:
+            self.files.append({"path": f"{llm_tests.RTX_DIR}/{item}/{setting_dir}/x_runs.jsonl", "last_commit_time": self.commit_time})
+        return runs
+
+    def rows(self, rel):
+        rows = self.table_rows.get(rel, [])
+        if rows:
+            self.files.append({"path": rel, "last_commit_time": self.commit_time})
+        return rows
+
+    def descends(self, run_hash, registered):
+        return True
+
+    def launcher_sha256(self, run_hash):
+        return llm_tests.LAUNCHER_SHA256
+
+    def frozen_ok(self, run_hash):
+        return True
+
+
+@pytest.fixture
+def quiet_registered(monkeypatch):
+    monkeypatch.setattr(llm_tests, "aucs", lambda runs, table, method: [0.01 * int(r["seed"]) + len(method) * 0.1 for r in sorted(runs, key=lambda r: r["seed"])])
+    monkeypatch.setattr(llm_tests, "diagnostics", lambda runs: {})
+    monkeypatch.setattr(llm_tests, "rtx_descriptive", lambda *a: {})
+    monkeypatch.setattr(llm_tests, "N_PERM", 200)
+
+
+def _at(stamp):
+    from datetime import datetime
+
+    return datetime.fromisoformat(stamp)
+
+
+def test_registered_source_before_deadline_is_provisional(quiet_registered):
+    out = llm_tests.registered_source(None, None, now=_at("2026-11-26T12:00:00-05:00"), src=_FakeRtx())
+    fam = out["families"]
+    assert set(fam["AB-P"]["tests"]) == {"scale trend"} and set(fam["AB-G"]["tests"]) == {"KL trend"}
+    assert "pending" in fam["AB-P"]["missing_reasons"]["anon vs ref_local"] and "pending" in fam["AB-G"]["missing_reasons"]["steps trend"]
+    assert out["final"] is False and out["queue_done_times"]["abl_g_ref_local"].startswith("2026-11-25")
+
+
+def test_registered_source_after_deadline_marks_missing_as_not_run(quiet_registered):
+    out = llm_tests.registered_source(None, None, now=_at("2026-11-29T09:00:00-05:00"), src=_FakeRtx())
+    assert out["final"] is True
+    assert "not run" in out["families"]["AB-P"]["missing_reasons"]["repair vs ref_local"]
+    stale = llm_tests.registered_source(None, None, now=_at("2026-11-29T09:00:00-05:00"), src=_FakeRtx(tip_ok=False))
+    assert stale["final"] is False and any("not the local tip" in r for r in stale["provisional_reasons"])
+    unfetched = llm_tests.registered_source(None, None, now=_at("2026-11-29T09:00:00-05:00"), src=_FakeRtx(fetch_time="2026-11-28T10:00:00-05:00"))
+    assert unfetched["final"] is False and any("not fetched" in r for r in unfetched["provisional_reasons"])
+
+
+def test_fetch_time_counts_only_a_fetch_of_the_teammate_branch(tmp_path):
+    head = tmp_path / "FETCH_HEAD"
+    tip = "a" * 40
+    head.write_text(f"{'b' * 40}\tnot-for-merge\tbranch 'main' of https://example.invalid/repo\n")
+    assert llm_tests.fetch_time_of(head, tip) is None  # only main was fetched
+    head.write_text(f"{'b' * 40}\tnot-for-merge\tbranch 'main' of https://example.invalid/repo\n"
+                    f"{tip}\tnot-for-merge\tbranch 'soumitra-leg2' of https://example.invalid/repo\n")
+    assert llm_tests.fetch_time_of(head, tip) is not None
+    assert llm_tests.fetch_time_of(head, "c" * 40) is None  # listed, but not at the local tip
+
+
+def test_finished_in_time_falls_back_to_commit_times_by_path(quiet_registered):
+    late = _at("2026-11-29T09:00:00-05:00")
+    early = llm_tests.registered_source(None, None, now=late, src=_FakeRtx(done_lines=False))
+    assert "scale trend" in early["families"]["AB-P"]["tests"]  # AB2 arms committed on 25 Nov count as finished
+    after = llm_tests.registered_source(None, None, now=late, src=_FakeRtx(done_lines=False, commit_time="2026-11-29T01:00:00-05:00"))
+    assert "scale trend" in after["families"]["AB-P"]["missing"]
+    assert "not shown to have finished" in after["families"]["AB-P"]["missing_reasons"]["scale trend"]
+
+
+def test_frozen_check_uses_the_fixed_manifest(tmp_path, monkeypatch):
+    import hashlib
+    import subprocess
+
+    git = lambda *a: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", *a], cwd=tmp_path,
+                                    check=True, capture_output=True, text=True).stdout.strip()
+    git("init", "-q")
+    names = [f"f{i}.py" for i in range(10)]
+    for n in names:
+        (tmp_path / n).write_text(n)
+    write_manifest = lambda: (tmp_path / "docs").mkdir(exist_ok=True) or (tmp_path / "docs/e4_rerun.sha256").write_text(
+        "".join(f"{hashlib.sha256((tmp_path / n).read_bytes()).hexdigest()}  {n}\n" for n in names))
+    write_manifest()
+    git("add", ".")
+    git("commit", "-q", "-m", "registered")
+    first = git("rev-parse", "HEAD")
+    (tmp_path / "f3.py").write_text("changed")
+    write_manifest()  # the run commit edits a frozen file and its digest line together
+    git("commit", "-q", "-am", "edit")
+    second = git("rev-parse", "HEAD")
+    monkeypatch.setattr(llm_tests, "ROOT", tmp_path)
+    monkeypatch.setattr(llm_tests, "E4_MANIFEST_COMMIT", first)
+    src = llm_tests.RtxSource(ref=first)
+    assert src.frozen_ok(first) and not src.frozen_ok(second)
+
+
+def test_registered_source_complete_and_with_a_failing_arm(quiet_registered):
+    out = llm_tests.registered_source(None, None, now=_at("2026-11-27T09:00:00-05:00"), src=_FakeRtx(with_ab4=True))
+    assert out["final"] is True and not out["families"]["AB-P"]["missing"] and not out["families"]["AB-G"]["missing"]
+    assert "exploratory_policy_level" in out["families"]["AB-G"]
+    bad = llm_tests.registered_source(None, None, now=_at("2026-11-26T12:00:00-05:00"), src=_FakeRtx(bad_method_item="ABL_P_3b_local"))
+    assert "scale trend" in bad["families"]["AB-P"]["missing"]
+    assert "failed checks" in bad["families"]["AB-P"]["missing_reasons"]["scale trend"]
+
+
+def test_registered_source_stops_on_a_manifest_mismatch(quiet_registered):
+    with pytest.raises(SystemExit):
+        llm_tests.registered_source(None, None, now=_at("2026-11-26T12:00:00-05:00"), src=_FakeRtx(manifest_ok=False))

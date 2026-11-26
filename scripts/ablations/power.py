@@ -113,6 +113,9 @@ def abl_rows() -> list[dict]:
     out = family_rows(OUT / "AB-C.json", "AB-C, ILI AUC", lambda d: d["tables"]["ILI_T24"]["tests"])
     out += family_rows(OUT / "AB-X.json", "AB-X, ILI AUC", lambda d: d["tables"]["ILI_T24"]["tests"])
     out += family_rows(OUT / "LLM.json", "AB-P on the Mac (exploratory), ILI AUC", lambda d: d["mps"]["AB-P"]["tests"])
+    reg_state = "final" if (OUT / "LLM.json").exists() and json.loads((OUT / "LLM.json").read_text()).get("registered", {}).get("final") else "provisional"
+    out += family_rows(OUT / "LLM.json", f"AB-P on the RTX (registered, AB4, {reg_state}), ILI AUC",
+                       lambda d: {k: v for k, v in d.get("registered", {}).get("families", {}).get("AB-P", {}).get("tests", {}).items() if "diff" in v})
     data = json.loads((OUT / "AB-L.json").read_text())
     for dataset in ("ILI", "ETTh1"):
         slopes = [v["spearman_slope"] for v in data["by_source"][dataset]["per_policy"].values() if v["arm"] == "league"]
@@ -127,10 +130,22 @@ def abl_rows() -> list[dict]:
 
 
 def trend_rows() -> list[dict]:
-    return [{"comparison": "AB-G step trend (30 + 10 + 10 + 10 runs)", "n": [60], "family": 2, "unit": "Spearman rho", "detectable_80": detectable_rho(60, 2)},
+    """Planned sizes; the detectable rho is a Fisher-z approximation, optimistic with heavily tied level ranks."""
+    note = "approximate: Fisher z for a rank correlation with heavily tied level ranks"
+    rows = [{"comparison": "AB-G step trend (30 + 10 + 10 + 10 runs)", "n": [60], "family": 2, "unit": "Spearman rho", "detectable_80": detectable_rho(60, 2)},
             {"comparison": "AB-G step trend, 10 per level", "n": [40], "family": 2, "unit": "Spearman rho", "detectable_80": detectable_rho(40, 2)},
             {"comparison": "AB-G KL trend (10 + 10 + 10 runs)", "n": [30], "family": 2, "unit": "Spearman rho", "detectable_80": detectable_rho(30, 2)},
             {"comparison": "AB-P scale trend (30 + 30 + 30 runs)", "n": [90], "family": 3, "unit": "Spearman rho", "detectable_80": detectable_rho(90, 3)}]
+    if (OUT / "LLM.json").exists():
+        reg = json.loads((OUT / "LLM.json").read_text()).get("registered", {})
+        fams = reg.get("families", {})
+        state = "final" if reg.get("final") else "provisional"
+        for fam, size in (("AB-P", 3), ("AB-G", 2)):
+            for name, t in fams.get(fam, {}).get("tests", {}).items():
+                if "rho" in t:
+                    rows.append({"comparison": f"{fam} {name} on the RTX (registered, {state})", "n": [t["n"]], "family": size, "unit": "Spearman rho",
+                                 "detectable_80": detectable_rho(t["n"], size), "diff": t["rho"], "p": t["p"]})
+    return [{**r, "note": r.get("note") or note} for r in rows]
 
 
 def e6_rows() -> list[dict]:
