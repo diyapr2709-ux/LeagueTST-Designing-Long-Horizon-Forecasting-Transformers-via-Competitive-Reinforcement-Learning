@@ -46,7 +46,8 @@ P_ARMS = {"ref": ("ABL_P_ref_local", "qwen_prompted_1.5b_local"), "anon": ("ABL_
           "0.5b": ("ABL_P_05b_local", "qwen_prompted_0.5b_local"), "3b": ("ABL_P_3b_local", "qwen_prompted_3b_local")}
 G_STEPS = {30: "ABL_G_steps30_local", 60: "ABL_G_ref_local", 120: "ABL_G_steps120_local"}
 G_BETA = {0.0: "ABL_G_beta0_local", 0.04: "ABL_G_ref_local", 0.1: "ABL_G_beta01_local"}
-N_SEARCH, N_POLICY = 30, 10
+N_SEARCH, N_POLICY = 30, 10  # every GRPO arm here deployed all 10 policies (no on-policy stop occurred, AB2/AB4 commits);
+# an arm with an on-policy stop would have 9 deployments, be reported as not run by complete(), and need its own handling
 
 
 def runs(item: str, setting: str) -> list[dict]:

@@ -416,3 +416,42 @@ this branch. The training records under results/runs/ABL_G_*_local/ stay
 where they are, because neither picks.py nor e5_referee.py reads
 results/runs/. Nothing in the move changes a test, a reference, a setting
 or a run file.
+
+### AB4 addendum 2 (2026-11-26, the analysis code; before any AB-P or AB-G outcome is computed)
+
+The registered AB-P and AB-G families for the RTX arms of AB2 and AB4 are
+computed by scripts/ablations/rtx_tests.py, first committed in e6926d8 (26 Nov 18:44 ET, with the RTX run files and
+copies of them under results/runs/llm_local/), amended only by a comment in
+the commit that adds this addendum, and run only after that commit, using byte-identical copies of Anirudh's
+scripts/ablations/common.py (sha256
+46aef3c196864a1f835505e58e2b1bef22940ca03219bb60887514039efa310b) and
+scripts/ablations/llm_tests.py (sha256
+01b70835dd128001c78eceb040590b7e79ace2a17f260a3b98022cdbcd0ee0a6) at
+5abbd20, which leaves registered items to their owner. No AUC, regret or
+test statistic from any AB2 or AB4 run had been computed when e6926d8 or this addendum was committed. Every GRPO
+arm deployed all 10 policies (no on-policy stop occurred); an arm with a
+stop would be reported as not run by the code and need its own handling.
+
+* Scale trend. AB-P names a trend without a statistic. It is spearman_trend
+  (5abbd20), AB-G's trend statistic: level ranks 0.5B < 1.5B < 3B, n = 90,
+  two-sided, 100,000 relabellings, seed 0, in AB-P's Holm family of 3.
+* Dependence. The scale levels share search seeds 0 to 29. The KL levels,
+  like the step levels, share training seeds 100 to 109 and deployment seeds
+  0 to 9. Every trend's permutation p therefore carries the dependence
+  caveat AB4 states for the steps trend. Each trend also reports an
+  approximate detectable |rho| at 80% power (Fisher z, ignoring the
+  dependence).
+* Scope of the outputs. These ablations compare variants of the same
+  architect with each other. No external baseline appears in them, so they
+  do not answer RQ1, whose registered answer is E4. They are secondary
+  tests, not claims under CLAUDE.md rule 6: they have permutation p values
+  and Welch intervals but no paired block-bootstrap interval. Lower AUC is
+  better, so a negative difference or rho favours the arm or the higher
+  level. Level 0 of the steps trend is prompted Qwen on 30 seeds, so that
+  trend mixes "trained at all" with "trained longer". The addendum-3
+  analyses are exploratory. Numbers reach docs/ or the report only through
+  results/ledger.jsonl and scripts/report.py (rule 5).
+* Re-score. An independent re-score that recomputes AUC from the traces with leaguetst.search.replay (the same
+  library the primary analysis uses through common.by_seed) and uses its own
+  Spearman and permutation code
+  is run after the outputs exist and reported beside them.
