@@ -32,6 +32,33 @@ Updated by every loop iteration. Newest first.
   AB4 discloses it and registers policy-level secondary analyses.
   Plan: docs/LEG3_soumitra.md (PDF beside it).
 
+## 2026-11-26, morning: acceptance audit and lit-scout
+
+* An area-chair-standard audit of the repo and report plan
+  (docs/verdicts/neurips_audit_2026-11-26.md). On the committed evidence RQ1
+  is negative for the GRPO architect (worse than warm-started TPE after Holm;
+  not better than the portfolio or the no-league control) and null for every
+  method against random on fresh seeds; the in-table TPE win is a winner's
+  curse (E3b). Only the E4 transfer result and AB-L meet all of rule 6; the
+  pick and E3b results have no recorded verifier re-score. Gaps that block
+  the gates: no docs/claims/E4.json, no "Verdict: ACCEPT" line in any
+  verdict, no test pre-registration file, LICENSE missing, REPORT_DRAFT.md
+  older than the ledger, scripts/report.py covers only part of what rule 5
+  requires. Twelve prioritised actions with owners are in the audit.
+* Lit-scout, 2026-11-26 (docs/related_work_2026-11-26.md; every paper opened
+  this session, arXiv ids and URLs inside). No prior work trains an LLM
+  architect with RL on a tabular forecasting benchmark and compares it at
+  equal epochs with random, RE, TPE, ASHA and the untrained LLM with seeds,
+  intervals and pre-registration; the nearest pieces are GRPOformer
+  (2509.17105), LM-Searcher (2611.12791), Rodrigues 2026 (2606.21641) and
+  TSBench (2403.04477). Our prompted-LLM and GRPO results match the
+  budget-matched nulls of Rodrigues 2026 and Ferreira 2026 (2603.24647) and
+  contradict Zhang et al. 2023 (2312.04528), LLAMBO and GENIUS; the
+  league-equals-none result is predicted by Gao et al. 2026 (2611.02404):
+  rivals independent of the group shift the baseline without changing the
+  expected gradient. "First" claims are worded "we found no prior work
+  that" (A11).
+
 ## 2026-11-24, evening
 
 * E4 rerun complete on Soumitra's Modal workspace and merged (PR #1,
