@@ -280,3 +280,122 @@ item below exists when this is committed.
 * Evidence: results/logs/ab2_modal_billing.txt (billing summary; the free
   credit was read from the dashboard, as the E4 screenshots show) and
   results/logs/ab2_3b_memory_probe.txt (the memory check).
+
+## Amendment AB4 (2026-11-26, before any run of the items below)
+
+Soumitra's side, under AB1, AB3 and docs/LEG2_anirudh.md ("If you cannot run
+WP3 on Modal at all ... the same items then join his RTX queue after the KL
+arms, with the local references"), by the owner's instruction of 26 Nov.
+AB3 (origin/anirudh-ablations, added in 31f9313 and read at dfb2b47)
+records that Anirudh did not launch
+ABL_P_anon, ABL_P_repair, ABL_G_steps30 or ABL_G_steps120 (nor ABL_P_ref) on
+Modal, so they may move to another backend (AB1, "Backend switching"). No
+result of any item below exists when this is committed. When writing AB4 the
+author had read AB3 and its addenda, not the Mac (AB3) result files or
+docs/ablations.md. AB3 addenda 3 and 4 describe the Mac step results
+qualitatively (the level-0 confound, the RevIN-off hypothesis, how many
+policies are worse), so the author knew the direction of the Mac
+comparison. The author had also handled the AB2 run files of
+ABL_P_ref_local and ABL_G_ref_local (counts, timings, on-policy gaps) and
+computed no AUC or regret from them. Nothing below changes a primary test, its family or its
+data.
+
+* Backend: the local GPU of AB2 (the same card, driver, WSL2, torch, CUDA and
+  cuDNN), one job at a time (--per-gpu 1), packages and model revision as
+  AB2 (Qwen/Qwen2.5-1.5B-Instruct 989aa7980e4cf806f80c7fef2b1adb7bc71aa306).
+  By the L4 rule the four items, about $20.5 on Modal (docs/LEG2_anirudh.md WP3: $3.5 + $4 + $3.5 +
+  $9.5), do not fit Soumitra's about $8.15 of free credit
+  (results/logs/ab2_modal_billing.txt; no Modal job has run since). Nothing
+  in AB4 runs on Modal.
+* Code. The launcher is unchanged: scripts/ablate_llm.py, sha256
+  3919d68337302590eda42f53ca10158ca27766bb488026b5a4fc8373c477b786
+  (79977de, AB2). Its flags --anonymous, --no-constrained and --steps pass to
+  leaguetst/architect/runner.py unchanged. The queue is a new file,
+  scripts/ablations/run_ab4_queue.sh, sha256
+  2b9f3d98a0246fd93bf4cbce6561ebec198055fada156564e0413e1a29d34788, with the AB2 queue's guards
+  (the same lock, dirty-tree refusal, the docs/e4_rerun.sha256 check) and its
+  own status file, results/logs/ab4_queue_status.txt. The ten files of
+  docs/e4_rerun.sha256 are unchanged.
+* Items. Each is the registered item of the same name without "_local", run
+  on the RTX; the Modal-named items stay not run. Outputs go to
+  results/runs/llm_local/<item>/<name>/ and logs to results/logs/, in this
+  order (short items first, ABL_G_steps120_local last):
+
+| Item | Command (scripts/ablate_llm.py ... --per-gpu 1) | Method |
+|---|---|---|
+| ABL_P_anon_local | prompted --dataset ILI (and later ETTh1) --seeds 30 --model Qwen/Qwen2.5-1.5B-Instruct --anonymous | qwen_prompted_anon_1.5b_local |
+| ABL_P_repair_local | the same with --no-constrained instead of --anonymous | qwen_prompted_repair_1.5b_local |
+| ABL_G_steps30_local | transfer --source ETTh1 --target ILI --arms league:10 --steps 30 (E4 recipe otherwise) | grpo_league_from_ETTh1 |
+| ABL_G_steps120_local | the same with --steps 120 | grpo_league_from_ETTh1 |
+
+  The queue runs anon then repair on ILI, then the same two on ETTh1 (ILI is
+  tested, ETTh1 descriptive), then steps30, then steps120. Search seeds 0 to
+  29; GRPO training seeds 100 to 109, deployed at seeds 0 to 9, budget 100,
+  KL weight 0.04, learning rate 1e-4.
+* References and tests. Every reference is local (AB1: local references
+  serve only local arms), which replaces AB2's naming of the Modal ABL_P_ref (never launched, AB3)
+  and the J2 league arm (a Modal run, which under AB1 serves only Modal
+  arms) as the references of these tests.
+  On ILI held-out AUC: anon against ABL_P_ref_local and repair against
+  ABL_P_ref_local (seed-level permutation tests, as AB-P); the steps trend
+  with levels 0 (ABL_P_ref_local on ILI, the untrained model, 30 searches),
+  30 (ABL_G_steps30_local), 60 (ABL_G_ref_local) and 120
+  (ABL_G_steps120_local), as AB-G. Each trained level is its own 10 policies, trained from scratch (no
+  level is a checkpoint of another, unlike AB3's Mac item),
+  but all levels use training seeds 100 to 109 and deployment seeds 0 to 9;
+  the learning rate is constant and the random streams seeded, so a 30-step
+  policy follows roughly the first 30 steps of the 60-step policy with the
+  same seed. Levels are therefore dependent, as in AB3's checkpoints, and the
+  registered permutation p is reported with this caveat. Trend statistic:
+  the Spearman correlation of level rank (0, 1, 2, 3) with ILI held-out AUC
+  over 30 + 10 + 10 + 10 values, two-sided permutation p, computed by
+  spearman_trend in scripts/ablations/llm_tests.py as committed at 5abbd20
+  on origin/anirudh-ablations (sha256
+  01b70835dd128001c78eceb040590b7e79ace2a17f260a3b98022cdbcd0ee0a6), with
+  the same function, AUC and settings as the KL trend. Holm sizes are unchanged: AB-P over 3
+  (anon, repair, the scale trend), AB-G over 2 (the steps trend, the KL
+  trend). AB3's Mac items are exploratory and are not a level or a
+  reference of any test here.
+  The AB4 tests are the only registered results for these questions; the
+  Mac results are reported beside them whether or not they agree. AB3
+  addendum 3's "training at all" and "dose" analyses run on the RTX levels
+  as exploratory only, specified exactly as in addendum 3. No other
+  analysis is added after results are seen.
+* Hardware check: AB1's ABL_P_ref_local against ABL_P_ref is not available
+  (ABL_P_ref was not run); ABL_G_ref_local against the J2 league arm stays
+  as AB2 says.
+* Where outputs are committed. results/ablations/rtx/<item>/<table>/, never
+  results/search/: scripts/picks.py and scripts/e5_referee.py read every
+  folder under results/search/, and these items reuse grpo_league_from_ETTh1
+  (AB3; docs/ISSUES.md on origin/anirudh-ablations, 25 Nov). The same rule applies to AB2's six items,
+  now under results/search/ABL_*_local: before soumitra-leg2 is pushed, and
+  before any picks.py, e5_referee.py, report or L5 run on it, they move
+  unchanged to results/ablations/rtx/ in a separate commit with a sha256
+  manifest. The move is logged in docs/ISSUES.md for Diya, and Anirudh is
+  told that scripts/ablations/llm_tests.py reads results/search/ABL_*.
+* Time, from the AB2 runs on this card (25 Nov). Prompted 1.5B searches took
+  24.7 min for 30 ILI seeds and 18.2 min for 30 ETTh1 seeds, so the anon
+  item takes about 45 min for both tables (the same model and prompt length). The repair item has not run on
+  any backend; unconstrained decoding skips the trie and an episode stops
+  after 20 steps with no new lookup, so it is estimated at 45 to 120 min
+  for both tables. A 60-step policy trained in 17.1 to 20.9 min, and
+  deploying 10 policies took 19 to 24 min (each 60-step item took 3.40 to
+  3.59 h, results/logs/l4_queue_status.txt), so, with training time roughly
+  proportional to steps, steps30 takes 10 x (8.6 to 10.5 min) plus 19 to 24
+  min, 1.7 to 2.1 h, and steps120 10 x (34 to 42 min) plus 19 to 24 min, 6.0
+  to 7.4 h (each policy below the 2.5 h hand-stop). Total about 9 to 12.5 h,
+  against the 28 Nov 23:59 ET deadline.
+* Memory: the 1.5B model at --per-gpu 1 ran every AB2 prompted search and
+  all 30 GRPO policies on this card with no out-of-memory error; the per-step
+  memory of GRPO does not depend on the number of steps, and the repair arm
+  builds no trie. No new probe was run.
+* As AB2, applied to AB4's items with results/logs/ab4_queue_status.txt in
+  place of the AB2 status file: hand-stops on record progress (one hour
+  prompted, 2.5 hours transfer), the stale driver.lock procedure, retried
+  runs and their A26 treatment, completion by counts, each prompted item's
+  ILI and ETTh1 table as its own arm, an arm unfinished at 28 Nov 23:59 ET
+  counting as not run, a trend with any level missing not tested and
+  counted as not rejected, and no setting changed to make a job fit or
+  finish.
+* Launch order: the queue is launched only with HEAD at the commit that
+  adds AB4 or a descendant of it.
