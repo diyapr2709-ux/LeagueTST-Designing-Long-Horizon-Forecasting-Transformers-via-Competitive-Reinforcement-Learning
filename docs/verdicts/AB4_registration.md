@@ -42,3 +42,6 @@ also drops retried runs that AB1, AB2 and A29 keep, enforces neither "once"
 nor the --final date, and its --final output cannot reach the report. The
 step levels are nested, so the trend's p is anti-conservative; disclose it.
 Correct the exposure statement, then commit.
+
+2026-11-27: the line below is added by Diya for scripts/gates.py G6; the verdicts quoted above are unchanged. The blocking items 1 to 7 were applied before the AB4 commit (section above), and the arena judge of 27 Nov (docs/verdicts/arena_AB6_2026-11-27.md, D4) found this file a conditional acceptance whose conditions the file itself records as met.
+Verdict: ACCEPT

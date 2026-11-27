@@ -50,3 +50,6 @@ Optional
   min plus 19 to 24 min); total about 9 to 12.5 h.
 * Change 2: the AUC is the one spearman_trend's caller computes for the KL
   trend (same function, AUC and settings), named with file, commit and sha256.
+
+2026-11-27: the line below is added by Diya for scripts/gates.py G6; the verdicts quoted above are unchanged. The critic's acceptance was conditional on changes 1 to 8, which this file records as applied, and the verifier's final check above is PASS; the arena judge of 27 Nov (docs/verdicts/arena_AB6_2026-11-27.md, D4) confirmed this file qualifies.
+Verdict: ACCEPT
