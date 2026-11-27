@@ -2,6 +2,36 @@
 
 Updated by every loop iteration. Newest first.
 
+## 2026-11-26, early morning
+
+* Leg 2 merged into main: soumitra-leg2 by fast-forward, then
+  anirudh-ablations (one conflict, docs/prereg_ablations.md, where both
+  appended an amendment; AB2 and AB3 kept in date order, text unchanged).
+* J3 is not run (A30, commit 7808ea6). Diya's side re-scored the ILI AUC
+  league-against-none test with scripts/replay.py in a throwaway worktree and
+  got the same exact p-value as Soumitra's independent analysis
+  (results/independent/E4_soumitra.json); that re-score is unrecorded, and
+  7808ea6 stays the record.
+* Soumitra's nine AB2 items (model scale and KL, local RTX 4080) are
+  complete by AB2's counts. They had been copied into results/search/, which
+  scripts/picks.py and scripts/e5_referee.py read in full, on Diya's leg-2
+  instruction. Moved to results/ablations/rtx/ with git mv, contents
+  unchanged, before any pick, K4 or E5 run read them.
+* Anirudh did not launch WP3 on Modal (AB3). Amendment AB4 registers the
+  four arms on Soumitra's RTX against the local references (anon, repair,
+  steps 30, steps 120), the new queue scripts/ablations/run_wp3_rtx_queue.sh,
+  and scripts/ablations/llm_registered.py, which computes the registered
+  AB-P and AB-G families once, after every arm is complete or after the AB4
+  GPU deadline (28 Nov 18:00 ET, so the analysis and push fit before 23:59).
+  Until AB4 nobody computed the registered families. The critic and the
+  verifier each found two blocking defects in the first draft (a completeness
+  check that voided any arm with a stop or a relaunched crash; retried runs
+  dropped against AB1, AB2 and A29); all seven blocking items were applied
+  before the commit (docs/verdicts/AB4_registration.md). Review found that
+  the step levels are nested (shared seeds, no step-dependent schedule), so
+  AB4 discloses it and registers policy-level secondary analyses.
+  Plan: docs/LEG3_soumitra.md (PDF beside it).
+
 ## 2026-11-24, evening
 
 * E4 rerun complete on Soumitra's Modal workspace and merged (PR #1,
