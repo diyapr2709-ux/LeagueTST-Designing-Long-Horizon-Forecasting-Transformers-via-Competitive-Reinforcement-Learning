@@ -2,9 +2,14 @@
 
 Moved on 26 Nov from scripts/ablations/llm_tests.py, where AB5 put it, so that llm_tests.py stays byte-identical
 to the version Diya's AB4 on main pins by sha256 (08c72a4c...) for scripts/ablations/llm_registered.py, the
-computation of record. No function changed in the move; tests/test_ablations.py compares every moved definition
-with its text at 523ae42. The statistics (spearman_trend, aucs, policy_level) are imported unchanged from
-llm_tests.py.
+computation of record. No function changed in the move; tests/test_ablations.py compares every definition of this
+file as committed in the move (943d893) with its text at 523ae42. The statistics (spearman_trend, aucs,
+policy_level) are imported unchanged from llm_tests.py.
+
+Added on 26 Nov, after the AB2 and AB4 results were seen, for the area-chair review: the run-path check (B19; every
+current arm passes it), and descriptive blocks for the report (each arm's queue DONE time, run commits, the
+timeline, Diya's disclosure sentence, whether the result of record exists, common.summarise per arm, per-policy
+AUCs). No test, family, permutation, completeness or finality rule changed.
 
 The RTX items of AB2 and AB4 (Soumitra's local GPU) are committed under results/ablations/rtx/ on
 origin/soumitra-leg2. They are read from the working tree if a merge has put them there, otherwise from the
@@ -78,6 +83,30 @@ TRANSFER_JOB = {"steps30": (30, 0.04), "ref": (60, 0.04), "steps120": (120, 0.04
 E4_MANIFEST_COMMIT = "a1751ae2a9dd4323bab484a42625fc835e76f989"  # main's docs/e4_rerun.sha256, the fixed reference (AB1)
 
 STATUS_FILES = ("results/logs/l4_queue_status.txt", "results/logs/ab4_queue_status.txt")
+
+# Added 26 Nov after the AB2 and AB4 results were seen (area-chair review B1, B2, B7, B19). None of these feeds a
+# test, a Holm family, completeness or finality; the run-path check is an extra check that every current arm passes.
+
+RUN_PATH = ("leaguetst", "scripts/llm_local.py", "requirements-llm.txt")  # Diya's AB4 (2ab2996): equal to AB2's c2dda8d
+
+MAIN_AB4 = "2ab29963e129a85e294520be49bf53164c002e9c"  # Diya's AB4 on origin/main
+
+DEADLINE_MAIN_AB4 = "2026-11-28T18:00:00-05:00"  # Diya's AB4 deadline for the four AB4 arms; descriptive here (AB1's DEADLINE decides)
+
+RECORD_FILE = "results/ablations/LLM-registered.json"  # the result of record named by Diya's AB4
+
+TIMELINE_COMMITS = {
+    REGISTERED_AT["AB2"]: "AB2 registered (origin/soumitra-leg2): the model-scale and KL arms",
+    REGISTERED_AT["AB4"]: "Soumitra's AB4 registered (origin/soumitra-leg2): the anon, repair and step arms, local references, "
+                          "the tests, the 28 Nov 23:59 ET deadline, policy-level analyses exploratory",
+    "7fd5085f9ab9b3d106db37eec917ac3ab566e4fc": "AB4 move of AB2's run files to results/ablations/rtx/ (origin/soumitra-leg2)",
+    "510633d53bed6bfbea793bc4e0bbba4d2e875995": "AB5 (this branch): this computation and the scale trend's statistic",
+    MAIN_AB4: "Diya's AB4 (origin/main): llm_registered.py as the computation of record, analyses (i) to (iii) registered "
+              "secondary, the reading rule, 28 Nov 18:00 ET for the four AB4 arms",
+    RTX_REF: "AB4 results committed (origin/soumitra-leg2; the pinned commit)",
+}
+
+QUEUE_EVENTS = ("QUEUE_START", "DONE", "INTERRUPTED", "STALE_LOCK", "QUEUE_END")
 
 def fetch_time_of(head: Path, tip: str | None, branch: str = "soumitra-leg2") -> str | None:
     """FETCH_HEAD's time if it lists ``branch`` at ``tip``, else None."""
@@ -195,6 +224,46 @@ class RtxSource:
         except subprocess.CalledProcessError:
             return None
 
+    def run_path_ok(self, run_hash: str) -> bool:
+        """leaguetst/, scripts/llm_local.py and requirements-llm.txt at this commit equal AB2's c2dda8d (git object ids)."""
+        import subprocess
+
+        def ids(commit: str) -> list[str]:
+            return [self._run("rev-parse", f"{commit}:{path}").decode().strip() for path in RUN_PATH]
+
+        try:
+            if getattr(self, "_run_path_ref", None) is None:
+                self._run_path_ref = ids(REGISTERED_AT["AB2"])
+            return ids(run_hash) == self._run_path_ref
+        except subprocess.CalledProcessError:
+            return False
+
+    def commit_time_of(self, commit: str) -> str | None:
+        """Commit time of a commit, or None if this clone lacks it."""
+        import subprocess
+
+        try:
+            return self._run("log", "-1", "--format=%cI", commit).decode().strip() or None
+        except subprocess.CalledProcessError:
+            return None
+
+    def show_at(self, commit: str, rel: str) -> bytes | None:
+        """A file at any commit (not a run file: not added to ``files``)."""
+        import subprocess
+
+        try:
+            return self._run("show", f"{commit}:{rel}")
+        except subprocess.CalledProcessError:
+            return None
+
+    def resolve(self, ref: str) -> str | None:
+        import subprocess
+
+        try:
+            return self._run("rev-parse", "--verify", f"{ref}^{{commit}}").decode().strip()
+        except subprocess.CalledProcessError:
+            return None
+
     def _list(self, rel_dir: str) -> list[str]:
         """File names in a folder: the pinned commit is the authority; local run files it lacks stop the script."""
         import subprocess
@@ -251,6 +320,8 @@ def check_hashes(src: "RtxSource", item: str, hashes: set[str], frozen: bool) ->
             problems.append(f"commit {run_hash[:12]} does not descend from {ITEM_AMENDMENT[item]}")
         elif src.launcher_sha256(run_hash) != LAUNCHER_SHA256:
             problems.append(f"launcher digest differs at {run_hash[:12]}")
+        elif not src.run_path_ok(run_hash):  # added 26 Nov (review B19); every current arm passes
+            problems.append(f"run-path code ({', '.join(RUN_PATH)}) differs from AB2's c2dda8d at {run_hash[:12]}")
         elif frozen and not src.frozen_ok(run_hash):
             problems.append(f"docs/e4_rerun.sha256 files differ at {run_hash[:12]} (AB1: such an AB-G arm is exploratory)")
     return problems
@@ -274,6 +345,10 @@ def check_runs(src: "RtxSource", item: str, runs: list[dict], revision: str, met
 
 def gpu_names(runs: list[dict]) -> list[str]:
     return sorted({str(r.get("env", {}).get("gpu_name")) for r in runs})
+
+def run_commits(records: list[dict]) -> list[str]:
+    """The commits stamped in records (env.git_hash), for the report's checks table."""
+    return sorted({str(r.get("env", {}).get("git_hash")) for r in records})
 
 def item_rows(src: "RtxSource", item: str, name: str) -> list[dict]:
     """A transfer item's training or error log: AB2 left them in results/runs/<item>/ILI_T24/, AB4's queue copies them
@@ -409,12 +484,15 @@ def registered_source(table, etth1, now=None, src: "RtxSource | None" = None) ->
     def settle(st: dict, name: str, counts_ok: bool, problems: list[str], files: list[dict]) -> bool:
         in_time = finished_in_time(name, files, done, deadline) if counts_ok else None
         st.update({"counts_complete": counts_ok, "problems": problems, "finished_in_time": in_time,
-                   "complete": counts_ok and not problems and not (deadline_passed and in_time is not True)})
+                   "complete": counts_ok and not problems and not (deadline_passed and in_time is not True),
+                   "done_time": done.get(name)})  # the queue's DONE time (descriptive, for the report's timeline)
         return st["complete"]
 
     for arm, (item, method) in PROMPTED.items():
         runs = src.runs(item, "ILI_T24")
-        st = status["prompted"][arm] = {"item": item, "searches": len({int(r["seed"]) for r in runs}), "gpu": gpu_names(runs)}
+        st = status["prompted"][arm] = {"item": item, "searches": len({int(r["seed"]) for r in runs}), "gpu": gpu_names(runs),
+                                        "amendment": ITEM_AMENDMENT[item], "commits": run_commits(runs),
+                                        "done_time_ETTh1": done.get(f"{item.lower()}_ETTh1")}
         problems = check_runs(src, item, runs, REVISIONS[PROMPTED_MODEL[arm]], method, frozen=False) if runs else []
         ok = settle(st, f"{item.lower()}_ILI", prompted_complete(runs, method), problems, arm_files(item))
         prompted[arm] = aucs(runs, table, method) if ok else None
@@ -425,7 +503,9 @@ def registered_source(table, etth1, now=None, src: "RtxSource | None" = None) ->
         records = item_rows(src, item, "training.jsonl")
         stopped = stopped_seeds(errors)
         st = status["transfer"][arm] = {"item": item, "deployed": len({int(r["seed"]) for r in runs}), "stopped": sorted(stopped),
-                                        "gpu": gpu_names(runs), "training": training_summary(records, errors)}
+                                        "gpu": gpu_names(runs), "training": training_summary(records, errors),
+                                        "amendment": ITEM_AMENDMENT[item], "commits": run_commits(runs),
+                                        "training_commits": run_commits(records), "training_gpu": gpu_names(records)}
         problems = (check_runs(src, item, runs, REVISIONS["1.5B"], TRANSFER_METHOD, frozen=True)
                     + check_training(records, *TRANSFER_JOB[arm], stopped, src, item)) if runs else []
         ok = settle(st, item.lower(), transfer_complete(runs, stopped), problems, arm_files(item))
@@ -485,7 +565,57 @@ def rtx_descriptive(table, prompted_runs: dict[str, list[dict]], transfer_runs: 
         out["prompted_ref_local_vs_E3_A10"] = paired_by_seed(ref, e3)
     out["revin_off_share_ILI"] = {**{f"prompted {a}": revin_off_share(r) for a, r in prompted_runs.items() if r},
                                   **{f"transfer {a}": revin_off_share(r) for a, r in transfer_runs.items() if r}}
+    # Added 26 Nov after the results were seen (review B6, results review R7): common.summarise's AUC in seed-SD units
+    # and raw validation MSE per complete arm, and each policy's AUC (by_seed) per transfer arm; descriptive.
+    out["summary_ILI"] = {**{f"prompted {a}": summarise(r, table)[PROMPTED[a][1]] for a, r in prompted_runs.items() if r},
+                          **{f"transfer {a}": summarise(r, table)[TRANSFER_METHOD] for a, r in transfer_runs.items() if r}}
+    out["per_seed_ILI"] = {a: {str(s): v for s, v in sorted(by_seed(r, TRANSFER_METHOD, table).items())} for a, r in transfer_runs.items() if r}
     return out
+
+
+def queue_events(src: "RtxSource") -> list[dict]:
+    """The queue lines of the AB2 and AB4 status files other than START, in file order (descriptive)."""
+    out = []
+    for rel in STATUS_FILES:
+        data = src._read(rel)
+        for line in (data.decode().splitlines() if data else []):
+            parts = line.split(maxsplit=2)
+            if len(parts) >= 2 and parts[1] in QUEUE_EVENTS:
+                rest = parts[2] if len(parts) > 2 else ""
+                name, detail = ("", rest) if parts[1] not in ("DONE", "INTERRUPTED") else (rest.partition(" ")[0], rest.partition(" ")[2])
+                out.append({"time": parts[0], "event": parts[1], "name": name.rstrip(":"), "detail": detail, "file": rel})
+    return out
+
+
+def disclosure(text: str | None) -> str | None:
+    """The report disclosure that Diya's AB4 fixes ('Report disclosure, fixed now: "..."'), joined to one line."""
+    if not text:
+        return None
+    flat = " ".join(text.split())
+    marker = 'Report disclosure, fixed now: "'
+    start = flat.find(marker)
+    if start < 0:
+        return None
+    start += len(marker)
+    end = flat.find('"', start)
+    return flat[start:end] if end > start else None
+
+
+def record_context(src: "RtxSource") -> dict:
+    """Timeline, Diya's disclosure, whether the result of record exists and the digest of llm_tests.py (all descriptive)."""
+    import hashlib
+
+    main_tip = src.resolve("origin/main")
+    prereg = src.show_at(MAIN_AB4, "docs/prereg_ablations.md")
+    places = {"origin/main": main_tip, "Diya's AB4": MAIN_AB4, "origin/soumitra-leg2 (pinned)": src.commit}
+    return {"timeline": {"commits": [{"commit": c, "time": src.commit_time_of(c), "label": label} for c, label in TIMELINE_COMMITS.items()],
+                         "queue": queue_events(src)},
+            "deadline_main_AB4": DEADLINE_MAIN_AB4,
+            "disclosure_main_AB4": {"commit": MAIN_AB4, "text": disclosure(prereg.decode() if prereg else None)},
+            "record_file": {"path": RECORD_FILE, "working_tree": (ROOT / RECORD_FILE).exists(),
+                            "at": {name: {"commit": c, "exists": c is not None and src.show_at(c, RECORD_FILE) is not None}
+                                   for name, c in places.items()}},
+            "llm_tests_sha256": hashlib.sha256((Path(__file__).resolve().parent / "llm_tests.py").read_bytes()).hexdigest()}
 
 
 def main() -> int:
@@ -498,9 +628,12 @@ def main() -> int:
     inputs = ["results/ledger.jsonl", *(str(p.relative_to(ROOT)) for p in sorted((OUT / "mps").glob("*/*/*.jsonl"))),
               "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl", "results/search/E3/ILI_T24/cpu_runs.jsonl",
               "results/search/E4/ILI_T24/grpo_league_from_ETTh1_runs.jsonl", "results/search/E4/ILI_T24/grpo_none_from_ETTh1_runs.jsonl"]
+    src = RtxSource()
+    registered = registered_source(table, etth1, src=src)
+    registered.update(record_context(src))
     result = {"note": "Anirudh's independent computation of the registered AB-P and AB-G families (AB5); the result of record is "
                       "results/ablations/LLM-registered.json from scripts/ablations/llm_registered.py (Diya's AB4 on main)",
-              "provenance": provenance(__file__, inputs), "registered": registered_source(table, etth1)}
+              "provenance": provenance(__file__, inputs), "registered": registered}
     import leaguetst
 
     result["provenance"]["leaguetst_path"] = str(Path(leaguetst.__file__).resolve().parent)

@@ -390,6 +390,9 @@ class _FakeSource:
     def frozen_ok(self, run_hash):
         return self.ok
 
+    def run_path_ok(self, run_hash):
+        return self.ok
+
     def _read(self, rel):
         return None
 
@@ -581,6 +584,9 @@ class _FakeRtx:
     def frozen_ok(self, run_hash):
         return True
 
+    def run_path_ok(self, run_hash):
+        return True
+
 
 def test_item_rows_reads_either_layout_and_stops_on_differing_copies():
     item = "ABL_G_steps30_local"
@@ -716,7 +722,13 @@ def test_llm_rtx_is_a_verbatim_move_and_llm_tests_matches_main():
                 out[",".join(x.id for x in n.targets)] = ast.dump(n)
         return out
 
-    before, after = defs(old), defs((ROOT / "scripts/ablations/llm_rtx.py").read_text())
+    # llm_rtx.py as committed in the move (943d893): later commits add to it (26 Nov, review B1, B6, B19), so the
+    # working tree is not the moved file; the move itself is what this test proves verbatim.
+    try:
+        moved_file = subprocess.run(["git", "show", "943d893:scripts/ablations/llm_rtx.py"], cwd=ROOT, capture_output=True, check=True, text=True).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("943d893 not in this clone")
+    before, after = defs(old), defs(moved_file)
     moved = [name for name in after if name != "main"]
     assert len(moved) > 30
     assert all(after[name] == before[name] for name in moved), [name for name in moved if after[name] != before.get(name)]
@@ -734,3 +746,82 @@ def test_llm_vs_baselines_lists_the_required_baselines_and_orders_seeds():
         assert llm_vs_baselines.values(runs, "m", None) == [0.0, 1.0, 2.0]
     finally:
         llm_vs_baselines.by_seed = original
+
+
+# Added 26 Nov, after the AB2 and AB4 results were seen (area-chair review B1, B7, B19): checks and descriptive blocks
+
+def test_run_path_check_compares_with_ab2(tmp_path, monkeypatch):
+    import subprocess
+
+    git = lambda *a: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", *a], cwd=tmp_path,
+                                    check=True, capture_output=True, text=True).stdout.strip()
+    git("init", "-q")
+    (tmp_path / "leaguetst").mkdir()
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "leaguetst/a.py").write_text("a")
+    (tmp_path / "scripts/llm_local.py").write_text("b")
+    (tmp_path / "requirements-llm.txt").write_text("c")
+    (tmp_path / "notes.md").write_text("x")
+    git("add", ".")
+    git("commit", "-q", "-m", "ab2")
+    first = git("rev-parse", "HEAD")
+    (tmp_path / "notes.md").write_text("y")
+    git("commit", "-q", "-am", "docs only")
+    docs_only = git("rev-parse", "HEAD")
+    (tmp_path / "leaguetst/a.py").write_text("changed")
+    git("commit", "-q", "-am", "code")
+    code = git("rev-parse", "HEAD")
+    monkeypatch.setattr(llm_rtx, "ROOT", tmp_path)
+    monkeypatch.setitem(llm_rtx.REGISTERED_AT, "AB2", first)
+    src = llm_rtx.RtxSource(ref=first)
+    assert src.run_path_ok(first) and src.run_path_ok(docs_only) and not src.run_path_ok(code)
+    assert not src.run_path_ok("0" * 40)  # unknown commit
+
+
+def test_check_runs_flags_a_differing_run_path():
+    class NoRunPath(_FakeSource):
+        def run_path_ok(self, run_hash):
+            return False
+
+    runs = [_run("m", s) for s in range(30)]
+    problems = llm_rtx.check_runs(NoRunPath(), "ABL_P_ref_local", runs, llm_rtx.REVISIONS["1.5B"], "m", False)
+    assert any("run-path" in p and "c2dda8d" in p for p in problems)
+    assert llm_rtx.check_runs(_FakeSource(), "ABL_P_ref_local", runs, llm_rtx.REVISIONS["1.5B"], "m", False) == []
+
+
+def test_queue_events_keep_every_line_but_start():
+    lines = ["2026-11-26T01:32:52-05:00 QUEUE_START git abc", "2026-11-26T01:32:52-05:00 START x log=y",
+             "2026-11-26T02:09:35-05:00 DONE abl_p_anon_local_ILI rc=0",
+             "2026-11-26T05:21:14-05:00 INTERRUPTED abl_p_anon_local_ETTh1: laptop shut down", "2026-11-26T18:25:15-05:00 QUEUE_END"]
+
+    class Src:
+        def _read(self, rel):
+            return "\n".join(lines).encode() if rel.endswith("ab4_queue_status.txt") else None
+
+    events = llm_rtx.queue_events(Src())
+    assert [e["event"] for e in events] == ["QUEUE_START", "DONE", "INTERRUPTED", "QUEUE_END"]
+    assert events[0]["detail"] == "git abc" and events[1]["name"] == "abl_p_anon_local_ILI" and events[1]["detail"] == "rc=0"
+    assert events[2]["name"] == "abl_p_anon_local_ETTh1" and events[2]["detail"] == "laptop shut down"
+
+
+def test_disclosure_is_quoted_verbatim():
+    text = 'x\n* Report disclosure, fixed now: "The RTX arms were registered\n  on 26 Nov (AB4), after one author\n  had analysed runs."\n* next'
+    assert llm_rtx.disclosure(text) == "The RTX arms were registered on 26 Nov (AB4), after one author had analysed runs."
+    assert llm_rtx.disclosure("no such sentence") is None and llm_rtx.disclosure(None) is None
+    import subprocess
+
+    try:
+        real = subprocess.run(["git", "show", f"{llm_rtx.MAIN_AB4}:docs/prereg_ablations.md"], cwd=ROOT, capture_output=True, check=True, text=True).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("Diya's AB4 commit not in this clone")
+    quoted = llm_rtx.disclosure(real)
+    assert quoted.startswith("The RTX AB-P and AB-G arms were registered on 26 Nov (AB4), after one author had analysed")
+    assert quoted.endswith("The Mac runs are exploratory and never pooled.")
+
+
+def test_registered_source_records_done_times_and_commits(quiet_registered):
+    out = llm_rtx.registered_source(None, None, now=_at("2026-11-27T09:00:00-05:00"), src=_FakeRtx(with_ab4=True))
+    ref = out["status"]["prompted"]["ref"]
+    assert ref["done_time"] == "2026-11-25T01:00:00-05:00" and ref["amendment"] == "AB2" and ref["commits"] == ["a" * 40]
+    st = out["status"]["transfer"]["steps30"]
+    assert st["done_time"] == "2026-11-25T02:00:00-05:00" and st["amendment"] == "AB4" and st["training_commits"] == ["a" * 40]
