@@ -3,7 +3,9 @@
 Asked for after the AB2 and AB4 results: does any LLM arm beat the baselines RQ1 and E4 require? On ILI held-out AUC
 (pooled seed-SD units, lower is better; common.by_seed, the AUC every other analysis uses), each LLM arm is compared
 with each baseline by common.compare (permutation p, Welch interval). Nothing here is registered; no claim rests on
-it. Holm over every comparison in the table is shown as a conservative reading of "beats". The registered tests
+it. Holm over every comparison in the table is shown as a conservative reading of "beats". The league-rival PG
+controller (pg_league, A4's matched control) was added on 26 Nov after the first output was seen, which enlarges
+the Holm set. The registered tests
 are E3's and E4's (scripts/replay.py) and AB-P and AB-G (llm_rtx.py, llm_registered.py); this file adds none.
 
 Comparability: every arm and baseline is scored on the same table and held-out seeds, but the LLM arms ran on
@@ -29,6 +31,8 @@ E4 = ROOT / "results/search/E4/ILI_T24"
 BASELINES = {"random": (E3 / "cpu_runs.jsonl", "random"), "regularized evolution": (E3 / "cpu_runs.jsonl", "re"),
              "TPE": (E3 / "cpu_runs.jsonl", "tpe"), "ASHA": (E3 / "cpu_runs.jsonl", "asha"),
              "random + referee": (E3 / "cpu_runs.jsonl", "referee"), "PG controller": (E3 / "cpu_runs.jsonl", "pg"),
+             # added 26 Nov after the first output was seen (results re-review): the control matched to the league under A4
+             "PG controller, league rivals (A4)": (E3 / "cpu_runs.jsonl", "pg_league"),
              "prompted Qwen 1.5B (E3, A10)": (E3 / "qwen_prompted_runs.jsonl", "qwen_prompted"),
              "warm-started TPE from ETTh1 (E4)": (E4 / "transfer_from_ETTh1_runs.jsonl", "tpe_warm_from_ETTh1"),
              "portfolio from ETTh1 (E4)": (E4 / "transfer_from_ETTh1_runs.jsonl", "portfolio_from_ETTh1")}

@@ -146,6 +146,20 @@ def abl_rows() -> list[dict]:
     return out
 
 
+TREND_AMENDMENT = {"scale trend": "AB2, statistic fixed in AB5", "KL trend": "AB2", "steps trend": "Soumitra's AB4, 15db163"}
+
+
+def prompted_rows() -> list[dict]:
+    """Added 26 Nov after the results were seen (results review R6), descriptive: what E3's 10-seed prompted arm could detect
+    against each 30-seed E3 baseline on ILI AUC (common.detectable with the observed SDs, one comparison, unadjusted)."""
+    table, _ = load_table("ILI")
+    e3 = ROOT / "results/search/E3/ILI_T24"
+    q = list(by_seed(read_runs(e3 / "qwen_prompted_runs.jsonl"), "qwen_prompted", table).values())
+    cpu = read_runs(e3 / "cpu_runs.jsonl")
+    return [row(f"E3 prompted Qwen (10 seeds, A10) vs {m} (30), ILI AUC", q, by_seed(cpu, m, table).values(), 1, "pooled seed SD", None,
+                "descriptive, unadjusted; no test") for m in ("random", "re", "tpe", "asha", "referee", "pg", "pg_league")]
+
+
 def trend_rows() -> list[dict]:
     """Planned sizes; the detectable rho is a Fisher-z approximation, optimistic with heavily tied level ranks."""
     note = "approximate: Fisher z for a rank correlation with heavily tied level ranks"
@@ -159,7 +173,7 @@ def trend_rows() -> list[dict]:
         for fam, size in (("AB-P", 3), ("AB-G", 2)):
             for name, t in fams.get(fam, {}).get("tests", {}).items():
                 if "rho" in t:
-                    rows.append({"comparison": f"{fam} {name} on the RTX (registered; not of record)", "n": [t["n"]], "family": size, "unit": "Spearman rho",
+                    rows.append({"comparison": f"{fam} {name} on the RTX (registered in {TREND_AMENDMENT.get(name, 'AB2')}; not of record)", "n": [t["n"]], "family": size, "unit": "Spearman rho",
                                  "detectable_80": detectable_rho(t["n"], size), "diff": t["rho"], "p": t["p"]})
     return [{**r, "note": r.get("note") or note} for r in rows]
 
@@ -194,7 +208,7 @@ def e5_rows() -> list[dict]:
 
 
 def main() -> int:
-    rows = e3_rows() + pick_rows("ILI") + pick_rows("ETTh1") + e4_rows() + abl_rows() + trend_rows() + e5_rows() + e6_rows()
+    rows = e3_rows() + pick_rows("ILI") + pick_rows("ETTh1") + e4_rows() + prompted_rows() + abl_rows() + trend_rows() + e5_rows() + e6_rows()
     files = ["results/ledger.jsonl", "docs/claims/E3.json", "results/independent/E4_soumitra.json", "results/picks/ILI_T24_analysis.json",
              "results/picks/ETTh1_T336_analysis.json", "results/e5/ILI_T24.json", "results/e5/ETTh1_T336.json",
              *(f"results/search/E3/{s}/{f}" for s in ("ILI_T24", "ETTh1_T336") for f in ("cpu_runs.jsonl", "qwen_prompted_runs.jsonl")),

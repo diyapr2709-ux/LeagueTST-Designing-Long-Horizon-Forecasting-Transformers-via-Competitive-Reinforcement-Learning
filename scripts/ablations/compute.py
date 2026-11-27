@@ -32,7 +32,11 @@ from common import OUT, ROOT, provenance, read_runs, write_json  # noqa: E402
 from llm_rtx import PROMPTED, RTX_DIR, RTX_REF, STATUS_FILES, TRANSFER, RtxSource, item_rows  # noqa: E402
 
 NOT_RECORDED = "not recorded"
+# E4's first training attempt (23 Nov, diyapr), superseded by A25 and never deployed (results review, 26 Nov)
+SUPERSEDED = {"train_ETTh1", "train_ILI"}
+SUPERSEDED_LABEL = "superseded (A25), never deployed, compute only"
 BILLING = "results/logs/ab2_modal_billing.txt"
+E4_SPEND_COMMIT = "22111daa57f1e15c4fe8502d847760870e560b68"  # its message states the metered spend of the E4 rerun (J1 and J2)
 
 
 def card(record: dict) -> str:
@@ -79,10 +83,13 @@ def committed_rows() -> list[dict]:
         groups: dict[str, list[dict]] = defaultdict(list)
         for r in records:
             groups[f"{r['job'].get('rivals')}, source {r['job'].get('dataset')}"].append(r)
+        old = folder.name in SUPERSEDED
+        label = f"E4 training ({folder.name}{', ' + SUPERSEDED_LABEL if old else ''})"
         for name, rs in sorted(groups.items()):
-            rows.append({"arm": f"E4 training ({folder.name}): {name}", "machine": "Modal", "table": folder.name, **group(rs, "training")})
+            rows.append({"arm": f"{label}: {name}", "machine": "Modal", "table": folder.name, "superseded": old,
+                         **group(rs, "training"), **({"kind": "training, " + SUPERSEDED_LABEL} if old else {})})
         if errors:
-            rows.append({"arm": f"E4 training ({folder.name}): error records", "machine": "Modal", "table": folder.name,
+            rows.append({"arm": f"{label}: error records", "machine": "Modal", "table": folder.name, "superseded": old,
                          "kind": "errors", "records": len(errors), "cards": {}, "seconds": None, "records_with_seconds": 0, "seconds_by_card": {}})
     return rows
 
@@ -141,8 +148,27 @@ def billing(src: RtxSource) -> dict | None:
     text = data.decode()
     comments = [line.lstrip("# ").strip() for line in text.splitlines() if line.startswith("#")]
     body = json.loads("\n".join(line for line in text.splitlines() if not line.startswith("#")))
+    import re
+
+    read = next((m.group(1) for c in comments for m in [re.search(r"on (\d{4}-\d{2}-\d{2}T[0-9:]+[+-]\d{2}:\d{2})", c)] if m), None)
     return {"path": BILLING, "commit": src.commit, "comments": comments, "metered_cost": body.get("metered_cost"),
-            "billed_cost": body.get("billed_cost")}
+            "billed_cost": body.get("billed_cost"), "read_at": read}
+
+
+def e4_spend(src: RtxSource) -> dict | None:
+    """The E4 rerun's metered spend as commit 22111da's message states it (round 2: both dollar figures from their sources)."""
+    import re
+    import subprocess
+
+    try:
+        message = src._run("log", "-1", "--format=%B", E4_SPEND_COMMIT).decode()
+        time = src._run("log", "-1", "--format=%cI", E4_SPEND_COMMIT).decode().strip()
+    except subprocess.CalledProcessError:
+        return None
+    line = next((x.strip() for x in message.splitlines() if re.match(r"Spend for J1 and J2 together: metered \$[0-9.]+", x.strip())), None)
+    if not line:
+        return None
+    return {"commit": E4_SPEND_COMMIT, "time": time, "line": line, "metered": float(re.search(r"metered \$([0-9.]+)", line).group(1))}
 
 
 def totals(rows: list[dict]) -> list[dict]:
@@ -168,7 +194,7 @@ def main() -> int:
     write_json(OUT / "compute.json", {
         "descriptive": "added 26 Nov after every result was seen; sums of what the records hold, no test",
         "provenance": provenance(__file__, inputs), "rtx_source": {"commit": src.commit, "files": src.files, "dir": RTX_DIR},
-        "rows": rows, "totals": totals(rows), "queue_wall_clock": queue, "dollars": billing(src)})
+        "rows": rows, "totals": totals(rows), "queue_wall_clock": queue, "dollars": billing(src), "e4_spend": e4_spend(src)})
     return 0
 
 
