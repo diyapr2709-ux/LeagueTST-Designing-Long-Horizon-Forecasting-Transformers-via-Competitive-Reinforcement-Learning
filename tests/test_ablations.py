@@ -480,7 +480,7 @@ def test_report_renders_registered_section(monkeypatch, final):
     assert "Not the result of record" in text and "LLM-registered.json" in text
     # review B1 to B11 and results review R15: named amendments, both deadlines, the scope sentences, no "final" label, not verified at a fake pin
     assert "Soumitra's AB4 (15db163" in text and "Diya's AB4 (2ab2996" in text and "28 Nov 23:59 ET" in text
-    assert report.RULE6 in text and report.SCOPE in text and "Status: final" not in text
+    assert report.RULE6 in text and report.SCOPE_SHORT in text and report.SCOPE not in text and "Status: final" not in text  # the full scope sentence is in the header only
     assert "Not verified" in text and "Welch t 95%, unadjusted" in text
     assert "Source: scripts/ablations/llm_rtx.py" in text
 
@@ -926,10 +926,49 @@ def test_report_rerun_note_and_ab5_correction(monkeypatch):
 
 def test_report_hardware_table_never_pairs_across_cards():
     report = _report()
-    m = lambda x: {"mean": x, "low": x - 0.1, "high": x + 0.1}
-    g = {"descriptive": {"hardware_G_ref_local_vs_J2": {"seeds": 10, "a": m(3.26), "b": m(3.14), "diff": {"mean": 0.12, "low": -0.7, "high": 0.93}}}}
+    m = lambda x, sd: {"mean": x, "low": x - 0.1, "high": x + 0.1, "sd": sd, "n": 10}
+    g = {"descriptive": {"hardware_G_ref_local_vs_J2": {"seeds": 10, "a": m(3.26, 0.5), "b": m(3.14, 0.9), "diff": {"mean": 0.12, "low": -0.7, "high": 0.93}}}}
     text = "\n".join(report.hardware_table(g))
-    assert "+0.12 |" in text and "-0.70" not in text and "not paired across cards" in text
+    w = report.welch(g["descriptive"]["hardware_G_ref_local_vs_J2"]["a"], g["descriptive"]["hardware_G_ref_local_vs_J2"]["b"])
+    assert f"+0.12 [{w['low']:+.2f}, {w['high']:+.2f}]" in text and "-0.70" not in text and "not paired across cards" in text
+
+
+def test_report_welch_matches_common_compare():
+    report = _report()
+    a, b = [1.0, 2.0, 4.0, 3.5, 2.2], [0.5, 1.0, 1.2, 0.7, 2.0, 1.1, 0.4]
+    expected = common.compare(a, b, 1)
+    got = report.welch(common.mean_ci(a), common.mean_ci(b))
+    assert got["diff"] == pytest.approx(expected["diff"]) and got["low"] == pytest.approx(expected["low"]) and got["high"] == pytest.approx(expected["high"])
+
+
+def test_report_baseline_reading_counts_holm_losses_by_arm_kind():
+    report = _report()
+    row = lambda arm, base, beats_interval=False, beats_holm=False, worse=False: {"arm": arm, "baseline": base, "beats_interval": beats_interval,
+                                                                                 "beats_holm": beats_holm, "worse_holm": worse}
+    d = {"baseline_order": ["random", "PG controller", "portfolio"],
+         "rows": [row("prompted 0.5B", "PG controller", beats_interval=True), row("prompted 0.5B", "portfolio", True, True),
+                  row("GRPO x", "random", worse=True), row("prompted 3B", "random", worse=True), row("GRPO x", "PG controller", worse=True)]}
+    x = report.baseline_reading(d)
+    assert x["never"] == ["random"] and x["below"]["PG controller"] == ["prompted 0.5B"] and x["held"] == {"portfolio": ["prompted 0.5B"]}
+    assert (x["worse"], x["worse_grpo"], x["worse_prompted"]) == (3, 2, 1)
+    text = report.baseline_sentences(d)
+    assert "prompted 0.5B below PG controller; none of these survives Holm" in text and "Holm-rejected in the baseline's favour: 2 with a GRPO arm and 1 with a prompted arm" in text
+
+
+def test_report_load_period_and_llm_tests_edits():
+    report = _report()
+    g = {"timeline": {"commits": [{"commit": "2ab2996" + "0" * 33, "time": "2026-11-26T17:21:57-05:00", "label": "x"}],
+                      "queue": [{"time": "2026-11-26T05:21:14-05:00", "event": "INTERRUPTED", "name": "a", "detail": "laptop shut down (boot 2026-11-26 05:18:33; x)",
+                                 "file": "f"}]},
+         "main_AB4_fetched": "2026-11-26T19:04:32-05:00",
+         "llm_tests_history": [{"commit": "510633d" + "0" * 33, "time": "2026-11-26T17:12:11-05:00"}, {"commit": "a692f0e" + "0" * 33, "time": "2026-11-26T19:32:39-05:00"},
+                               {"commit": "943d893" + "0" * 33, "time": "2026-11-26T19:44:15-05:00"}]}
+    period = report.load_period(g)
+    assert period["start"] == "2026-11-26T05:18:33-05:00" and report.ran_after(["2026-11-26T11:29:12-05:00"], period)
+    assert not report.ran_after(["2026-11-26T04:01:31-05:00"], period) and not report.ran_after(["x"], None)
+    text = report.llm_tests_edits(g)
+    assert "510633d (26 Nov 17:12 ET) before docs/LEG3_soumitra.md existed" in text and "a692f0e (26 Nov 19:32 ET) after this clone fetched it (26 Nov 19:04 ET), against its request" in text
+    assert "943d893 (26 Nov 19:44 ET) restored it" in text
 
 
 def test_anytime_curve_averages_to_the_auc_and_writes_svg():
@@ -946,7 +985,38 @@ def test_anytime_curve_averages_to_the_auc_and_writes_svg():
     finally:
         anytime.by_seed = original
     assert c["n"] == 3 and len(c["mean"]) == 100 and c["mean"][0] == pytest.approx(100.0) and c["mean"][-1] == pytest.approx(1.0)
-    panels = [{"title": "a", "series": [{"label": "random", "name": "random search", "n": 3, "mean": c["mean"]}]},
-              {"title": "b", "series": [{"label": "x", "name": "x", "n": 3, "mean": c["mean"]}]}]
-    svg = anytime.svg(panels)
-    assert svg.startswith("<svg") and svg.count("<path") == 3 and "prefers-color-scheme: dark" in svg  # two series and the reference
+    assert c["low"][0] < c["mean"][0] < c["high"][0]
+    one = lambda label, slot: {"label": label, "name": label, "n": 3, "slot": slot, **c}
+    data = {"reference": one("random", None), "panels": [{"title": "a", "series": [one("x", 0)]}, {"title": "b", "series": [one("y", 1)]}]}
+    svg = anytime.svg(data)
+    # per panel: one band, the dashed reference and one line; each series keeps its own slot in every panel
+    assert svg.startswith("<svg") and svg.count("<path") == 6 and svg.count('class="ref"') == 4 and "prefers-color-scheme: dark" in svg
+    slots = [spec[5] for _, arms in anytime.PANELS for spec in arms]
+    assert len(set(slots)) == len(slots) == len(anytime.LIGHT["series"]) == len(anytime.DARK["series"])
+
+
+def test_compute_labels_superseded_training_and_reads_the_spend_line():
+    import compute
+
+    assert compute.SUPERSEDED == {"train_ETTh1", "train_ILI"} and "superseded (A25)" in compute.SUPERSEDED_LABEL
+    rows = [{"machine": "Modal", "kind": "training, " + compute.SUPERSEDED_LABEL, "seconds_by_card": {"A": 3600.0}},
+            {"machine": "Modal", "kind": "training", "seconds_by_card": {"A": 7200.0}}]
+    kinds = {t["kind"]: t["hours"] for t in compute.totals(rows)}
+    assert kinds == {"training": 2.0, "training, " + compute.SUPERSEDED_LABEL: 1.0}  # superseded compute is never pooled with the rest
+    import llm_rtx
+
+    spend = compute.e4_spend(llm_rtx.RtxSource(ref="no-such-ref"))
+    if spend is None:
+        pytest.skip("22111da not in this clone")
+    assert spend["line"].startswith("Spend for J1 and J2 together: metered $") and spend["metered"] > 0
+
+
+def test_first_fetch_holding_takes_the_earliest_reflog_entry_that_contains_the_commit():
+    class Src:
+        def _run(self, *args):
+            return ("aaa origin/main@{2026-11-26T19:04:32-05:00}\nbbb origin/main@{2026-11-26T16:44:08-05:00}\nccc origin/main@{2026-11-26T00:30:42-05:00}\n").encode()
+
+        def descends(self, head, commit):
+            return head in ("aaa", "bbb")
+
+    assert llm_rtx.first_fetch_holding(Src(), "x") == "2026-11-26T16:44:08-05:00"

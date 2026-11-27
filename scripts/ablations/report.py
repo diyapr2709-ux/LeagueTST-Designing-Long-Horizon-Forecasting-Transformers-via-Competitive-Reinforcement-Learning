@@ -21,6 +21,7 @@ WELCH = "Welch t 95%, unadjusted"
 NO_CLAIM = "in-sample, no claim"
 SCOPE = ("These numbers describe the replay table (every lookup returns a recorded training run), not live training: "
          "E3b's K7 check of the table against live training failed on ILI, so they hold for the table only.")
+SCOPE_SHORT = "Replay table only (E3b's K7 failed on ILI; see the header)."
 RULE6 = ("These are secondary tests, not claims under CLAUDE.md rule 6: the intervals are Welch t and the p values unpaired "
          "permutation p, with no paired block-bootstrap interval, and no gate applies (G4 covers E3 and E4 only).")
 TRANSFER_SCOPE = ("The GRPO evidence is transfer between two tables (ETTh1 to ILI); within-table GRPO was dropped (docs/PLAN.md A12, A18). "
@@ -60,7 +61,7 @@ def controller() -> list[str]:
     lines = ["## AB-C: factorized-controller ablations (tested, CPU)", ""]
     if not d:
         return lines + [MISSING, ""]
-    lines += [f"League rivals, {d['seeds']} search seeds per arm; held-out AUC regret on ILI in pooled seed-SD units; lower is better. {SCOPE} "
+    lines += [f"League rivals, {d['seeds']} search seeds per arm; held-out AUC regret on ILI in pooled seed-SD units; lower is better. {SCOPE_SHORT} "
               + provenance_line(d), ""]
     for dataset, _ in SETTINGS:
         t = d["tables"][setting(dataset)]
@@ -79,7 +80,7 @@ def external() -> list[str]:
         return lines + [MISSING, ""]
     v = d["run"]["versions"]
     lines += [f"SMAC3 {v.get('smac')}, DEHB {v.get('dehb')}, ConfigSpace {v.get('ConfigSpace')} through the E3 oracle; 30 seeds; "
-              f"tested on ILI against E3's random search. {SCOPE} " + provenance_line(d), ""]
+              f"tested on ILI against E3's random search. {SCOPE_SHORT} " + provenance_line(d), ""]
     for dataset, _ in SETTINGS:
         t = d["tables"][setting(dataset)]
         lines += [f"{dataset}{'' if t['registered'] else f' ({NO_CLAIM}; descriptive)'}:", ""]
@@ -107,7 +108,7 @@ def noise_free() -> list[str]:
     p = d["plateau"]
     lines += [f"Every lookup returns the 3-seed mean, and regret is scored on the same means. {p['within_1sd']} of {p['configs']} configs lie "
               f"within one seed SD of the best mean and {p['within_2sd']} within two. The last two columns are the share of seed pairs in "
-              f"which the method beats random search: with seed noise (E3, held out) and without it. {SCOPE} " + provenance_line(d), ""]
+              f"which the method beats random search: with seed noise (E3, held out) and without it. {SCOPE_SHORT} " + provenance_line(d), ""]
     rows = []
     for m, v in sorted(d["noise_free"].items(), key=lambda kv: kv[1]["auc"]["mean"]):
         s = d["separation"].get(m)
@@ -142,7 +143,7 @@ def one_seed() -> list[str]:
     if not d:
         return lines + [MISSING, ""]
     lines += ["The ILI table is cut to look like ETTh1's (variant etth1_like: ETTh1's observation-noise rule) or to seed 2021 only (variant strict: noise SD is the full ILI table's pooled SD), and every run is scored twice: as the cut "
-              f"table would report it, and held out on the full 3-seed table. Optimism is held-out AUC minus reported AUC. {SCOPE} " + provenance_line(d), ""]
+              f"table would report it, and held out on the full 3-seed table. Optimism is held-out AUC minus reported AUC. {SCOPE_SHORT} " + provenance_line(d), ""]
     for name, v in d["variants"].items():
         r = v["method_ranking"]
         lines += [f"Variant {name}: {v['multi_seed_configs']} configs keep three seeds; noise SD {v['noise_sd']:.4f}; best value reported "
@@ -161,7 +162,7 @@ def referee() -> list[str]:
     lines = ["## AB-R: referee variants (descriptive, CPU)", ""]
     if not d:
         return lines + [MISSING, ""]
-    lines += [f"Kendall tau against the multi-seed mean on the 150 scored configs of E2, 95% bootstrap interval. {SCOPE} " + provenance_line(d), ""]
+    lines += [f"Kendall tau against the multi-seed mean on the 150 scored configs of E2, 95% bootstrap interval. {SCOPE_SHORT} " + provenance_line(d), ""]
     for dataset, _ in SETTINGS:
         t = d["tables"][setting(dataset)]
         e = t["e2_referee"]
@@ -205,7 +206,7 @@ def learned() -> list[str]:
         h = d["holm"][f"league slopes vs 0, {dataset} source"]
         lines.append(f"* {dataset} source{f' ({NO_CLAIM}: the reward is the ETTh1 table the policies train on)' if dataset == 'ETTh1' else ''}: mean Spearman slope {t['mean']:+.3f} over {t['n']} league policies, p {t['p']:.3f}, Holm {h['p_holm']:.3f}, "
                      f"{'rejected' if h['reject'] else 'not rejected'} (results/ablations/AB-L.json).")
-    lines += ["", SCOPE, ""]
+    lines += ["", SCOPE_SHORT, ""]
     if n:
         lines += ["The registered test compares the slope with zero, but the search history resets every episode and the untrained model "
                   "already improves within one, so the slope of a model that never learns is not centred on zero. Chaining untrained "
@@ -227,6 +228,20 @@ def learned() -> list[str]:
 LEVEL_UNITS = {"scale trend": lambda k: {"0.5": "0.5B", "1.5": "1.5B", "3.0": "3B"}.get(k, k),
                "KL trend": lambda k: f"beta {float(k):g}",
                "steps trend": lambda k: f"{k} steps"}
+
+
+def welch(a: dict, b: dict) -> dict:
+    """The unpaired Welch t 95% interval of a minus b from two mean_ci summaries (n, mean, sd), as common.compare computes it."""
+    import math
+
+    from scipy.stats import t as student_t
+
+    va, vb = a["sd"] ** 2 / a["n"], b["sd"] ** 2 / b["n"]
+    se = math.sqrt(va + vb)
+    df = (va + vb) ** 2 / (va**2 / (a["n"] - 1) + vb**2 / (b["n"] - 1)) if se > 0 else a["n"] + b["n"] - 2
+    diff = a["mean"] - b["mean"]
+    half = float(student_t.ppf(0.975, df) * se)
+    return {"diff": diff, "mean": diff, "low": diff - half, "high": diff + half}
 
 
 def ci_signed(e: dict, digits: int = 2) -> str:
@@ -340,25 +355,47 @@ def status_text(g: dict) -> str:
             f"({et(g['source'].get('fetch_time'))}); that does not stop Soumitra from pushing before the deadline, and a new tip would reopen it.")
 
 
+def llm_tests_edits(g: dict) -> str:
+    """Review B8, round 2: which llm_tests.py commits came before and after docs/LEG3_soumitra.md, from git times."""
+    hist = g.get("llm_tests_history") or []
+    leg3_commit, fetched = commit_time(g, "2ab2996"), g.get("main_AB4_fetched")
+    if not hist or not leg3_commit:
+        return ("llm_tests.py, which llm_registered.py pins, was changed on this branch after AB5 and restored byte-identical to main's 08c72a4c in 943d893.")
+    restore = hist[-1] if hist[-1]["commit"].startswith("943d893") else None
+    edits = [h for h in hist if h is not restore]
+    before = [h for h in edits if when(h["time"]) < when(leg3_commit)]
+    after = [h for h in edits if fetched and when(h["time"]) > when(fetched)]
+    between = [h for h in edits if h not in before and h not in after]
+    fmt = lambda hs: ", ".join(f"{h['commit'][:7]} ({et(h['time'])})" for h in hs)
+    parts = []
+    if before:
+        parts.append(f"{fmt(before)} before docs/LEG3_soumitra.md existed (committed on main with Diya's AB4, {et(leg3_commit)})")
+    if between:
+        parts.append(f"{fmt(between)} after it was committed but before this clone fetched it")
+    if after:
+        parts.append(f"{fmt(after)} after this clone fetched it ({et(fetched)}), against its request")
+    return ("llm_tests.py, which llm_registered.py pins, was changed on this branch in " + "; in ".join(parts)
+            + (f"; {restore['commit'][:7]} ({et(restore['time'])}) restored it byte-identical to main's 08c72a4c" if restore else "") + ".")
+
+
 def record_note(g: dict) -> str:
     """Not of record: where LLM-registered.json is looked for, and the history of llm_tests.py on this branch (B2, B8)."""
     rf = g.get("record_file") or {}
-    places: dict[str, list[str]] = {}
-    for name, v in (rf.get("at") or {}).items():
-        places.setdefault(f"{str(v['commit'])[:7]}{' (present)' if v['exists'] else ''}", []).append(name)
-    exists = rf.get("working_tree") or any(v["exists"] for v in (rf.get("at") or {}).values())
-    where = "; ".join(f"{' = '.join(names)} at {c}" for c, names in places.items())
-    found = (f"That file exists ({where}); where it differs from these tables, it stands and the difference is a finding to report." if exists else
-             f"That file is not yet computed: it is in none of {where}, nor in this tree, so the registered families are not yet computed of record.")
+    at = rf.get("at") or {}
+    exists = rf.get("working_tree") or any(v["exists"] for v in at.values())
+    checked = [f"{name} at {str(v['commit'])[:7]} ({'present' if v['exists'] else 'absent'})" for name, v in at.items()]
+    checked.append(f"this working tree ({'present' if rf.get('working_tree') else 'absent'})")
+    found = (("That file exists; where it differs from these tables, it stands and the difference is a finding to report. " if exists else
+              "That file is not yet computed, so the registered families are not yet computed of record. ")
+             + "Places checked for it: " + "; ".join(checked) + ".")
     sha = g.get("llm_tests_sha256")
     return ("Not the result of record. Diya's AB4 (2ab2996, origin/main) names scripts/ablations/llm_registered.py, run once by Soumitra, as the computation of the "
             f"registered AB-P and AB-G families, writing {rf.get('path', 'results/ablations/LLM-registered.json')}. {found} Soumitra's branch also carries its own "
             "scripts/ablations/rtx_tests.py (e6926d8). AB5 (510633d) was committed before Diya's AB4 but reached GitHub after it. The tables below are an independent "
             "computation of the same registered tests from the same run files. docs/LEG3_soumitra.md asks Anirudh not to read results/ablations/rtx/ before "
             "LLM-registered.json is committed, and not to edit common.py or llm_tests.py until then: the AB2 values here were computed before docs/LEG3_soumitra.md "
-            "reached this clone, and the AB4 values after it, on Anirudh's decision, as a check. llm_tests.py, which llm_registered.py pins, was changed on this "
-            "branch between 510633d and 523ae42, against docs/LEG3_soumitra.md's request, and restored byte-identical to main's 08c72a4c in 943d893"
-            + (f" (its sha256 when this computation ran: {sha[:8]})." if sha else "."))
+            "reached this clone, and the AB4 values after it, on Anirudh's decision, as a check. " + llm_tests_edits(g)
+            + (f" Its sha256 when this computation ran: {sha[:8]}." if sha else ""))
 
 
 def governance_text() -> str:
@@ -449,6 +486,51 @@ def arm_label(key: str) -> str:
             "beta0": "beta 0", "beta01": "beta 0.1", "anon": "1.5B anon", "repair": "1.5B repair"}.get(arm, arm) + f" ({kind})"
 
 
+REPAIR_DEFINITION = ("The repair arm is the 1.5B model without constrained decoding: a proposal over the parameter cap is replaced by the nearest feasible "
+                     "config not yet in the search's history (leaguetst/architect/episode.py), as TPE's proposals are.")
+
+
+def load_period(g: dict) -> dict | None:
+    """Results re-review N2: the RTX reboot from the INTERRUPTED queue line (its boot time if logged); c7e4bc9's message records the load after it."""
+    import re
+
+    for q in (g.get("timeline") or {}).get("queue", []):
+        if q["event"] == "INTERRUPTED":
+            m = re.search(r"boot (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})", q["detail"])
+            start = f"{m.group(1)}T{m.group(2)}{q['time'][-6:]}" if m else q["time"]
+            return {"start": start, "logged": q["time"]}
+    return None
+
+
+def ran_after(times: list[str], period: dict | None) -> bool:
+    return bool(period) and any(t and when(t) > when(period["start"]) for t in times)
+
+
+LOAD_TEXT = ("c7e4bc9's commit message records that from that reboot on the card also carried other Windows GPU and CPU load and that per-step time rose; "
+             "no end of that period is recorded. These timings are therefore not comparable with the AB2 arms', which ran before it; no statistic depends on them.")
+
+
+def load_note(g: dict, keys: list[str]) -> list[str]:
+    """A footnote for the arms whose queue job finished after the reboot (per-arm ILI table)."""
+    period = load_period(g)
+    flagged = [arm_label(k) for k in keys if ran_after([g["status"]["transfer" if k.startswith("transfer ") else "prompted"].get(k.split(" ", 1)[1], {}).get("done_time")], period)]
+    if not flagged:
+        return []
+    return [f"† Seconds marked † come from queue jobs that finished after the RTX laptop's reboot at {et(period['start'])} (queue line at {et(period['logged'])}): "
+            f"{', '.join(flagged)}. {LOAD_TEXT}"]
+
+
+def repeat_note(diag: dict, summary: dict, prefix: str = "prompted ") -> str:
+    """The prompted arm with the lowest AUC and its repeat rate (a repeated proposal is not looked up and costs no budget)."""
+    arms = [k for k in diag if k.startswith(prefix) and summary.get(k)]
+    if not arms:
+        return ""
+    best = min(arms, key=lambda k: summary[k]["auc"]["mean"])
+    most = max(arms, key=lambda k: diag[k]["repeat_rate"])
+    return (f"The prompted arm with the lowest ILI AUC, {arm_label(best)}, repeats {diag[best]['repeat_rate']:.0%} of its proposals"
+            + (", the most of any prompted arm" if most == best else "") + " (a repeated proposal is not looked up and costs no budget).")
+
+
 def rtx_arm_table(g: dict) -> list[str]:
     """ILI per arm: AUC in SD units and raw MSE (common.summarise), search diagnostics and RevIN-off share (B6, B16)."""
     desc = g["descriptive"]
@@ -459,26 +541,24 @@ def rtx_arm_table(g: dict) -> list[str]:
     rows = []
     for k in keys:
         s, x = summary.get(k), diag[k]
+        st = g["status"]["transfer" if k.startswith("transfer ") else "prompted"].get(k.split(" ", 1)[1], {})
+        mark = " †" if ran_after([st.get("done_time")], load_period(g)) else ""
         rows.append([arm_label(k), str(x["searches"]), ci(s["auc"]) if s else "-", ci(s["auc_raw_mse"], 5) if s else "not shown",
                      f"{x['lookups']['mean']:.0f}", f"{x['repeat_rate']:.2f}", f"{x['repaired_rate']:.2f}", f"{x['invalid_rate']:.3f}",
-                     f"{share[k]:.0%}" if k in share else "-", f"{x['seconds']['mean']:.0f}"])
+                     f"{share[k]:.0%}" if k in share else "-", f"{x['seconds']['mean']:.0f}{mark}"])
     out = ["ILI per arm (descriptive; AB5's diagnostics). AUC with a t 95% interval over searches; raw MSE is common.summarise's AUC times the table's pooled seed SD; "
            "repeat, repaired and invalid rates are shares of proposals; the RevIN-off share is of distinct lookups and is shown beside the AUC with no inference drawn from its order. "
-           + SCOPE, ""]
+           , ""]
     out += table(["arm", "searches", "AUC (t 95%)", "AUC, raw validation MSE (t 95%)", "lookups per search", "repeat rate", "repaired rate", "invalid rate",
                   "RevIN-off share of lookups", "seconds per search"], rows)
     rep, ref = diag.get("prompted repair"), diag.get("prompted ref")
     sentences = []
     if rep and ref:
-        sentences.append(f"The repair arm's comparison is confounded by design on the RTX as on the Mac: {rep['repaired_rate']:.0%} of its ILI proposals are replaced by "
-                         f"the nearest unseen config (its repeat rate is {rep['repeat_rate']:.2f}, against {ref['repeat_rate']:.2f} for ref), so it measures removing "
-                         "the constrained decoding together with that replacement.")
-    prompted = [k for k in keys if k.startswith("prompted ") and summary.get(k)]
-    if prompted:
-        best = min(prompted, key=lambda k: summary[k]["auc"]["mean"])
-        sentences.append(f"The prompted arm with the lowest ILI AUC, {arm_label(best)}, repeats {diag[best]['repeat_rate']:.0%} of its proposals, "
-                         "which matters for reading the scale trend.")
-    return out + ([" ".join(sentences), ""] if sentences else [])
+        sentences.append(f"{REPAIR_DEFINITION} {rep['repaired_rate']:.0%} of its ILI proposals went through that replacement, against {ref['repaired_rate']:.0%} for ref, "
+                         "so its comparison with ref measures decoding without the constraint together with the replacement rule, not unconstrained proposals alone.")
+    sentences.append(repeat_note(diag, summary))
+    sentences += load_note(g, [k for k in keys if k.startswith("transfer ")])
+    return out + ([" ".join(x for x in sentences if x), ""] if any(sentences) else [])
 
 
 def per_policy_table(g: dict) -> list[str]:
@@ -494,7 +574,7 @@ def per_policy_table(g: dict) -> list[str]:
              f"{rhos[i]:+.2f}" if rhos and len(rhos) == len(seeds) else "-"] for i, s in enumerate(seeds)]
     return ["Each policy's ILI held-out AUC (common.by_seed, SD units), by deployment seed. The levels share training seeds 100 to 109 and deployment seeds 0 to 9, "
             "so a row is one seed's policies, not independent replications, and the step question has 10 policies, not 30 values; ABL_G_ref_local is at the same "
-            "time the 60-step level, the beta 0.04 KL level and the J2 hardware twin. Seeds are compared only within the RTX. " + SCOPE, ""] + \
+            "time the 60-step level, the beta 0.04 KL level and the J2 hardware twin. Seeds are compared only within the RTX. ", ""] + \
         table(["deployment seed", *(label for _, label in cols), "per-policy rho of AUC with 30, 60, 120 steps"], rows)
 
 
@@ -583,13 +663,13 @@ def hardware_table(g: dict) -> list[str]:
                               ("prompted_ref_local_vs_E3_A10", "ABL_P_ref_local against E3 prompted, AB5", ("RTX", "A10"))):
         v = desc.get(key)
         if v:
-            rows.append([label, str(v["seeds"]), f"{ci(v['a'])} ({cards[0]})", f"{ci(v['b'])} ({cards[1]})", f"{v['a']['mean'] - v['b']['mean']:+.2f}"])
+            rows.append([label, str(v["seeds"]), f"{ci(v['a'])} ({cards[0]})", f"{ci(v['b'])} ({cards[1]})", ci_signed(welch(v["a"], v["b"]))])
     if not rows:
         return []
     return ["AB1 hardware check and AB5 comparisons (descriptive, no test): each arm's mean AUC (t 95%) over the seeds both arms ran. Seeds are not paired across "
-            "cards (an equal seed does not reproduce a search on another card), so the difference of the means is shown without an interval. These means do not "
-            "show that the RTX matches the other machines; the samplers differ, and the E3 searches predate the A25 environment pins. " + SCOPE, ""] + \
-        table(["comparison", "seeds", "first (card)", "second (card)", "difference of means"], rows)
+            "cards (an equal seed does not reproduce a search on another card), so the difference is given with the unpaired Welch interval of the two sets of "
+            "searches. These intervals do not show that the RTX matches the other machines; the samplers differ, and the E3 searches predate the A25 environment pins.", ""] + \
+        table(["comparison", "seeds", "first (card)", "second (card)", f"difference ({WELCH}, unpaired)"], rows)
 
 
 def registered_llm() -> list[str]:
@@ -607,7 +687,7 @@ def registered_llm() -> list[str]:
               f"({len(src['files'])} files, each with its source, commit and sha256 in results/ablations/LLM-rtx.json; AB2's move manifest matches for "
               f"{sum(src['ab2_manifest_matches'].values())} of {len(src['ab2_manifest_matches'])} files). Every reference is local to the same card (AB1; Soumitra's AB4, 15db163). "
               "ILI held-out AUC, pooled seed-SD units, lower is better. For a trend, positive rho means a higher (worse) AUC at the higher level: more steps, a larger KL weight, a larger model. "
-              f"{RULE6} {SCOPE} " + provenance_line(d), ""]
+              f"{RULE6} {SCOPE_SHORT} " + provenance_line(d), ""]
     lines += [verification_text(g), ""]
     lines += [record_note(g), ""]
     lines += [governance_text(), ""]
@@ -634,7 +714,7 @@ def registered_llm() -> list[str]:
         lines += [f"For context (post hoc, no test): E3's random search has ILI AUC {ci(rnd['auc'])} on the same scale.", ""]
     lines += rtx_arm_table(g) + hardware_table(g)
     if g.get("ETTh1_descriptive"):
-        lines += [f"ETTh1 ({NO_CLAIM}; descriptive, one seed per config). {SCOPE}", ""]
+        lines += [f"ETTh1 ({NO_CLAIM}; descriptive, one seed per config).", ""]
         lines += table(["arm", "AUC (t 95%)", "AUC, raw validation MSE (t 95%)", *(f"@{b}" for b in BUDGETS)],
                        [[{"ref": "1.5B (ref)"}.get(arm, arm), ci(next(iter(x["summary"].values()))["auc"]), ci(next(iter(x["summary"].values()))["auc_raw_mse"], 5),
                          *(ci(next(iter(x["summary"].values()))[str(b)]) for b in BUDGETS)] for arm, x in g["ETTh1_descriptive"].items()])
@@ -672,7 +752,7 @@ def llm() -> list[str]:
     lines += ["The Modal items (ABL_P_ref, ABL_P_anon, ABL_P_repair, ABL_G_steps30, ABL_G_steps120) were never launched (AB3); their questions are registered on the RTX "
               "(AB2 and Soumitra's AB4, 15db163; the RTX section above). ",
               "Everything below ran on an Apple M4 Pro (torch MPS), each Mac arm against its own reference on the same machine (the A10 columns of the hardware check are committed runs). It is exploratory (AB1, AB3): "
-              f"it replaces no registered family. {RULE6} {SCOPE} Raw MSE is not shown for the Mac ILI arms: results/ablations/LLM.json, written by llm_tests.py, "
+              f"it replaces no registered family. {RULE6} {SCOPE_SHORT} Raw MSE is not shown for the Mac ILI arms: results/ablations/LLM.json, written by llm_tests.py, "
               "holds the AUC in seed-SD units only, and llm_tests.py stays as main pins it. " + provenance_line(d), ""]
     p = m["AB-P"]
     lines += ["### AB-P on the Mac: prompted Qwen, ILI held-out AUC", "", "Finished searches: " + ", ".join(f"{k} {v}" for k, v in p["complete"].items()) + ".", ""]
@@ -683,8 +763,9 @@ def llm() -> list[str]:
         lines += ["ILI diagnostics:", ""] + table(["arm", "searches", "lookups", "repeat rate", "repaired rate", "invalid rate"],
                        [[a, str(x["searches"]), f"{x['lookups']['mean']:.0f}", f"{x['repeat_rate']:.2f}", f"{x['repaired_rate']:.2f}", f"{x['invalid_rate']:.2f}"] for a, x in p["diagnostics"].items()])
         if rep:
-            lines += [f"The repair arm's comparison is confounded by design: {rep['repaired_rate']:.0%} of its ILI proposals are replaced by the nearest unseen config (its repeat rate is "
-                      f"{rep['repeat_rate']:.2f}, against {p['diagnostics']['ref']['repeat_rate']:.2f} for ref), so it measures removing the constrained decoding together with that replacement.", ""]
+            lines += [f"{REPAIR_DEFINITION} On the Mac {rep['repaired_rate']:.0%} of its ILI proposals went through that replacement, against "
+                      f"{p['diagnostics']['ref']['repaired_rate']:.0%} for ref, so its comparison with ref measures decoding without the constraint together with the "
+                      "replacement rule, not unconstrained proposals alone.", ""]
     if m.get("ETTh1_descriptive"):
         lines += [f"ETTh1 ({NO_CLAIM}; descriptive, one seed per config):", ""]
         if m.get("ETTh1_differences"):
@@ -702,7 +783,7 @@ def llm() -> list[str]:
     if g["tests"]:
         t = g["tests"]["step trend"]
         lines += ["ILI held-out AUC per level. The trained levels are checkpoints 30, 60 and 120 of the same ten policies (one training run each), not "
-                  f"independent replications; level 0 is the untrained model. {SCOPE}", ""]
+                  f"independent replications; level 0 is the untrained model.", ""]
         lines += table(["steps", "runs", "ILI held-out AUC (t 95%)"], [[k, str(v["n"]), ci(v)] for k, v in sorted(t["levels"].items(), key=lambda kv: int(kv[0]))])
         u, dose = m["policy_level"]["trained_vs_untrained"], m["policy_level"]["dose"]
         u, dose, pair = m["policy_level"]["trained_vs_untrained"], m["policy_level"]["dose"], m["paired"]
@@ -726,7 +807,9 @@ def llm() -> list[str]:
         sd = m["step_diagnostics"]
         lines += table(["checkpoint", "searches", "lookups", "repeat rate", "invalid rate", "logged updates per policy"],
                        [[k, str(v["searches"]), f"{v['lookups']['mean']:.0f}", f"{v['repeat_rate']:.2f}", f"{v['invalid_rate']:.2f}", ci(v["logged_updates"], 1)] for k, v in sorted(sd.items(), key=lambda kv: int(kv[0]))])
-        lines += ["A step with no budget left logs no update, so the levels are about 29, 57 and 113 updates at 30, 60 and 120 steps.", ""]
+        ordered = sorted(sd.items(), key=lambda kv: int(kv[0]))
+        updates = ", ".join(f"{v['logged_updates']['mean']:.0f}" for _, v in ordered)
+        lines += [f"A step with no budget left logs no update, so the levels are about {updates} updates at {', '.join(k for k, _ in ordered)} steps.", ""]
         lines += [f"AB-G's registered statistic, computed on these Mac runs (Spearman of the level with AUC over 60 values): rho {t['rho']:+.2f}, p {pfmt(t['p'])}, Holm over 2 {pfmt(t['p_holm'])}. "
                   "This p is not valid (AB3 addendum 3): levels 30, 60 and 120 are checkpoints of the same policies, and level 0 (untrained) drives the rank correlation. It is therefore not reported as a rejection. "
                   f"With 10 seeds per level: rho {m['step_trend_10_per_level']['rho']:+.2f}, p {pfmt(m['step_trend_10_per_level']['p'])} (same caveat). "
@@ -737,10 +820,10 @@ def llm() -> list[str]:
                   f"{tr['unique_rate_mean']:.2f}, errors: {len(tr['errors'])}.", ""]
     if d["hardware_check"]:
         lines += ["### Hardware check (no test)", "", "Each arm's mean AUC (t 95%) over the seeds both ran. Seeds are not paired across cards (an equal seed does not "
-                  "reproduce a search on another card), so the difference of the means is shown without an interval. " + SCOPE, ""]
-        rows = [[k, str(v["seeds"]), ci(v["mps"]), ci(v.get("a10_E3") or v.get("a10_J2")), f"{v['mps']['mean'] - (v.get('a10_E3') or v.get('a10_J2'))['mean']:+.2f}"]
+                  "reproduce a search on another card), so the difference is given with the unpaired Welch interval of the two sets of searches.", ""]
+        rows = [[k, str(v["seeds"]), ci(v["mps"]), ci(v.get("a10_E3") or v.get("a10_J2")), ci_signed(welch(v["mps"], v.get("a10_E3") or v.get("a10_J2")))]
                 for k, v in d["hardware_check"].items()]
-        lines += table(["run", "shared seeds", "Mac", "A10 or A10G", "difference of means, Mac minus A10"], rows)
+        lines += table(["run", "shared seeds", "Mac", "A10 or A10G", f"Mac minus A10 or A10G ({WELCH}, unpaired)"], rows)
         h = d["hardware_check"]
         if "prompted_ILI" in h and "grpo_league_60_steps" in h:
             gap_a10 = h["grpo_league_60_steps"]["a10_J2"]["mean"] - h["prompted_ILI"]["a10_E3"]["mean"]
@@ -756,12 +839,14 @@ def power() -> list[str]:
     if not d:
         return lines + [MISSING, ""]
     lines += ["Smallest true difference that the test would find with 80% power, with the observed per-arm SDs and the registered Holm size. "
-              "An observed difference well below the detectable one is not evidence of no effect. " + t_quantile_note(d) + f" {SCOPE} " + provenance_line(d), ""]
-    groups = {"E3 against random (ILI, SD units)": [], "Picks on fresh seeds (validation MSE)": [], "E4, AB-C, AB-X, AB-P, AB-L": [], "Trends (rank correlation)": [],
-              "E5 (interval half width)": [], "E6 planning (validation MSE)": []}
+              "An observed difference well below the detectable one is not evidence of no effect. " + t_quantile_note(d) + f" {SCOPE_SHORT} " + provenance_line(d), ""]
+    prompted10 = "E3's 10-seed prompted arm against each 30-seed E3 baseline (descriptive, unadjusted; results review R6)"
+    groups = {"E3 against random (ILI, SD units)": [], "Picks on fresh seeds (validation MSE)": [], "E4, AB-C, AB-X, AB-P, AB-L": [], prompted10: [],
+              "Trends (rank correlation)": [], "E5 (interval half width)": [], "E6 planning (validation MSE)": []}
     for r in d["rows"]:
         name = r["comparison"]
-        key = ("E5 (interval half width)" if name.startswith("E5") else "E6 planning (validation MSE)" if name.startswith("E6") else
+        key = (prompted10 if name.startswith("E3 prompted Qwen (10 seeds") else
+               "E5 (interval half width)" if name.startswith("E5") else "E6 planning (validation MSE)" if name.startswith("E6") else
                "Trends (rank correlation)" if "trend" in name else "Picks on fresh seeds (validation MSE)" if " picks: " in name else
                "E4, AB-C, AB-X, AB-P, AB-L" if name.startswith(("E4", "AB-")) else "E3 against random (ILI, SD units)")
         groups[key].append(r)
@@ -797,7 +882,7 @@ def robustness() -> list[str]:
     lines = ["## ST: robust checks (descriptive)", ""]
     if not d:
         return lines + [MISSING, ""]
-    lines += [f"Interquartile mean of regret and probability of improvement over random search, 95% bootstrap intervals over search seeds within arms. {SCOPE} " + provenance_line(d), ""]
+    lines += [f"Interquartile mean of regret and probability of improvement over random search, 95% bootstrap intervals over search seeds within arms. {SCOPE_SHORT} " + provenance_line(d), ""]
     for dataset, _ in SETTINGS:
         t = d["tables"][setting(dataset)]
         share = t["summary"]["random"]["heldout_share"] if "heldout_share" in t["summary"]["random"] else {}
@@ -819,7 +904,7 @@ def rq3() -> list[str]:
     lines = ["## RQ3: which design choices matter (descriptive)", ""]
     if not d:
         return lines + [MISSING, ""]
-    lines += [f"{SCOPE} " + provenance_line(d), ""]
+    lines += [f"{SCOPE_SHORT} " + provenance_line(d), ""]
     fields = sorted(next(iter(d["tables"].values()))["main_effect_share"])
     ili, ett = d["tables"]["ILI_T24"]["main_effect_share"], d["tables"]["ETTh1_T336"]["main_effect_share"]
     lv = d["cross_table"]["level_means"]
@@ -857,6 +942,31 @@ def rq3() -> list[str]:
     return lines
 
 
+def baseline_reading(d: dict) -> dict:
+    """Results re-review N4: per baseline, the arms whose unadjusted interval lies below it, Holm survivors, and the Holm losses by arm kind."""
+    base = d.get("baseline_order") or list(d["baselines"])
+    rows = d["rows"]
+    grpo = lambda arm: "grpo" in arm.lower()
+    below = {b: sorted(r["arm"] for r in rows if r["beats_interval"] and r["baseline"] == b) for b in base}
+    held = {b: sorted(r["arm"] for r in rows if r["beats_holm"] and r["baseline"] == b) for b in base}
+    worse = [r for r in rows if r["worse_holm"]]
+    return {"base": base, "never": [b for b in base if not below[b]], "below": {b: a for b, a in below.items() if a}, "held": {b: a for b, a in held.items() if a},
+            "worse": len(worse), "worse_grpo": sum(grpo(r["arm"]) for r in worse), "worse_prompted": sum(not grpo(r["arm"]) for r in worse), "n": len(rows)}
+
+
+def baseline_sentences(d: dict) -> str:
+    x = baseline_reading(d)
+    unadjusted_only = {b: a for b, a in x["below"].items() if b not in x["held"]}
+    text = f"No arm's unadjusted interval lies below {', '.join(x['never'])}. " if x["never"] else ""
+    if unadjusted_only:
+        text += ("On unadjusted intervals only: " + "; ".join(f"{', '.join(a)} below {b}" for b, a in unadjusted_only.items())
+                 + "; none of these survives Holm. ")
+    if x["held"]:
+        text += "After Holm, arms beat: " + "; ".join(f"{b} (by {', '.join(a)})" for b, a in x["held"].items()) + ". "
+    return text + (f"{x['worse']} of {x['n']} comparisons are Holm-rejected in the baseline's favour: {x['worse_grpo']} with a GRPO arm and "
+                   f"{x['worse_prompted']} with a prompted arm.")
+
+
 def vs_baselines() -> list[str]:
     """Exploratory, post hoc: every LLM arm against every required baseline (results/ablations/LLM-vs-baselines.json)."""
     d = load("LLM-vs-baselines")
@@ -867,19 +977,18 @@ def vs_baselines() -> list[str]:
     lines += [f"Asked for on 26 Nov, after every LLM result had been seen; nothing here is registered and no claim rests on it. ILI held-out AUC, pooled seed-SD units, "
               f"lower is better; each cell is the arm minus the baseline ({WELCH}; negative: the arm searched better). Holm is applied over all {d['comparisons']} "
               "comparisons as a conservative reading; * marks a Holm rejection. The arms ran on different cards with 10 or 30 seeds, and no seed is paired across cards. "
-              f"{TRANSFER_SCOPE} {SCOPE} " + provenance_line(d), ""]
+              f"{TRANSFER_SCOPE} {SCOPE_SHORT} " + provenance_line(d), ""]
     base = d.get("baseline_order") or list(d["baselines"])
     lines += table(["baseline", "ILI held-out AUC (t 95%)"], [[b, ci(d["baselines"][b])] for b in base])
     cell = {(r["arm"], r["baseline"]): r for r in rows}
     lines += table([f"arm (cells: arm minus baseline, {WELCH})", "AUC (t 95%)", *base],
                    [[a, ci(v), *(f"{cell[(a, b)]['diff']:+.2f} [{cell[(a, b)]['low']:+.2f}, {cell[(a, b)]['high']:+.2f}]" + ("*" if cell[(a, b)]["reject"] else "") for b in base)]
                     for a, v in sorted(d["arms"].items(), key=lambda kv: kv[1]["mean"])])
-    rq1 = [b for b in base if "E4" not in b]
-    beaten = sorted({(r["arm"], r["baseline"]) for r in rows if r["beats_holm"]})
-    lines += [f"No arm's interval lies below {', '.join(b for b in rq1 if not any(r['beats_interval'] and r['baseline'] == b for r in rows))} "
-              "(among the RQ1 and E3 baselines). " if any(not any(r["beats_interval"] and r["baseline"] == b for r in rows) for b in rq1) else "",
-              f"After Holm, {len(beaten)} comparisons favour an arm: " + ("; ".join(f"{a} over {b}" for a, b in beaten) if beaten else "none") + ". "
-              f"{sum(r['worse_holm'] for r in rows)} of {len(rows)} favour the baseline. The arm with the lowest mean AUC is {d['best_arm']}.", ""]
+    det = [r for r in (load("ST-power") or {}).get("rows", []) if r["comparison"].startswith("E3 prompted Qwen (10 seeds")]
+    lines += [baseline_sentences(d) + f" The arm with the lowest mean AUC is {d['best_arm']}."
+              + (f" With 10 seeds, E3's prompted arm could detect differences of {min(r['detectable_80'] for r in det):.2f} to {max(r['detectable_80'] for r in det):.2f} SD "
+                 "against the 30-seed E3 baselines at 80% power (common.detectable with the observed SDs, one comparison each; descriptive, ST section), so a "
+                 "difference not detected is not shown to be absent." if det else ""), ""]
     return lines
 
 
@@ -936,7 +1045,8 @@ def rtx_glance(g: dict) -> list[str]:
         fam, v = tests["repair vs ref_local"]
         rep = (g.get("diagnostics_ILI") or {}).get("prompted repair")
         out.append(f"  * Repair (AB-P): {v['diff']:+.2f} SD [{v['low']:+.2f}, {v['high']:+.2f}] against ref ({WELCH}; {decision(v)})"
-                   + (f"; {rep['repaired_rate']:.0%} of its proposals are replaced by the repair rule, so the comparison is confounded by design." if rep else "."))
+                   + (f"; it decodes without the constraint, and {rep['repaired_rate']:.0%} of its proposals were over the parameter cap and replaced by the nearest "
+                      "feasible unseen config, so it measures that combination." if rep else "."))
     if "KL trend" in tests:
         fam, v = tests["KL trend"]
         det = detect(fam, "KL trend")
@@ -960,7 +1070,7 @@ def glance() -> list[str]:
     """The main readings, each built from the result files."""
     lines = ["## At a glance", ""]
     q, x, c, n, r, a, g, w = (load(k) for k in ("AB-Q", "AB-X", "AB-C", "AB-L-null", "AB-R", "RQ3", "LLM", "ST-power"))
-    lines.append(f"* Scope of everything below: {SCOPE} Every test here is secondary to the primary endpoints and none is a claim under CLAUDE.md rule 6 "
+    lines.append(f"* Scope of everything below: {SCOPE_SHORT} Every test here is secondary to the primary endpoints and none is a claim under CLAUDE.md rule 6 "
                  "(Welch t intervals and permutation p, no paired block-bootstrap interval, no gate). ETTh1 values are in-sample (one seed per config), so no claim rests on them.")
     if q:
         s, h = q["separation"], q["holdout"]["methods"]
@@ -997,21 +1107,22 @@ def glance() -> list[str]:
         t = c["tables"]["ILI_T24"]["tests"]
         lines.append(f"* Controller ablations: none of the {len(t)} league settings is rejected against the reference; the test could detect about "
                      f"{max(v['detectable_80'] for v in t.values()):.2f} SD (AB-C).")
-    vb = load("LLM-vs-baselines")
-    if vb:
-        rq1 = [b for b in (vb.get("baseline_order") or vb["baselines"]) if "E4" not in b]
-        unbeaten = [b for b in rq1 if not any(r["beats_interval"] and r["baseline"] == b for r in vb["rows"])]
-        held = sorted({r["baseline"] for r in vb["rows"] if r["beats_holm"]})
-        winners = {r["arm"] for r in vb["rows"] if r["beats_holm"]}
-        only_prompted = bool(winners) and all("prompted" in a for a in winners)
-        lines.append(f"* Exploratory, post hoc: no LLM arm (prompted or GRPO, any card) beats {', '.join(unbeaten)} on ILI held-out AUC, even by an unadjusted interval; "
-                     f"after Holm over {vb['comparisons']} comparisons the only baselines an arm beats are {', '.join(held) or 'none'}"
-                     + (", each time by an untrained prompted arm, which searches ILI directly and is not the arm that transfer control is matched to" if only_prompted else "")
-                     + f"; {sum(r['worse_holm'] for r in vb['rows'])} "
-                     f"comparisons favour the baseline. The GRPO-trained arms are worse than the untrained prompted model (AB-G). {TRANSFER_SCOPE}")
     rtx = load("LLM-rtx") or {}
     if "families" in rtx.get("registered", {}):
         lines += rtx_glance(rtx["registered"])
+    vb = load("LLM-vs-baselines")
+    if vb:
+        x = baseline_reading(vb)
+        winners = {a for arms in x["held"].values() for a in arms}
+        only_prompted = bool(winners) and all("prompted" in a for a in winners)
+        lines.append(f"* Exploratory, post hoc (Holm over {vb['comparisons']} comparisons): no LLM arm (prompted or GRPO, any card) beats {', '.join(x['never'])} on ILI held-out AUC, "
+                     "even by an unadjusted interval"
+                     + ("; on unadjusted intervals only, " + "; ".join(f"{', '.join(a)} lie below {b}" for b, a in x["below"].items() if b not in x["held"])
+                        + ", and none of these survives Holm" if any(b not in x["held"] for b in x["below"]) else "")
+                     + (f"; after Holm the only baselines an arm beats are {', '.join(x['held'])}" if x["held"] else "; after Holm no arm beats any baseline")
+                     + (", each time by an untrained prompted arm, which searches ILI directly and is not the arm that transfer control is matched to" if only_prompted else "")
+                     + f"; {x['worse']} comparisons are Holm-rejected in the baseline's favour ({x['worse_grpo']} with a GRPO arm, {x['worse_prompted']} with a prompted arm). "
+                     f"The GRPO-trained arms are worse than the untrained prompted model (AB-G). {TRANSFER_SCOPE}")
     if g and g["mps"]["AB-P"]["tests"]:
         t = g["mps"]["AB-P"]["tests"]
         etth1_d = g["mps"].get("ETTh1_differences", {})
@@ -1105,9 +1216,9 @@ def failure_case() -> list[str]:
     b = rv["best_regret_by_revin"]
     lines += ["Asked for by the results review (R2) after every result was seen; descriptive, no test. RevIN is the instance_norm field (reversible instance normalisation). "
               f"On ILI the best RevIN-off config has regret {b['ILI_T24']['revin_off']:.2f} SD and the best RevIN-on config {b['ILI_T24']['revin_on']:.2f} SD "
-              f"(llm_tests.revin_regret, on the table's 3-seed means); on ETTh1 ({NO_CLAIM}) the best RevIN-on config has {b['ETTh1_T336']['revin_on']:.2f} SD and the best "
-              f"RevIN-off {b['ETTh1_T336']['revin_off']:.2f}. A search that looks up only RevIN-off configs on ILI can reach nothing closer to ILI's best than {b['ILI_T24']['revin_off']:.2f} SD "
-              f"by the table's means. {SCOPE}", ""]
+              f"(llm_tests.revin_regret on each table's config values: means of three seeds on ILI); on ETTh1 ({NO_CLAIM}) the best RevIN-on config has {b['ETTh1_T336']['revin_on']:.2f} SD and the best "
+              f"RevIN-off {b['ETTh1_T336']['revin_off']:.2f}, values from configs with one seed each (ETTh1 has one seed per config). A search that looks up only RevIN-off configs on ILI "
+              f"can reach nothing closer to ILI's best than {b['ILI_T24']['revin_off']:.2f} SD by the table's means. {SCOPE_SHORT}", ""]
     entries = []  # (arm, card, searches, AUC or None, share, trained by GRPO)
     compute_rows = (load("compute") or {}).get("rows", [])
     def cards_of(method: str) -> str:
@@ -1127,15 +1238,12 @@ def failure_case() -> list[str]:
         entries.append((f"level {k}", "Apple M4 Pro", level["n"] if level else None, level, share, k.split()[0] != "0"))
     lines += table(["arm", "card", "searches", "ILI AUC (t 95%)", "RevIN-off share of ILI lookups"],
                    [[a, c, str(n) if n else "-", ci(auc) if auc else "-", f"{share:.0%}"] for a, c, n, auc, share, _ in entries])
-    abl = (load("AB-L") or {}).get("tests", {}).get("league slopes vs 0, ETTh1 source")
     grpo = [share for *_, share, trained in entries if trained]
     untrained = [share for *_, share, trained in entries if not trained]
     if grpo and untrained:
         lines += [f"The GRPO arms' RevIN-off shares of ILI lookups range from {min(grpo):.0%} to {max(grpo):.0%}; random search and the untrained prompted arms range from "
-                  f"{min(untrained):.0%} to {max(untrained):.0%}. "
-                  + (f"GRPO raised the policies' mean reward on the ETTh1 source (AB-L: mean slope {abl['mean']:+.3f}; its registered test is too liberal, and an exploratory test agrees), "
-                     "so the policies changed in training; " if abl and abl["mean"] > 0 else "")
-                  + f"the preference they show fits the ETTh1 table, whose best config has RevIN {'off' if b['ETTh1_T336']['revin_off'] == 0 else 'on'}, and costs on ILI. "
+                  f"{min(untrained):.0%} to {max(untrained):.0%}, so training changed what the policies look up. "
+                  f"The preference they show fits the ETTh1 table, whose best config has RevIN {'off' if b['ETTh1_T336']['revin_off'] == 0 else 'on'}, and costs on ILI. "
                   "This is consistent with a source-table preference that does not transfer. No intervention tested the cause (no arm removes the preference while keeping "
                   "the training), so no causal claim is made. Arms on different cards are shown side by side, not paired.", ""]
     return lines
@@ -1148,14 +1256,18 @@ def figure_section() -> list[str]:
     if not d:
         return lines + [MISSING, ""]
     rel = Path(d["figure"]).relative_to("docs")
+    ref = d.get("reference")
     lines += [f"![Mean ILI held-out regret by budget, two panels]({rel})", "",
               "Mean held-out regret at each budget from 1 to 100 full-run equivalents, over each arm's searches (common.by_seed at that budget; the mean over the 100 "
-              "budgets is the AUC of the tables above). No interval is drawn, and arms with 10 searches are noisier than arms with 30. The dashed grey line in the second "
-              f"panel is E3's random search. Added after every result was seen. {TRANSFER_SCOPE} {SCOPE} " + provenance_line(d), ""]
+              "budgets is the AUC of the tables above), with a 95% t band per budget over searches; arms with 10 searches have wider bands than arms with 30. "
+              + (f"The dashed grey line in both panels is {ref['name']}. " if ref else "") + "Each series keeps one colour in both panels. "
+              + ("Not drawn: " + ", ".join(d.get("not_drawn", [])) + ". " if d.get("not_drawn") else "")
+              + f"Added after every result was seen. {TRANSFER_SCOPE} {SCOPE_SHORT} " + provenance_line(d), ""]
     marks = (1, 10, 25, 50, 100)
-    rows = [[s["name"], str(s["n"]), *(f"{s['mean'][b - 1]:.2f}" for b in marks), f"{sum(s['mean']) / len(s['mean']):.2f}"]
-            for p in d["panels"] for s in p["series"]]
-    return lines + ["Table view of the figure:", ""] + table(["arm (searches)", "n", *(f"@{b}" for b in marks), "mean over 1 to 100 (AUC)"], rows)
+    every = ([ref] if ref else []) + [s for p in d["panels"] for s in p["series"]]
+    rows = [[s["name"], str(s["n"]), *(f"{s['mean'][b - 1]:.2f}" for b in marks), f"{sum(s['mean']) / len(s['mean']):.2f}"] for s in every]
+    return lines + ["Table view of the figure (means; the bands are in results/ablations/anytime-ILI.json):", ""] + \
+        table(["arm (searches)", "n", *(f"@{b}" for b in marks), "mean over 1 to 100 (AUC)"], rows)
 
 
 def compute_section() -> list[str]:
@@ -1171,11 +1283,36 @@ def compute_section() -> list[str]:
               + provenance_line(d), ""]
     lines += ["Recorded hours per card:", ""] + table(["machine", "card", "kind", "hours"], [[t["machine"], t["card"], t["kind"], f"{t['hours']:.2f}"] for t in d["totals"]])
     timed = [r for r in d["rows"] if r.get("seconds") is not None]
-    lines += ["Per arm, records with seconds:", ""] + table(
+    period = load_period((load("LLM-rtx") or {}).get("registered", {}))
+    segments = {j["job"]: [] for jobs in d.get("queue_wall_clock", {}).values() for j in jobs}
+    for jobs in d.get("queue_wall_clock", {}).values():
+        for j in jobs:
+            segments[j["job"]].append(j["end"])
+
+    def rtx_job(r: dict) -> str | None:
+        if not r["arm"].startswith("RTX "):
+            return None
+        item = r["arm"].removeprefix("RTX ").split(" ")[0].lower()
+        return item if item.startswith("abl_g_") else f"{item}_{'ILI' if r['table'].startswith('ILI') else 'ETTh1'}"
+
+    late = {r["arm"] + r["table"] for r in timed if rtx_job(r) and ran_after(segments.get(rtx_job(r), []), period)}
+    lines += ["Per arm, records with seconds († the RTX job finished after the laptop's reboot; see below):", ""] + table(
         ["arm", "table", "card (records)", "records", "target epochs", "source epochs", "hours"],
         [[r["arm"], r["table"], ", ".join(f"{c} ({n})" for c, n in r["cards"].items()), str(r["records"]),
           f"{r['target_epochs']:,.0f}" if r.get("target_epochs") is not None else "-", f"{r['source_epochs']:,.0f}" if r.get("source_epochs") is not None else "-",
-          f"{r['seconds'] / 3600:.2f}"] for r in timed])
+          f"{r['seconds'] / 3600:.2f}" + (" †" if r["arm"] + r["table"] in late else "")] for r in timed])
+    if late and period:
+        lines += [f"† The RTX laptop rebooted at {et(period['start'])} (queue line at {et(period['logged'])}); the marked jobs finished after it. {LOAD_TEXT}", ""]
+        s30 = next((r for r in timed if r["arm"] == "RTX ABL_G_steps30_local (training)"), None)
+        s60 = next((r for r in timed if r["arm"] == "RTX ABL_G_ref_local (training)"), None)
+        if s30 and s60:
+            lines += [f"For example, the 30-step training took {s30['seconds'] / 3600:.2f} h for {s30['source_epochs']:,.0f} source epochs, against {s60['seconds'] / 3600:.2f} h "
+                      f"for {s60['source_epochs']:,.0f} at 60 steps; the 30-step job {'finished after the reboot' if s30['arm'] + s30['table'] in late else 'ran before the reboot'} "
+                      f"and the 60-step job {'after' if s60['arm'] + s60['table'] in late else 'before'} it.", ""]
+    superseded = [r for r in d["rows"] if r.get("superseded") and r.get("seconds") is not None]
+    if superseded:
+        lines += [f"The rows marked superseded are E4's first training attempt on 23 Nov ({sum(r['seconds'] for r in superseded) / 3600:.2f} h recorded): A25 superseded it and "
+                  "none of its policies was deployed, so it counts as compute only.", ""]
     cpu = [r for r in d["rows"] if r["kind"] == "search" and r.get("seconds") is None]
     errors = [r for r in d["rows"] if r["kind"] == "errors"]
     if cpu:
@@ -1187,11 +1324,18 @@ def compute_section() -> list[str]:
             stopped = [j for j in jobs if j["outcome"] == "INTERRUPTED"]
             lines += [f"RTX queue wall clock ({Path(rel).name}): {sum(j['seconds'] for j in jobs) / 3600:.2f} h over {len(jobs)} job segments"
                       + ("; interrupted and relaunched: " + ", ".join(f"{j['job']} after {j['seconds'] / 3600:.2f} h" for j in stopped) if stopped else "") + ".", ""]
-    bill = d.get("dollars")
-    lines += [("Dollars: no results file records them per arm. The one committed billing record, " + f"{bill['path']} at {str(bill['commit'])[:7]}, is a month-to-date summary of "
-               f"Soumitra's Modal profile ({bill['comments'][0] if bill['comments'] else 'no note'}): metered ${float(bill['metered_cost']):.2f}, billed ${float(bill['billed_cost']):.2f}; "
-               "it is not split per arm. The RTX and the Mac are local cards with no metered cost.") if bill else
-              "Dollars: no committed file records them.", ""]
+    bill, spend = d.get("dollars"), d.get("e4_spend")
+    text = "Dollars: no results file records them per arm, and the RTX and the Mac are local cards with no metered cost. "
+    if bill:
+        text += (f"The committed billing record {bill['path']} (at {str(bill['commit'])[:7]}) is a month-to-date summary of Soumitra's Modal profile "
+                 f"({bill['comments'][0] if bill['comments'] else 'no note'}): metered ${float(bill['metered_cost']):.2f}, billed ${float(bill['billed_cost']):.2f}. ")
+    if spend:
+        text += f"Commit {spend['commit'][:7]} ({et(spend['time'])}) states, in its message: \"{spend['line']}\" (docs/STATE.md, 24 Nov, gives the same figure). "
+    if bill and spend:
+        later = bill.get("read_at") and when(bill["read_at"]) > when(spend["time"])
+        text += ("The two figures differ" + (", and the billing summary, read later, is the lower one" if later and float(bill["metered_cost"]) < spend["metered"] else "")
+                 + "; Soumitra is asked to reconcile them. Neither is split per arm.")
+    lines += [text, ""]
     return lines
 
 
@@ -1207,7 +1351,7 @@ def history() -> list[str]:
             "(every arm passes), the timeline, the per-arm ILI table with raw MSE, the per-policy table, the t-quantile detectable column, the one-Holm sensitivity, the failure-case "
             "table, the compute totals and the scope sentences. No registered test, permutation, Holm size or completeness rule changed.",
             "* Not done from WP6: regret curves with intervals as figures (docs/ablations.md gives tables at fixed budgets only)." if not (load("anytime-ILI") or {}).get("figure") else
-            "* From WP6: an anytime-regret figure of mean curves without intervals (the figure section); curves with intervals are still not done.",
+            "* From WP6: an anytime-regret figure of mean curves with 95% t bands (the figure section); the A3 noise-floor band and per-architecture regret are not done.",
             "* Not answered here: why TPE wins E3's held-out replay but not the pick reseeds (an effect-size question, no equivalence test exists yet); whether rankings survive resampling "
             "of the three table seeds; whether results survive a different fidelity ladder or a common first configuration; BOHB and one-epoch-then-top-K baselines; and, for AB-L, how much of the ETTh1 slope the league contributes.",
             "* Mac LLM runs: the ILI prompted reference (ABL_P_ref_mps) ran at commit 31f9313 and every other Mac item at 0929d26; scripts/ablations/llm_mps.py and leaguetst/ are identical between the two. Every run file's commit and digest is in results/ablations/LLM.json. "
