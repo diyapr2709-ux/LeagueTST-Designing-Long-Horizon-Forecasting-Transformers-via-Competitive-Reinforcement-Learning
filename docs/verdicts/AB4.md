@@ -50,3 +50,25 @@ Optional
   min plus 19 to 24 min); total about 9 to 12.5 h.
 * Change 2: the AUC is the one spearman_trend's caller computes for the KL
   trend (same function, AUC and settings), named with file, commit and sha256.
+
+## Registered AB-P and AB-G result (27 Nov), under Diya's AB4 and AB5
+
+results/ablations/LLM-registered.json, written once by scripts/ablations/llm_registered.py at 27 Nov 14:54 ET (HEAD 26abd39). It equals results/ablations/rtx/RTX_tests.json (rtx_tests.py, 26 Nov 19:05 ET) value for value. The verifier's script scripts/independent/ablations_rescore_B.py, committed before the run, rebuilt every trace with no mismatch and agrees to about 1e-15, with p values within Monte Carlo error and every Holm decision the same: results/independent/AB_rescore_B.json.
+
+### Critic's verdict (verbatim)
+
+LLM-registered.json equals RTX_tests.json value for value, on the same inputs. AB_rescore_B agrees to Monte Carlo error, with the same Holm decisions. AB-P: anonymising field names made ILI held-out AUC worse (+0.36 SD, Welch [0.10, 0.63], Holm p 0.015). Repair showed no detectable difference (+0.03, [-0.28, 0.33], detectable 0.49). The scale trend rejects, rho +0.43: regret rose from 0.5B to 3B. AB-G: the step trend rejects (rho +0.76) but by Diya's rule it is not a dose-response, because (ii) gives mean rho 0.05 with p 1.0. Instead, (i) shows trained policies worse than the untrained model (+1.59, [1.28, 1.90]), and their 30, 60 and 120-step means are flat. KL is not rejected (p 0.37). None of this answers RQ1; E4 does.
+
+REQUIRED
+1. Call all five "registered secondary tests", not claims. Rule 6 fails on the missing paired block-bootstrap interval. Numbers only via ledger.jsonl and report.py.
+2. Steps: write "GRPO-trained policies (30 to 120 steps, ETTh1 source) were worse on ILI than the untrained model". Never write "dose-response" or "longer training hurts". Write the registered p as "< 0.0001" (Monte Carlo floor): it is anti-conservative and carried by level 0. Diagnostic (iii): the logs match only at step 1 (about 3.5% of rows), so nesting is weak; levels still share seeds. E4's no-league arm was equally poor, so do not blame the league.
+3. Scale: limit the statement to Qwen2.5-Instruct 0.5/1.5/3B, with one prompt and trie, temperature 1.0, ILI and budget 100. Never write "larger LLMs are worse architects". The trend is carried mainly by 3B, and 0.5B vs 1.5B was not tested. ETTh1 (descriptive) reverses, with 3B lowest. The mechanism is untested: more random sampling, constrained decoding, or a prompt not adapted per size could each explain it.
+4. Anon: say "removing field names and descriptions raised ILI regret". Consistent with use of field semantics, not proof of forecasting knowledge: prompt length and tokens also change, ETTh1 runs the other way; below the planned detectable 0.42, so likely inflated.
+5. Repair: say "no detectable difference", not "constrained decoding does not matter".
+6. KL: say not rejected, underpowered (detectable |rho| about 0.5) and conservative. Do not call its monotone means a trend.
+7. Disclosure: include AB4's fixed paragraph, plus: the families were computed twice, rtx_tests.py (26 Nov 19:05 ET) then llm_registered.py (27 Nov 14:54 ET). The values are identical: Diya's "computed once" rule was broken, nothing changed.
+8. Make no cross-backend comparison with E3 random or TPE (e.g. "0.5B beats random"). ETTh1 and the hardware check (RTX minus J2: +0.12, [-0.70, 0.93]) are descriptive only.
+
+Optional
+- Seed-paired block-bootstrap intervals, labelled descriptive.
+- Exploratory diagnostics per arm: unique-config rate and RevIN-off share.
