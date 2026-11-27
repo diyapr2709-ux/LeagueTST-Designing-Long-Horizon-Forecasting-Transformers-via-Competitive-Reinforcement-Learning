@@ -471,6 +471,20 @@ def test_report_renders_registered_section(monkeypatch, final):
     assert "scale trend" in text and "KL trend" in text and "positive rho means a higher (worse) AUC" in text
     assert ("pending" in text) != final
     assert "Training (RTX transfer items): ABL_G_ref_local 10 policies" in text
+    assert "Not the result of record" in text and "LLM-registered.json" in text
+
+
+def test_step_reading_follows_ab4_rule():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("ablations_report", ROOT / "scripts" / "ablations" / "report.py")
+    report = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(report)
+    up, flat = {"rho": 0.3}, {"p": 0.5}
+    assert "read as a dose-response" in report.step_reading(up, flat, {"mean_rho": 0.4, "p_sign_flip": 0.01})
+    assert "neither" in report.step_reading(up, flat, {"mean_rho": -0.4, "p_sign_flip": 0.01})  # wrong sign
+    assert "differ from the untrained" in report.step_reading(up, {"p": 0.01}, {"mean_rho": 0.4, "p_sign_flip": 0.2})
+    assert "neither" in report.step_reading(None, flat, {"mean_rho": 0.4, "p_sign_flip": 0.01})  # no registered trend
 
 
 

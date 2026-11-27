@@ -237,16 +237,34 @@ def pfmt(p: float) -> str:
     return "< 0.0001" if p < 1e-4 else f"{p:.4f}"
 
 
+RECORD_NOTE = ("Not the result of record. Diya's amendment AB4 on main (2ab2996, 26 Nov 17:21 ET) names scripts/ablations/llm_registered.py, run once by Soumitra, "
+               "as the computation of the registered AB-P and AB-G families (results/ablations/LLM-registered.json); Soumitra's branch also carries its own "
+               "scripts/ablations/rtx_tests.py (e6926d8). AB5 reached GitHub on 26 Nov at 18:36 ET, after that amendment. The tables below are an independent "
+               "computation of the same registered tests from the same run files; where they differ from LLM-registered.json, that file stands and the difference "
+               "is a finding to report. docs/LEG3_soumitra.md asks Anirudh not to read results/ablations/rtx/ before LLM-registered.json is committed: the AB2 values "
+               "here were computed before that file reached this clone, and the AB4 values after it, on Anirudh's decision, as a check. This branch does not change "
+               "llm_registered.py or its inputs.")
+
+
+def step_reading(steps: dict | None, u: dict, dose: dict) -> str:
+    """Diya's AB4 reading rule for the step result, fixed before any AB4 value was seen."""
+    if steps and dose["p_sign_flip"] <= 0.05 and (dose["mean_rho"] > 0) == (steps["rho"] > 0) and dose["mean_rho"] != 0:
+        return "By AB4's rule the step result is read as a dose-response: (ii) has the registered trend's sign and p at most 0.05."
+    if u["p"] <= 0.05:
+        return "By AB4's rule the step result is not read as a dose-response; trained policies differ from the untrained model ((i), p at most 0.05)."
+    return "By AB4's rule the step result is read neither as a dose-response nor as a difference between trained and untrained policies."
+
+
 def registered_llm() -> list[str]:
     """AB2 and AB4: the registered AB-P and AB-G families on Soumitra's RTX items."""
     d = load("LLM")
-    lines = ["## AB-P and AB-G: registered families (Soumitra's RTX, AB2 and AB4)", ""]
+    lines = ["## AB-P and AB-G on Soumitra's RTX (AB2 and AB4): Anirudh's independent computation", ""]
     if not d or "families" not in d.get("registered", {}):
         return lines + [MISSING, ""]
     g = d["registered"]
     src = g["source"]
     if g["final"]:
-        status_text = "Status: final."
+        status_text = "Status: final by AB5's rule, for this computation."
     else:
         status_text = ("Status: provisional. Reasons: " + "; ".join(g.get("provisional_reasons") or ["not final"]) + ". "
                        "The pending tests count as not rejected for now (Holm treats them as p = 1). A rejection shown here holds whatever they show; "
@@ -259,6 +277,7 @@ def registered_llm() -> list[str]:
               f"({len(src['files'])} files, each with its source, commit and sha256 in results/ablations/LLM.json; AB2's move manifest matches for "
               f"{sum(src['ab2_manifest_matches'].values())} of {len(src['ab2_manifest_matches'])} files). Every reference is local to the same card (AB1, AB4). "
               "ILI held-out AUC, pooled seed-SD units, lower is better. For a trend, positive rho means a higher (worse) AUC at the higher level: more steps, a larger KL weight, a larger model.", ""]
+    lines += [RECORD_NOTE, ""]
     rows = [[v["item"] + (" ILI" if kind == "prompted" else ""), str(v.get("searches", v.get("deployed", ""))), ", ".join(map(str, v.get("stopped", []))) or "-",
              ", ".join(v.get("gpu", [])) or "-", "yes" if v["complete"] else "no",
              ("; ".join(v["problems"]) or "all pass") if v.get("searches", v.get("deployed", 0)) else "not checked (no runs)"]
@@ -294,17 +313,22 @@ def registered_llm() -> list[str]:
                   + (f"On ETTh1 (in-sample, descriptive, no test) the order by AUC is {order}" + (", and every pair of intervals overlaps" if overlap else "") + "; no test is made on ETTh1. " if order else "")
                   + "The 3B checkpoint is under the Qwen Research License (non-commercial; docs/neurips_checklist.md, item 12); releasing its generated proposals may need that licence's notice.", ""]
     if g["families"]["AB-G"]["tests"]:
-        lines += ["The AB-G levels share training seeds 100 to 109 and deployment seeds 0 to 9 (and the steps levels share level 0), so they are dependent (AB4); "
-                  "the permutation p treats the values as exchangeable and is reported with that caveat. The detectable rho values are Fisher-z approximations, optimistic with tied levels.", ""]
+        lines += ["The AB-G levels share training seeds 100 to 109 and deployment seeds 0 to 9 (and the steps levels share level 0), so they are dependent. "
+                  "Diya's AB4 on main: training has no step-dependent schedule, so a 30-step policy is, up to GPU nondeterminism, a prefix of the 60- and 120-step policies of its seed, "
+                  "and the step-trend permutation p is anti-conservative (its critic's simulation: a false-positive rate of 0.10 to 0.15 at nominal 0.05); "
+                  "the step trend and its Holm decision are reported as registered, with this caveat. The KL levels share seeds too; with balanced levels AB4 states that this makes the KL test conservative. "
+                  "The detectable rho values are Fisher-z approximations, optimistic with tied levels.", ""]
     rnd = d.get("mps", {}).get("revin", {}).get("committed_ILI", {}).get("random (E3)")
     if rnd:
         lines += [f"For context (post hoc, no test): E3's random search has ILI AUC {ci(rnd['auc'])} on the same scale.", ""]
     pl = g["families"]["AB-G"].get("exploratory_policy_level")
     if pl:
         u, dose = pl["trained_vs_untrained"], pl["dose"]
-        lines += [f"Exploratory (AB4, as AB3 addendum 3): trained at all, the ten policies' AUC averaged over their three steps levels against the 30 untrained searches, "
+        steps = g["families"]["AB-G"]["tests"].get("steps trend")
+        lines += [f"Registered secondary step analyses (Diya's AB4 on main; policy as unit, no Holm): (i) trained at all, the ten policies' AUC averaged over their three steps levels against the 30 untrained searches, "
                   f"{u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] (permutation p {pfmt(u['p'])}; the test could detect {u['detectable_80']:.2f} SD; positive is worse); "
-                  f"dose, the per-policy Spearman correlation of AUC with 30, 60, 120 steps, mean {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f}.", ""]
+                  f"(ii) dose, the per-policy Spearman correlation of AUC with 30, 60, 120 steps, mean {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f}. "
+                  + step_reading(steps, u, dose) + " AB4's diagnostic (iii), the share of training-log rows shared with the 60-step log, is not computed here.", ""]
     desc = g["descriptive"]
     rows = []
     for key, label in (("hardware_G_ref_local_vs_J2", "ABL_G_ref_local (RTX) minus J2 league (A10/A10G), AB1 hardware check"),
@@ -557,11 +581,13 @@ def glance() -> list[str]:
             if name == "scale trend":
                 way = "a larger model gave a higher, that is worse," if v["rho"] > 0 else "a larger model gave a lower, that is better,"
                 return f"{fam} {name}: {way} ILI held-out AUC ({trend_words(name, v)} SD; rho {v['rho']:+.2f}, {decision}{could}; ILI only, three checkpoints, size not isolated)"
-            return f"{fam} {name}: ILI held-out AUC {trend_words(name, v)} SD (rho {v['rho']:+.2f}, {decision}{could})"
+            nested = "; p anti-conservative, nested levels (AB4)" if name == "steps trend" else ""
+            return f"{fam} {name}: ILI held-out AUC {trend_words(name, v)} SD (rho {v['rho']:+.2f}, {decision}{could}{nested})"
 
         done = [said(fam, name, v) for fam in ("AB-P", "AB-G") for name, v in reg["families"][fam]["tests"].items()]
         missing = [name for fam in ("AB-P", "AB-G") for name in reg["families"][fam]["missing"]]
-        lines.append("* Registered LLM ablations on Soumitra's RTX (" + ("final" if reg["final"] else "provisional") + "): " + ("; ".join(done) or "none complete")
+        lines.append("* Registered LLM ablations on Soumitra's RTX, Anirudh's independent computation (" + ("final" if reg["final"] else "provisional")
+                     + "; the result of record is results/ablations/LLM-registered.json, Diya's AB4 on main): " + ("; ".join(done) or "none complete")
                      + (f"; missing so far, counted as not rejected: {', '.join(missing)}" if missing else "") + " (AB2, AB4).")
     if g and g["mps"]["AB-P"]["tests"]:
         t = g["mps"]["AB-P"]["tests"]
@@ -615,7 +641,7 @@ def history() -> list[str]:
 def main() -> int:
     lines = ["# Ablations, robustness and external validity", "",
              "Generated by scripts/ablations/report.py from results/ablations/*.json. Do not edit by hand. Registered in "
-             "docs/prereg_ablations.md (AB1, AB3 and AB5 on this branch; AB2 and AB4 on origin/soumitra-leg2); every result here is secondary to the primary endpoints. Regret is in pooled "
+             "docs/prereg_ablations.md (AB1, AB3 and AB5 on this branch; AB2 and AB4 on origin/soumitra-leg2; Diya's AB4 on main); every result here is secondary to the primary endpoints. Regret is in pooled "
              "seed-SD units unless stated; lower is better. ILI regret is scored on seeds the search never saw; ETTh1 has one seed per config, "
              "so ETTh1 replays are in-sample and descriptive.", ""]
     lines += glance() + noise_free() + external() + controller() + registered_llm() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power() + history()
