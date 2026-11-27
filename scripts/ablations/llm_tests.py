@@ -223,7 +223,7 @@ def hardware_check(table) -> dict:
 
 
 RTX_DIR = "results/ablations/rtx"
-RTX_REF = "7fd5085f9ab9b3d106db37eec917ac3ab566e4fc"  # origin/soumitra-leg2, pinned; moved forward by a commit of this file when AB4 lands
+RTX_REF = "e6926d8664b8493442f4e372a4cf0349a34d06e0"  # origin/soumitra-leg2, pinned; moved forward by a commit of this file when AB4 lands
 DEADLINE = "2026-11-28T23:59:00-05:00"  # AB1: an arm unfinished then counts as not run
 TRANSFER_METHOD = "grpo_league_from_ETTh1"
 # AB2 and AB4: arm -> (item, method of its searches)
