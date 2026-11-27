@@ -1392,6 +1392,30 @@ Scope: scripts/ablations/llm_tests.py (then llm_rtx.py) at a692f0e, f9c0d62 and 
 > - The O items from round 1: B1 O, B2 O, B20, B21 and B23.
 > - From the results re-review: Diya's R1, R3, R4, R5, R8, R9, R10 and R16, and Soumitra's R3, R5, R9, R10, R11, R12 and the dollar reconciliation.
 
+### Verifier: final check before the push
+
+> **VERDICT: PASS** (e62e88a..a3ee8f0, HEAD a3ee8f0). One wording fix is recommended before the push but does not block it.
+>
+> 1. **Registered results are unchanged.** `registered.families` is identical to e62e88a (digest aee7655f, the value the report's verification gate expects). All ten arms keep `complete: true` with no problems, and final is True at pin e6926d8, which is the local tip. The only changes are four descriptive keys: computed_at, llm_tests_history, main_AB4_fetched and timeline. llm_tests.py is 08c72a4c and common.py is 46aef3c, both equal to main. My three-way comparison against HEAD's LLM-rtx.json still gives 113 of 113.
+>
+> 2. **The round-2 numbers are right.** Each item below is recomputed from the run files with my own code:
+>    - Hardware rows, unpaired Welch: +0.12 [−0.60, +0.83], −0.09 [−0.39, +0.21], −0.24 [−0.73, +0.25]. These match.
+>    - The 180 comparisons are 18 arms × 10 baselines, with no duplicates. The Holm values recompute exactly. 101 favour the baseline after Holm (87 GRPO, 14 prompted). 8 beat the portfolio after Holm, all by prompted arms. The lowest-mean arm is repair (Mac).
+>    - 10-seed detectable rows: 0.5059 to 0.5555, matching to 4 decimals.
+>    - Compute labels: the superseded train_* folders are labelled. The $22.17 is read from 22111da's message and the $21.87 from ab2_modal_billing.txt.
+>    - Anytime bands: the means and t bands for prompted 1.5B and GRPO 60 steps match at all 100 budgets.
+>
+> 3. **docs/ablations.md regenerates byte-identically at a3ee8f0.**
+>    - The decimals in report.py's strings are thresholds and settings only.
+>    - docs/verdicts/ablations_rtx_reviews.md now exists, so its 3 citations in docs/ablations.md and 2 in the checklist resolve.
+>    - **Recommended fix:** `baseline_sentences` drops every baseline that has a Holm survivor from the "on unadjusted intervals only" list. That silently omits GRPO 120 steps (Mac) against the portfolio: −0.44 [−0.87, −0.01], Holm p 1.0. It is the only GRPO arm whose unadjusted interval lies below any baseline. The table shows it, but the summary sentence does not. Fix it in code by taking the set difference per arm, not per baseline.
+>
+> 4. **The reviews file is clean.** My reports are quoted in full; I spot-checked 10 sentences from three of them. Local paths are masked as [scratch], and no /Users, /private/tmp or email address appears in either verdict file or in results/ablations/verify_rtx/. In verify_rtx, only the paths changed, and the committed recompute_ab4.json equals my original output.
+>
+> 5. **Authorship passes.** All 24 commits in 3aff768..HEAD are authored and committed by Anirudh Katupilla (GitHub noreply address), with no Claude, Anthropic or Co-Authored-By line.
+>
+> **Cleanup:** I removed head_wt and rtx_wt with `git worktree remove --force`. The blind worktree (local/ab2-provisional-do-not-push) is yours and remains.
+
 ## What changed in response (Anirudh's side, 26 Nov evening)
 
 Commits on anirudh-ablations after 3aff768, all made after the AB2 values were seen, and from a692f0e on after the AB4 values were seen:
@@ -1425,3 +1449,5 @@ Not done at all:
 * the A3 noise-floor band and per-architecture regret;
 * diagnostic (iii) of Diya's AB4;
 * a same-seed rerun to measure GPU nondeterminism.
+
+After the verifier's final check: its recommended fix (the "on unadjusted intervals only" sentence listed arms per baseline, which dropped GRPO 120 steps on the Mac against the portfolio) was applied in the commit after a3ee8f0, and docs/ablations.md was regenerated. That changed one sentence; no number changed.
