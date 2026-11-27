@@ -539,6 +539,32 @@ def rq3() -> list[str]:
     return lines
 
 
+def vs_baselines() -> list[str]:
+    """Exploratory, post hoc: every LLM arm against every required baseline (results/ablations/LLM-vs-baselines.json)."""
+    d = load("LLM-vs-baselines")
+    lines = ["## Exploratory: every LLM arm against the required baselines (post hoc)", ""]
+    if not d:
+        return lines + [MISSING, ""]
+    rows = d["rows"]
+    lines += [f"Asked for on 26 Nov, after every LLM result had been seen; nothing here is registered and no claim rests on it. ILI held-out AUC, pooled seed-SD units, "
+              f"lower is better; each cell is the arm minus the baseline with a Welch interval (negative: the arm searched better). Holm is applied over all {d['comparisons']} "
+              "comparisons as a conservative reading; * marks a Holm rejection. The arms ran on different cards with 10 or 30 seeds, and the GRPO arms transfer from ETTh1 while "
+              "the CPU baselines search ILI directly; the E4 portfolio and warm-started TPE are the transfer controls the GRPO arms are registered against (E4). " + provenance_line(d), ""]
+    base = d.get("baseline_order") or list(d["baselines"])
+    lines += table(["baseline", "ILI held-out AUC"], [[b, ci(d["baselines"][b])] for b in base])
+    cell = {(r["arm"], r["baseline"]): r for r in rows}
+    lines += table(["arm", "AUC", *base],
+                   [[a, ci(v), *(f"{cell[(a, b)]['diff']:+.2f} [{cell[(a, b)]['low']:+.2f}, {cell[(a, b)]['high']:+.2f}]" + ("*" if cell[(a, b)]["reject"] else "") for b in base)]
+                    for a, v in sorted(d["arms"].items(), key=lambda kv: kv[1]["mean"])])
+    rq1 = [b for b in base if "E4" not in b]
+    beaten = sorted({(r["arm"], r["baseline"]) for r in rows if r["beats_holm"]})
+    lines += [f"No arm's interval lies below {', '.join(b for b in rq1 if not any(r['beats_interval'] and r['baseline'] == b for r in rows))} "
+              "(among the RQ1 and E3 baselines). " if any(not any(r["beats_interval"] and r["baseline"] == b for r in rows) for b in rq1) else "",
+              f"After Holm, {len(beaten)} comparisons favour an arm: " + ("; ".join(f"{a} over {b}" for a, b in beaten) if beaten else "none") + ". "
+              f"{sum(r['worse_holm'] for r in rows)} of {len(rows)} favour the baseline. The arm with the lowest mean AUC is {d['best_arm']}.", ""]
+    return lines
+
+
 def glance() -> list[str]:
     """The main readings, each built from the result files."""
     lines = ["## At a glance", ""]
@@ -576,6 +602,18 @@ def glance() -> list[str]:
         t = c["tables"]["ILI_T24"]["tests"]
         lines.append(f"* Controller ablations: none of the {len(t)} league settings is rejected against the reference; the test could detect about "
                      f"{max(v['detectable_80'] for v in t.values()):.2f} SD (AB-C).")
+    vb = load("LLM-vs-baselines")
+    if vb:
+        rq1 = [b for b in (vb.get("baseline_order") or vb["baselines"]) if "E4" not in b]
+        unbeaten = [b for b in rq1 if not any(r["beats_interval"] and r["baseline"] == b for r in vb["rows"])]
+        held = sorted({r["baseline"] for r in vb["rows"] if r["beats_holm"]})
+        winners = {r["arm"] for r in vb["rows"] if r["beats_holm"]}
+        only_prompted = bool(winners) and all("prompted" in a for a in winners)
+        lines.append(f"* Exploratory, post hoc: no LLM arm (prompted or GRPO, any card) beats {', '.join(unbeaten)} on ILI held-out AUC, even by an unadjusted interval; "
+                     f"after Holm over {vb['comparisons']} comparisons the only baselines an arm beats are {', '.join(held) or 'none'}"
+                     + (", each time by an untrained prompted arm, which searches ILI directly and is not the arm that transfer control is matched to" if only_prompted else "")
+                     + f"; {sum(r['worse_holm'] for r in vb['rows'])} "
+                     f"comparisons favour the baseline. The GRPO-trained arms are worse than the untrained prompted model (AB-G).")
     rtx = load("LLM-rtx") or {}
     if "families" in rtx.get("registered", {}):
         reg = rtx["registered"]
@@ -655,7 +693,7 @@ def main() -> int:
              "docs/prereg_ablations.md (AB1, AB3 and AB5 on this branch; AB2 and Soumitra's AB4, 15db163, on origin/soumitra-leg2; Diya's AB4, 2ab2996, on main); every result here is secondary to the primary endpoints. Regret is in pooled "
              "seed-SD units unless stated; lower is better. ILI regret is scored on seeds the search never saw; ETTh1 has one seed per config, "
              "so ETTh1 replays are in-sample and descriptive.", ""]
-    lines += glance() + noise_free() + external() + controller() + registered_llm() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power() + history()
+    lines += glance() + noise_free() + external() + controller() + registered_llm() + vs_baselines() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power() + history()
     TARGET.write_text("\n".join(lines).rstrip() + "\n")
     print(f"wrote {TARGET.relative_to(ROOT)} ({len(lines)} lines)")
     return 0

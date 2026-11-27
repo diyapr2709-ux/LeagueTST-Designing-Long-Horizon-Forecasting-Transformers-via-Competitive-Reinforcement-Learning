@@ -76,7 +76,7 @@ def main() -> int:
                          "worse_holm": bool(t["reject"] and t["diff"] > 0)})
     result = {"exploratory": "post hoc, asked for on 26 Nov after every LLM result was seen; no claim rests on it",
               "provenance": provenance(__file__, [str(p.relative_to(ROOT)) for p, _ in BASELINES.values()]),
-              "baselines": {k: mean_ci(v) for k, v in base.items()}, "arms": {k: mean_ci(v) for k, v in llm.items()},
+              "baselines": {k: mean_ci(v) for k, v in base.items()}, "baseline_order": list(BASELINES), "arms": {k: mean_ci(v) for k, v in llm.items()},
               "comparisons": len(rows), "rows": rows,
               "any_arm_beats_any_baseline_holm": any(r["beats_holm"] for r in rows),
               "best_arm": min(llm, key=lambda k: sum(llm[k]) / len(llm[k]))}
