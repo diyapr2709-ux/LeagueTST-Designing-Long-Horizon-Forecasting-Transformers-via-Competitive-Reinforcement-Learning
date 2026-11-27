@@ -1117,7 +1117,7 @@ def glance() -> list[str]:
         only_prompted = bool(winners) and all("prompted" in a for a in winners)
         lines.append(f"* Exploratory, post hoc (Holm over {vb['comparisons']} comparisons): no LLM arm (prompted or GRPO, any card) beats {', '.join(x['never'])} on ILI held-out AUC, "
                      "even by an unadjusted interval"
-                     + ("; on unadjusted intervals only, " + "; ".join(f"{', '.join(a)} lie below {b}" for b, a in x["below"].items() if b not in x["held"])
+                     + ("; on unadjusted intervals only, " + "; ".join(f"{', '.join(a)} {'lies' if len(a) == 1 else 'lie'} below {b}" for b, a in x["below"].items() if b not in x["held"])
                         + ", and none of these survives Holm" if any(b not in x["held"] for b in x["below"]) else "")
                      + (f"; after Holm the only baselines an arm beats are {', '.join(x['held'])}" if x["held"] else "; after Holm no arm beats any baseline")
                      + (", each time by an untrained prompted arm, which searches ILI directly and is not the arm that transfer control is matched to" if only_prompted else "")
