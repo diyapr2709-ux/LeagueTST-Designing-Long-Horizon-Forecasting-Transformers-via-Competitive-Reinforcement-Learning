@@ -1,0 +1,1586 @@
+{
+ "descriptive": "added 26 Nov after every result was seen; sums of what the records hold, no test",
+ "dollars": {
+  "billed_cost": "0E-8",
+  "comments": [
+   "AB2 evidence: output of 'MODAL_PROFILE=soumitra .venv/bin/modal billing summary --json' on 2026-11-25T00:10:26-05:00.",
+   "The CLI reports month-to-date spend only; the free credit left ($8.15 on 24 Nov) was read from the Modal dashboard header (results/runs/E4/soumitra_*/J*.png show 'Credits $8.15')."
+  ],
+  "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+  "metered_cost": "21.86573300",
+  "path": "results/logs/ab2_modal_billing.txt",
+  "read_at": "2026-11-25T00:10:26-05:00"
+ },
+ "e4_spend": {
+  "commit": "22111daa57f1e15c4fe8502d847760870e560b68",
+  "line": "Spend for J1 and J2 together: metered $22.17, billed $0.00 (free credit).",
+  "metered": 22.17,
+  "time": "2026-11-24T16:17:34-05:00"
+ },
+ "provenance": {
+  "git_hash": "1c90bed2afab8f95332d81fc39d6ca3113aa0ded",
+  "inputs_sha256": {
+   "results/ablations/mps/ABL_G_steps_mps/ILI_T24/grpo_league_from_ETTh1_steps120_mps_runs.jsonl": "82897f144f9c0af03bcf70ca4ad90b52cb6a6c3bf64a18b0e3fc5171ee94cf31",
+   "results/ablations/mps/ABL_G_steps_mps/ILI_T24/grpo_league_from_ETTh1_steps30_mps_runs.jsonl": "5f862115367ce6eba2e87898adb0e4eded926ba96b9a1201e7233713997f06f6",
+   "results/ablations/mps/ABL_G_steps_mps/ILI_T24/grpo_league_from_ETTh1_steps60_mps_runs.jsonl": "90fa5ccc0c918c19815a33db0ab45c36207634ec8e9990cf777f330a428efbf8",
+   "results/ablations/mps/ABL_G_steps_mps/ILI_T24/training.jsonl": "2a79a2a3f129966eb857a56f85f08c9f11c4bf915c2f0ae61cd2a7c7ee84908f",
+   "results/ablations/mps/ABL_P_anon_mps/ETTh1_T336/qwen_prompted_anon_mps_runs.jsonl": "d7fa85e644506e936fb718d0b7191426760a8365eb4d048cf3c82310afaee7f9",
+   "results/ablations/mps/ABL_P_anon_mps/ILI_T24/qwen_prompted_anon_mps_runs.jsonl": "d4c3b4ddc6c5abd2355512a2ce47ab87fe809b497ff383d1c0407aa5abe8bbba",
+   "results/ablations/mps/ABL_P_ref_mps/ETTh1_T336/qwen_prompted_mps_runs.jsonl": "2129b14f39b0cdc7677f5e0a526086e2fe7c169683b61f30cf418f81a44d6f6b",
+   "results/ablations/mps/ABL_P_ref_mps/ILI_T24/qwen_prompted_mps_runs.jsonl": "f5d707c04ae0d1ff02f31669a452d07592e8c5f15d495757d25f048eb083693c",
+   "results/ablations/mps/ABL_P_repair_mps/ETTh1_T336/qwen_prompted_repair_mps_runs.jsonl": "e9b27fc4953fdcff17e410288c9fa86f6a35b3b6a9fdee221a865c309164564e",
+   "results/ablations/mps/ABL_P_repair_mps/ILI_T24/qwen_prompted_repair_mps_runs.jsonl": "ee04d1ba8c8e738f9053b89700896b5dae814add2b29375fdc39268c81c8f42c",
+   "results/ablations/mps/ABL_Q_prompted_mps/ILI_T24/qwen_prompted_mps_runs.jsonl": "e468d6db384661cf1e6a157f224e4f5ebebfc6fcfec25b26941ab39d972c4121",
+   "results/runs/E4/soumitra_ETTh1_T336/training.jsonl": "1b23e0a97fd785a3e721394b6fa85fc7c8ee011597319629bca7ad6eb8b9e099",
+   "results/runs/E4/soumitra_ILI_T24/training.jsonl": "45147f89ab11a53628bf178a821b21a1d2b56e11f470a2c6781dde17b977f884",
+   "results/runs/E4/train_ETTh1/errors.jsonl": "15cb8ddc1331a49ce5fd2b8abb52d6633ececfdb4df8938250e0ea38d8b8500f",
+   "results/runs/E4/train_ETTh1/training.jsonl": "09d68f4a86d368a0dfbe58f6a1c8e8367b71633bf3a757b2e7085919737237c9",
+   "results/runs/E4/train_ILI/errors.jsonl": "61ea5b43c178bcd6a21be4c4b8dd53130a77962299a4c07a17b2fd5dc6885b70",
+   "results/runs/E4/train_ILI/training.jsonl": "a7cab35ca1da9a82f4b42f8edfb6c8848dceb24df8b2bef5b7f964a8d53c68a6",
+   "results/search/E3/ETTh1_T336/cpu_runs.jsonl": "77c509887c67a41de0f87381d08caf33afc6f491c5d7444771ad1239109acc8c",
+   "results/search/E3/ETTh1_T336/qwen_prompted_runs.jsonl": "04aa248107a09839f84645ba1e2dfa8808dc33609b29024c9ae5a7374f9b8ba3",
+   "results/search/E3/ILI_T24/cpu_runs.jsonl": "093885b956513e3ce831adfb6942aa3f3bd6281331adddcaef19a16e47130c8f",
+   "results/search/E3/ILI_T24/qwen_prompted_runs.jsonl": "d62b8bf00323eec52eb08ce40093a56498224c4488d700c2491a86cd0ec96ca0",
+   "results/search/E4/ETTh1_T336/grpo_league_from_ILI_runs.jsonl": "7c48cd6fbced5ad6b1fa916a0602a2e818ba59ae532f763c4f65274a638e7171",
+   "results/search/E4/ETTh1_T336/grpo_none_from_ILI_runs.jsonl": "6d2bd17eb8619feb5f07881d39f620685cd79306d42b357681b58c95d62f2995",
+   "results/search/E4/ETTh1_T336/grpo_uniform_from_ILI_runs.jsonl": "0715284a1d55447ba2fdeff4d8bd23c95d534889bb8d985d3f2fe4bd8d7710d4",
+   "results/search/E4/ETTh1_T336/transfer_from_ILI_runs.jsonl": "cae2c1807e18bc812f912d47271a1bf24d7df51cc15ad2e93fcee3dba2218513",
+   "results/search/E4/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": "54047f02c1edee748b6e20628c16e29bdba567aab3e4b4958696c6f2ff2cd103",
+   "results/search/E4/ILI_T24/grpo_none_from_ETTh1_runs.jsonl": "c1fe5d6020a86ae6733cc8f7dac1b53f32fa8435aaeb31dbd0bfa68b35bdce22",
+   "results/search/E4/ILI_T24/transfer_from_ETTh1_runs.jsonl": "0a3e41c5c561cfc95900ec1e9e28783a5b441753e18b6bf8adad7e768a806605"
+  },
+  "script": "scripts/ablations/compute.py",
+  "script_sha256": "319ef0ba7690a97341e93ab05b93e91591882f845320b06cc09520d762dbac2c",
+  "versions": {
+   "numpy": "2.5.4",
+   "optuna": "5.1.0",
+   "python": "3.12.16",
+   "scikit-learn": "1.9.1",
+   "scipy": "1.18.1",
+   "torch": "2.15.0"
+  }
+ },
+ "queue_wall_clock": {
+  "results/logs/ab4_queue_status.txt": [
+   {
+    "end": "2026-11-26T02:09:35-05:00",
+    "job": "abl_p_anon_local_ILI",
+    "outcome": "DONE rc=0",
+    "seconds": 2203.0,
+    "start": "2026-11-26T01:32:52-05:00"
+   },
+   {
+    "end": "2026-11-26T04:01:31-05:00",
+    "job": "abl_p_repair_local_ILI",
+    "outcome": "DONE rc=0",
+    "seconds": 6716.0,
+    "start": "2026-11-26T02:09:35-05:00"
+   },
+   {
+    "end": "2026-11-26T05:21:14-05:00",
+    "job": "abl_p_anon_local_ETTh1",
+    "outcome": "INTERRUPTED",
+    "seconds": 4783.0,
+    "start": "2026-11-26T04:01:31-05:00"
+   },
+   {
+    "end": "2026-11-26T05:36:50-05:00",
+    "job": "abl_p_anon_local_ETTh1",
+    "outcome": "DONE rc=0",
+    "seconds": 936.0,
+    "start": "2026-11-26T05:21:14-05:00"
+   },
+   {
+    "end": "2026-11-26T07:19:41-05:00",
+    "job": "abl_p_repair_local_ETTh1",
+    "outcome": "DONE rc=0",
+    "seconds": 6171.0,
+    "start": "2026-11-26T05:36:50-05:00"
+   },
+   {
+    "end": "2026-11-26T11:29:12-05:00",
+    "job": "abl_g_steps30_local",
+    "outcome": "DONE rc=0",
+    "seconds": 14971.0,
+    "start": "2026-11-26T07:19:41-05:00"
+   },
+   {
+    "end": "2026-11-26T18:25:15-05:00",
+    "job": "abl_g_steps120_local",
+    "outcome": "DONE rc=0",
+    "seconds": 24963.0,
+    "start": "2026-11-26T11:29:12-05:00"
+   }
+  ],
+  "results/logs/l4_queue_status.txt": [
+   {
+    "end": "2026-11-25T00:40:42-05:00",
+    "job": "abl_p_ref_local_ILI",
+    "outcome": "DONE rc=0",
+    "seconds": 1611.0,
+    "start": "2026-11-25T00:13:51-05:00"
+   },
+   {
+    "end": "2026-11-25T01:10:33-05:00",
+    "job": "abl_p_05b_local_ILI",
+    "outcome": "DONE rc=0",
+    "seconds": 1791.0,
+    "start": "2026-11-25T00:40:42-05:00"
+   },
+   {
+    "end": "2026-11-25T02:03:07-05:00",
+    "job": "abl_p_3b_local_ILI",
+    "outcome": "DONE rc=0",
+    "seconds": 3153.0,
+    "start": "2026-11-25T01:10:34-05:00"
+   },
+   {
+    "end": "2026-11-25T02:23:26-05:00",
+    "job": "abl_p_ref_local_ETTh1",
+    "outcome": "DONE rc=0",
+    "seconds": 1219.0,
+    "start": "2026-11-25T02:03:07-05:00"
+   },
+   {
+    "end": "2026-11-25T02:43:41-05:00",
+    "job": "abl_p_05b_local_ETTh1",
+    "outcome": "DONE rc=0",
+    "seconds": 1215.0,
+    "start": "2026-11-25T02:23:26-05:00"
+   },
+   {
+    "end": "2026-11-25T03:13:58-05:00",
+    "job": "abl_p_3b_local_ETTh1",
+    "outcome": "DONE rc=0",
+    "seconds": 1817.0,
+    "start": "2026-11-25T02:43:41-05:00"
+   },
+   {
+    "end": "2026-11-25T06:37:54-05:00",
+    "job": "abl_g_ref_local",
+    "outcome": "DONE rc=0",
+    "seconds": 12236.0,
+    "start": "2026-11-25T03:13:58-05:00"
+   },
+   {
+    "end": "2026-11-25T10:13:02-05:00",
+    "job": "abl_g_beta0_local",
+    "outcome": "DONE rc=0",
+    "seconds": 12908.0,
+    "start": "2026-11-25T06:37:54-05:00"
+   },
+   {
+    "end": "2026-11-25T13:44:26-05:00",
+    "job": "abl_g_beta01_local",
+    "outcome": "DONE rc=0",
+    "seconds": 12684.0,
+    "start": "2026-11-25T10:13:02-05:00"
+   }
+  ]
+ },
+ "rows": [
+  {
+   "arm": "E3 cpu: asha",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89904.0
+  },
+  {
+   "arm": "E3 cpu: epochk",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89696.0
+  },
+  {
+   "arm": "E3 cpu: pg",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89530.0
+  },
+  {
+   "arm": "E3 cpu: pg_league",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89554.0
+  },
+  {
+   "arm": "E3 cpu: pg_league_charged",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89546.0
+  },
+  {
+   "arm": "E3 cpu: pg_uniform_rivals",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89499.0
+  },
+  {
+   "arm": "E3 cpu: random",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89534.0
+  },
+  {
+   "arm": "E3 cpu: re",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89657.0
+  },
+  {
+   "arm": "E3 cpu: referee",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89746.0
+  },
+  {
+   "arm": "E3 cpu: tpe",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89626.0
+  },
+  {
+   "arm": "E3 qwen_prompted: qwen_prompted",
+   "cards": {
+    "NVIDIA A10": 4,
+    "NVIDIA A10G": 6
+   },
+   "kind": "search",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 841.7343208789825,
+   "seconds_by_card": {
+    "NVIDIA A10": 289.65806674957275,
+    "NVIDIA A10G": 552.0762541294098
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 29898.0
+  },
+  {
+   "arm": "E3 cpu: asha",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89937.0
+  },
+  {
+   "arm": "E3 cpu: epochk",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89765.0
+  },
+  {
+   "arm": "E3 cpu: pg",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89646.0
+  },
+  {
+   "arm": "E3 cpu: pg_league",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89670.0
+  },
+  {
+   "arm": "E3 cpu: pg_league_charged",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89636.0
+  },
+  {
+   "arm": "E3 cpu: pg_uniform_rivals",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89697.0
+  },
+  {
+   "arm": "E3 cpu: random",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89667.0
+  },
+  {
+   "arm": "E3 cpu: re",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89589.0
+  },
+  {
+   "arm": "E3 cpu: referee",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89731.0
+  },
+  {
+   "arm": "E3 cpu: tpe",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89647.0
+  },
+  {
+   "arm": "E3 qwen_prompted: qwen_prompted",
+   "cards": {
+    "NVIDIA A10": 10
+   },
+   "kind": "search",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1112.4704048633575,
+   "seconds_by_card": {
+    "NVIDIA A10": 1112.4704048633575
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29889.0
+  },
+  {
+   "arm": "E4 grpo_league_from_ILI: grpo_league_from_ILI",
+   "cards": {
+    "NVIDIA A10": 6,
+    "NVIDIA A10G": 4
+   },
+   "kind": "search",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1211.6568009853363,
+   "seconds_by_card": {
+    "NVIDIA A10": 711.0513002872467,
+    "NVIDIA A10G": 500.6055006980896
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 29879.0
+  },
+  {
+   "arm": "E4 grpo_none_from_ILI: grpo_none_from_ILI",
+   "cards": {
+    "NVIDIA A10": 6,
+    "NVIDIA A10G": 4
+   },
+   "kind": "search",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1277.8655424118042,
+   "seconds_by_card": {
+    "NVIDIA A10": 713.6505715847015,
+    "NVIDIA A10G": 564.2149708271027
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 29856.0
+  },
+  {
+   "arm": "E4 grpo_uniform_from_ILI: grpo_uniform_from_ILI",
+   "cards": {
+    "NVIDIA A10": 3,
+    "NVIDIA A10G": 2
+   },
+   "kind": "search",
+   "machine": "Modal",
+   "records": 5,
+   "records_with_seconds": 5,
+   "seconds": 608.860024690628,
+   "seconds_by_card": {
+    "NVIDIA A10": 295.9075050354004,
+    "NVIDIA A10G": 312.95251965522766
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 14909.0
+  },
+  {
+   "arm": "E4 transfer_from_ILI: portfolio_from_ILI",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89880.0
+  },
+  {
+   "arm": "E4 transfer_from_ILI: tpe_warm_from_ILI",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ETTh1_T336",
+   "target_epochs": 89613.0
+  },
+  {
+   "arm": "E4 grpo_league_from_ETTh1: grpo_league_from_ETTh1",
+   "cards": {
+    "NVIDIA A10": 5,
+    "NVIDIA A10G": 5
+   },
+   "kind": "search",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1759.1730751991272,
+   "seconds_by_card": {
+    "NVIDIA A10": 762.2706260681152,
+    "NVIDIA A10G": 996.902449131012
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29930.0
+  },
+  {
+   "arm": "E4 grpo_none_from_ETTh1: grpo_none_from_ETTh1",
+   "cards": {
+    "NVIDIA A10": 5,
+    "NVIDIA A10G": 5
+   },
+   "kind": "search",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1920.7181012630463,
+   "seconds_by_card": {
+    "NVIDIA A10": 825.5379328727722,
+    "NVIDIA A10G": 1095.180168390274
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29933.0
+  },
+  {
+   "arm": "E4 transfer_from_ETTh1: portfolio_from_ETTh1",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89680.0
+  },
+  {
+   "arm": "E4 transfer_from_ETTh1: tpe_warm_from_ETTh1",
+   "cards": {
+    "not recorded": 30
+   },
+   "kind": "search",
+   "machine": "CPU replay",
+   "records": 30,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "table": "ILI_T24",
+   "target_epochs": 89659.0
+  },
+  {
+   "arm": "E4 training (soumitra_ETTh1_T336): league, source ILI",
+   "cards": {
+    "NVIDIA A10": 6,
+    "NVIDIA A10G": 4
+   },
+   "kind": "training",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 17150.064873933792,
+   "seconds_by_card": {
+    "NVIDIA A10": 9592.494884729385,
+    "NVIDIA A10G": 7557.569989204407
+   },
+   "source_epochs": 87547.0,
+   "superseded": false,
+   "table": "soumitra_ETTh1_T336"
+  },
+  {
+   "arm": "E4 training (soumitra_ETTh1_T336): none, source ILI",
+   "cards": {
+    "NVIDIA A10": 5,
+    "NVIDIA A10G": 3
+   },
+   "kind": "training",
+   "machine": "Modal",
+   "records": 8,
+   "records_with_seconds": 8,
+   "seconds": 11032.28400349617,
+   "seconds_by_card": {
+    "NVIDIA A10": 6632.766612768173,
+    "NVIDIA A10G": 4399.517390727997
+   },
+   "source_epochs": 69252.0,
+   "superseded": false,
+   "table": "soumitra_ETTh1_T336"
+  },
+  {
+   "arm": "E4 training (soumitra_ETTh1_T336): uniform, source ILI",
+   "cards": {
+    "NVIDIA A10": 2,
+    "NVIDIA A10G": 3
+   },
+   "kind": "training",
+   "machine": "Modal",
+   "records": 5,
+   "records_with_seconds": 5,
+   "seconds": 7007.718522310257,
+   "seconds_by_card": {
+    "NVIDIA A10": 2677.7969160079956,
+    "NVIDIA A10G": 4329.921606302261
+   },
+   "source_epochs": 43470.0,
+   "superseded": false,
+   "table": "soumitra_ETTh1_T336"
+  },
+  {
+   "arm": "E4 training (soumitra_ILI_T24): league, source ETTh1",
+   "cards": {
+    "NVIDIA A10": 6,
+    "NVIDIA A10G": 4
+   },
+   "kind": "training",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 16923.152933597565,
+   "seconds_by_card": {
+    "NVIDIA A10": 9783.673151731491,
+    "NVIDIA A10G": 7139.479781866074
+   },
+   "source_epochs": 112140.0,
+   "superseded": false,
+   "table": "soumitra_ILI_T24"
+  },
+  {
+   "arm": "E4 training (soumitra_ILI_T24): none, source ETTh1",
+   "cards": {
+    "NVIDIA A10": 6,
+    "NVIDIA A10G": 4
+   },
+   "kind": "training",
+   "machine": "Modal",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 13256.841315984726,
+   "seconds_by_card": {
+    "NVIDIA A10": 7662.690283298492,
+    "NVIDIA A10G": 5594.1510326862335
+   },
+   "source_epochs": 110561.0,
+   "superseded": false,
+   "table": "soumitra_ILI_T24"
+  },
+  {
+   "arm": "E4 training (train_ETTh1, superseded (A25), never deployed, compute only): league, source ETTh1",
+   "cards": {
+    "NVIDIA A10": 2,
+    "NVIDIA A10G": 1
+   },
+   "kind": "training, superseded (A25), never deployed, compute only",
+   "machine": "Modal",
+   "records": 3,
+   "records_with_seconds": 3,
+   "seconds": 3224.4704418182373,
+   "seconds_by_card": {
+    "NVIDIA A10": 2099.361574411392,
+    "NVIDIA A10G": 1125.108867406845
+   },
+   "source_epochs": 33663.0,
+   "superseded": true,
+   "table": "train_ETTh1"
+  },
+  {
+   "arm": "E4 training (train_ETTh1, superseded (A25), never deployed, compute only): none, source ETTh1",
+   "cards": {
+    "NVIDIA A10": 2
+   },
+   "kind": "training, superseded (A25), never deployed, compute only",
+   "machine": "Modal",
+   "records": 2,
+   "records_with_seconds": 2,
+   "seconds": 2515.4457726478577,
+   "seconds_by_card": {
+    "NVIDIA A10": 2515.4457726478577
+   },
+   "source_epochs": 21318.0,
+   "superseded": true,
+   "table": "train_ETTh1"
+  },
+  {
+   "arm": "E4 training (train_ETTh1, superseded (A25), never deployed, compute only): error records",
+   "cards": {},
+   "kind": "errors",
+   "machine": "Modal",
+   "records": 15,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "superseded": true,
+   "table": "train_ETTh1"
+  },
+  {
+   "arm": "E4 training (train_ILI, superseded (A25), never deployed, compute only): league, source ILI",
+   "cards": {
+    "NVIDIA A10": 2
+   },
+   "kind": "training, superseded (A25), never deployed, compute only",
+   "machine": "Modal",
+   "records": 2,
+   "records_with_seconds": 2,
+   "seconds": 2208.403727054596,
+   "seconds_by_card": {
+    "NVIDIA A10": 2208.403727054596
+   },
+   "source_epochs": 17386.0,
+   "superseded": true,
+   "table": "train_ILI"
+  },
+  {
+   "arm": "E4 training (train_ILI, superseded (A25), never deployed, compute only): none, source ILI",
+   "cards": {
+    "NVIDIA A10": 1
+   },
+   "kind": "training, superseded (A25), never deployed, compute only",
+   "machine": "Modal",
+   "records": 1,
+   "records_with_seconds": 1,
+   "seconds": 693.3570020198822,
+   "seconds_by_card": {
+    "NVIDIA A10": 693.3570020198822
+   },
+   "source_epochs": 8870.0,
+   "superseded": true,
+   "table": "train_ILI"
+  },
+  {
+   "arm": "E4 training (train_ILI, superseded (A25), never deployed, compute only): uniform, source ILI",
+   "cards": {
+    "NVIDIA A10": 1,
+    "NVIDIA A10G": 2
+   },
+   "kind": "training, superseded (A25), never deployed, compute only",
+   "machine": "Modal",
+   "records": 3,
+   "records_with_seconds": 3,
+   "seconds": 3516.2375099658966,
+   "seconds_by_card": {
+    "NVIDIA A10": 646.2050421237946,
+    "NVIDIA A10G": 2870.032467842102
+   },
+   "source_epochs": 27404.0,
+   "superseded": true,
+   "table": "train_ILI"
+  },
+  {
+   "arm": "E4 training (train_ILI, superseded (A25), never deployed, compute only): error records",
+   "cards": {},
+   "kind": "errors",
+   "machine": "Modal",
+   "records": 44,
+   "records_with_seconds": 0,
+   "seconds": null,
+   "seconds_by_card": {},
+   "superseded": true,
+   "table": "train_ILI"
+  },
+  {
+   "arm": "RTX ABL_P_ref_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1480.451698064804,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1480.451698064804
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89668.0
+  },
+  {
+   "arm": "RTX ABL_P_ref_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1094.0885076522827,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1094.0885076522827
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89610.0
+  },
+  {
+   "arm": "RTX ABL_P_anon_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 2002.1712625026703,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 2002.1712625026703
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89590.0
+  },
+  {
+   "arm": "RTX ABL_P_anon_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 4518.695401668549,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 4518.695401668549
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89657.0
+  },
+  {
+   "arm": "RTX ABL_P_repair_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 5976.364109992981,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 5976.364109992981
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89645.0
+  },
+  {
+   "arm": "RTX ABL_P_repair_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 5406.424879550934,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 5406.424879550934
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89609.0
+  },
+  {
+   "arm": "RTX ABL_P_05b_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1665.4896154403687,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1665.4896154403687
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89667.0
+  },
+  {
+   "arm": "RTX ABL_P_05b_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1103.3499674797058,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1103.3499674797058
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89529.0
+  },
+  {
+   "arm": "RTX ABL_P_3b_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 2999.934354543686,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 2999.934354543686
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89667.0
+  },
+  {
+   "arm": "RTX ABL_P_3b_local",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 30
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1665.6229600906372,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1665.6229600906372
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89539.0
+  },
+  {
+   "arm": "RTX ABL_G_steps30_local (deployment)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 3481.1291694641113,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 3481.1291694641113
+   },
+   "table": "ILI_T24",
+   "target_epochs": 28859.0
+  },
+  {
+   "arm": "RTX ABL_G_steps30_local (training)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "training",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 10626.662131547928,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10626.662131547928
+   },
+   "source_epochs": 54043.0,
+   "table": "ETTh1_T336 (source)"
+  },
+  {
+   "arm": "RTX ABL_G_ref_local (deployment)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1187.7603197097778,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1187.7603197097778
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29904.0
+  },
+  {
+   "arm": "RTX ABL_G_ref_local (training)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "training",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 10736.139735937119,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10736.139735937119
+   },
+   "source_epochs": 112080.0,
+   "table": "ETTh1_T336 (source)"
+  },
+  {
+   "arm": "RTX ABL_G_steps120_local (deployment)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1348.945149421692,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1348.945149421692
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29907.0
+  },
+  {
+   "arm": "RTX ABL_G_steps120_local (training)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "training",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 22988.989943504333,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 22988.989943504333
+   },
+   "source_epochs": 221901.0,
+   "table": "ETTh1_T336 (source)"
+  },
+  {
+   "arm": "RTX ABL_G_beta0_local (deployment)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1463.440303325653,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1463.440303325653
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29868.0
+  },
+  {
+   "arm": "RTX ABL_G_beta0_local (training)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "training",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 11111.817551136017,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 11111.817551136017
+   },
+   "source_epochs": 105844.0,
+   "table": "ETTh1_T336 (source)"
+  },
+  {
+   "arm": "RTX ABL_G_beta01_local (deployment)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "search",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 1142.5217988491058,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 1142.5217988491058
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29935.0
+  },
+  {
+   "arm": "RTX ABL_G_beta01_local (training)",
+   "cards": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 10
+   },
+   "kind": "training",
+   "machine": "RTX (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 11195.089928627014,
+   "seconds_by_card": {
+    "NVIDIA GeForce RTX 4080 Laptop GPU": 11195.089928627014
+   },
+   "source_epochs": 113978.0,
+   "table": "ETTh1_T336 (source)"
+  },
+  {
+   "arm": "Mac ABL_G_steps_mps: grpo_league_from_ETTh1_steps120_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 10
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 863.8675198554993,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 863.8675198554993
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29885.0
+  },
+  {
+   "arm": "Mac ABL_G_steps_mps: grpo_league_from_ETTh1_steps30_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 10
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 919.4676916599274,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 919.4676916599274
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29918.0
+  },
+  {
+   "arm": "Mac ABL_G_steps_mps: grpo_league_from_ETTh1_steps60_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 10
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 871.7807269096375,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 871.7807269096375
+   },
+   "table": "ILI_T24",
+   "target_epochs": 29874.0
+  },
+  {
+   "arm": "Mac ABL_G_steps_mps (training)",
+   "cards": {
+    "Apple M4 Pro (MPS)": 10
+   },
+   "kind": "training",
+   "machine": "Mac (local)",
+   "records": 10,
+   "records_with_seconds": 10,
+   "seconds": 13614.933497190475,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 13614.933497190475
+   },
+   "source_epochs": 223158.0,
+   "table": "ETTh1_T336 (source)"
+  },
+  {
+   "arm": "Mac ABL_P_anon_mps: qwen_prompted_anon_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 30
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1193.3366162776947,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 1193.3366162776947
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89634.0
+  },
+  {
+   "arm": "Mac ABL_P_anon_mps: qwen_prompted_anon_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 30
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 4211.2510776519775,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 4211.2510776519775
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89631.0
+  },
+  {
+   "arm": "Mac ABL_P_ref_mps: qwen_prompted_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 30
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1208.372076034546,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 1208.372076034546
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89595.0
+  },
+  {
+   "arm": "Mac ABL_P_ref_mps: qwen_prompted_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 30
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 2460.7686398029327,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 2460.7686398029327
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89700.0
+  },
+  {
+   "arm": "Mac ABL_P_repair_mps: qwen_prompted_repair_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 30
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1522.2106778621674,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 1522.2106778621674
+   },
+   "table": "ETTh1_T336",
+   "target_epochs": 89494.0
+  },
+  {
+   "arm": "Mac ABL_P_repair_mps: qwen_prompted_repair_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 30
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 4662.815808773041,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 4662.815808773041
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89679.0
+  },
+  {
+   "arm": "Mac ABL_Q_prompted_mps: qwen_prompted_mps",
+   "cards": {
+    "Apple M4 Pro (MPS)": 30
+   },
+   "kind": "search",
+   "machine": "Mac (local)",
+   "records": 30,
+   "records_with_seconds": 30,
+   "seconds": 1621.13720369339,
+   "seconds_by_card": {
+    "Apple M4 Pro (MPS)": 1621.13720369339
+   },
+   "table": "ILI_T24",
+   "target_epochs": 89687.0
+  }
+ ],
+ "rtx_source": {
+  "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+  "dir": "results/ablations/rtx",
+  "files": [
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_P_ref_local/ILI_T24/qwen_prompted_1.5b_local_runs.jsonl",
+    "sha256": "2d927d437e3b7ff386a5e0c208d1c27371a882f49bda9aeec09692b016e3474a",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_P_ref_local/ETTh1_T336/qwen_prompted_1.5b_local_runs.jsonl",
+    "sha256": "3c729c7f5e4a48e79d4d7024b39d960c841c60ba42d87a4160b02a58ec21e6f1",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T07:20:49-05:00",
+    "path": "results/ablations/rtx/ABL_P_anon_local/ILI_T24/qwen_prompted_anon_1.5b_local_runs.jsonl",
+    "sha256": "92faed56fc8e13c186a79eb2b5d1009d6e5cdc75058747e4110a0703064ea29d",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T07:20:49-05:00",
+    "path": "results/ablations/rtx/ABL_P_anon_local/ETTh1_T336/qwen_prompted_anon_1.5b_local_runs.jsonl",
+    "sha256": "648ab02dd2fb9dbbcd9014f36fa19d0f0395cd6a19f78f8c81a4f5f54dfaa962",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T07:20:49-05:00",
+    "path": "results/ablations/rtx/ABL_P_repair_local/ILI_T24/qwen_prompted_repair_1.5b_local_runs.jsonl",
+    "sha256": "08eb45a63de2b5c6c713b027c667f06cacfeeb6568a7167dc032e9b7a306b9b9",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T07:20:49-05:00",
+    "path": "results/ablations/rtx/ABL_P_repair_local/ETTh1_T336/qwen_prompted_repair_1.5b_local_runs.jsonl",
+    "sha256": "d0e4373fb1221ed027b45525f266f11ac221854382be93c41c2245936a7457c4",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_P_05b_local/ILI_T24/qwen_prompted_0.5b_local_runs.jsonl",
+    "sha256": "93826f85c3c31885a12566d56510f2c008e5ce5a30e90866fa863bf9d476030e",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_P_05b_local/ETTh1_T336/qwen_prompted_0.5b_local_runs.jsonl",
+    "sha256": "cfea999efae9130311650a416544c579f1f1e0f6f239abcb3a7007582480154b",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_P_3b_local/ILI_T24/qwen_prompted_3b_local_runs.jsonl",
+    "sha256": "3238a0244ec8e465ab63531e9bf7c3fc5da6a9e872d9927e90841ee96eea3d76",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_P_3b_local/ETTh1_T336/qwen_prompted_3b_local_runs.jsonl",
+    "sha256": "f262fadfed06354c63761e05e6a516a76491bf51caad321ae2cb5bb78d183b8b",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T11:29:53-05:00",
+    "path": "results/ablations/rtx/ABL_G_steps30_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl",
+    "sha256": "ff28e524f42d067566d3ab32d385895435b1616c88b2ee505737d8ee8b6f60e7",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T11:29:53-05:00",
+    "path": "results/ablations/rtx/ABL_G_steps30_local/ILI_T24/training.jsonl",
+    "sha256": "0a3748e71931ee8781257108abceda42e7581f2befba71cd13f6eea5c98064d8",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_G_ref_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl",
+    "sha256": "4d7cdbe3a37a2b5031e5aae06ee7213371dcfd5a62ee09dccf9a9be4f37b4644",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-25T06:46:13-05:00",
+    "path": "results/runs/ABL_G_ref_local/ILI_T24/training.jsonl",
+    "sha256": "0b08db52440470aa4eabce6e7feab9c13874d52edac8eb2419c814d6f26328a0",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T18:25:44-05:00",
+    "path": "results/ablations/rtx/ABL_G_steps120_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl",
+    "sha256": "5d376354a92d8f05c6e89b721673d5c1a0d6c7036d0adf62a2c08866ebeb2f8c",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T18:25:44-05:00",
+    "path": "results/ablations/rtx/ABL_G_steps120_local/ILI_T24/training.jsonl",
+    "sha256": "4c31760884d482cc7006a8708d1d88160913f1efe925befc65fe41f357bd26ca",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_G_beta0_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl",
+    "sha256": "d01e5e453a98b643f7065378f3195964b0410f8a1f83edb9e562af354f259bc5",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-25T10:16:48-05:00",
+    "path": "results/runs/ABL_G_beta0_local/ILI_T24/training.jsonl",
+    "sha256": "c67307cb509a9c192c9b0d0c5b9fe753f5bcf8955c1be64b15bc0d989c428e40",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T01:38:34-05:00",
+    "path": "results/ablations/rtx/ABL_G_beta01_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl",
+    "sha256": "b772468566bacbc3b7b6e11816bd0d6ef2972024eda12bed9e8d40ed0ae05044",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-25T13:47:55-05:00",
+    "path": "results/runs/ABL_G_beta01_local/ILI_T24/training.jsonl",
+    "sha256": "2e6f87426d5d9db6d12264ceee6404c96df99c5c23e4dddc6151f144979b710e",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-25T13:47:55-05:00",
+    "path": "results/logs/l4_queue_status.txt",
+    "sha256": "9daa8c9ea0d145c7e06bf4311c26bdb1702653d3bd3597cb9a2eb1eb6f767db1",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-26T18:25:44-05:00",
+    "path": "results/logs/ab4_queue_status.txt",
+    "sha256": "5ce306c3d9a1f13a6d2a75f19c2d16cc1398d6a8aa02294addfd093063b12cf4",
+    "source": "git"
+   },
+   {
+    "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+    "last_commit_time": "2026-11-25T00:13:47-05:00",
+    "path": "results/logs/ab2_modal_billing.txt",
+    "sha256": "e38536207cdcbd09787d5d1a64412d72343c0b73e087128152cedc2ac94db9ca",
+    "source": "git"
+   }
+  ]
+ },
+ "totals": [
+  {
+   "card": "Apple M4 Pro (MPS)",
+   "hours": 5.426391121811337,
+   "kind": "search",
+   "machine": "Mac (local)",
+   "seconds": 19535.008038520813
+  },
+  {
+   "card": "Apple M4 Pro (MPS)",
+   "hours": 3.7819259714417988,
+   "kind": "training",
+   "machine": "Mac (local)",
+   "seconds": 13614.933497190475
+  },
+  {
+   "card": "NVIDIA A10",
+   "hours": 1.3084851131836572,
+   "kind": "search",
+   "machine": "Modal",
+   "seconds": 4710.546407461166
+  },
+  {
+   "card": "NVIDIA A10",
+   "hours": 10.097061624593206,
+   "kind": "training",
+   "machine": "Modal",
+   "seconds": 36349.42184853554
+  },
+  {
+   "card": "NVIDIA A10",
+   "hours": 2.267436977293756,
+   "kind": "training, superseded (A25), never deployed, compute only",
+   "machine": "Modal",
+   "seconds": 8162.773118257523
+  },
+  {
+   "card": "NVIDIA A10G",
+   "hours": 1.1172032952308655,
+   "kind": "search",
+   "machine": "Modal",
+   "seconds": 4021.9318628311157
+  },
+  {
+   "card": "NVIDIA A10G",
+   "hours": 8.061288833551936,
+   "kind": "training",
+   "machine": "Modal",
+   "seconds": 29020.639800786972
+  },
+  {
+   "card": "NVIDIA A10G",
+   "hours": 1.1097614820135964,
+   "kind": "training, superseded (A25), never deployed, compute only",
+   "machine": "Modal",
+   "seconds": 3995.141335248947
+  },
+  {
+   "card": "NVIDIA GeForce RTX 4080 Laptop GPU",
+   "hours": 10.148997082710267,
+   "kind": "search",
+   "machine": "RTX (local)",
+   "seconds": 36536.38949775696
+  },
+  {
+   "card": "NVIDIA GeForce RTX 4080 Laptop GPU",
+   "hours": 18.516305358542336,
+   "kind": "training",
+   "machine": "RTX (local)",
+   "seconds": 66658.69929075241
+  }
+ ]
+}

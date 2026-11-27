@@ -1,0 +1,156 @@
+{
+ "exploratory": "post hoc sensitivity, added 26 Nov after every result was seen; the registered decisions are per family",
+ "family_sizes": {
+  "AB-C": 3,
+  "AB-G": 2,
+  "AB-L": 2,
+  "AB-P": 3,
+  "AB-X": 3
+ },
+ "provenance": {
+  "git_hash": "1c90bed2afab8f95332d81fc39d6ca3113aa0ded",
+  "inputs_sha256": {
+   "results/ablations/AB-C.json": "9d0b005fb1fd09469f4c257acf4ac0c670cfe2f1748550e775468a6724c56b26",
+   "results/ablations/AB-L.json": "b82641d9142f4496ed29cf32620589d281acb08130ae2035f9584e3e81b96ce2",
+   "results/ablations/AB-X.json": "d0d7b62990e2ef5d9d41d4d22dd6a0e772394c05df5f74a9ee34d278e335e7b6",
+   "results/ablations/LLM-rtx.json": "8f766c9d10fb0dc3e94b64900684b802fd05fb4c693a09351f00ffb85fe3b3f6"
+  },
+  "script": "scripts/ablations/programme_holm.py",
+  "script_sha256": "2c630a3058d91b3aae86596b8f987a6bc65dbb9ddac3c851f4a6e758c9937761",
+  "versions": {
+   "numpy": "2.5.4",
+   "optuna": "5.1.0",
+   "python": "3.12.16",
+   "scikit-learn": "1.9.1",
+   "scipy": "1.18.1",
+   "torch": "2.15.0"
+  }
+ },
+ "rows": [
+  {
+   "family": "AB-C",
+   "family_p_holm": 0.9866601333986661,
+   "family_reject": false,
+   "p": 0.3288867111328887,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "rivals_1 vs ref"
+  },
+  {
+   "family": "AB-C",
+   "family_p_holm": 0.9866601333986661,
+   "family_reject": false,
+   "p": 0.7796322036779633,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "rivals_8 vs ref"
+  },
+  {
+   "family": "AB-C",
+   "family_p_holm": 0.9866601333986661,
+   "family_reject": false,
+   "p": 0.4752352476475235,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "snapshot_1 vs ref"
+  },
+  {
+   "family": "AB-X",
+   "family_p_holm": 1.0,
+   "family_reject": false,
+   "p": 0.8842811571884281,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "dehb vs random"
+  },
+  {
+   "family": "AB-X",
+   "family_p_holm": 1.0,
+   "family_reject": false,
+   "p": 0.9727302726972731,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "hyperband vs random"
+  },
+  {
+   "family": "AB-X",
+   "family_p_holm": 0.15809841901580984,
+   "family_reject": false,
+   "p": 0.05269947300526995,
+   "programme_p_holm": 0.47429525704742953,
+   "programme_reject": false,
+   "test": "smac vs random"
+  },
+  {
+   "family": "AB-P",
+   "family_p_holm": 0.014539854601453985,
+   "family_reject": true,
+   "p": 0.007269927300726993,
+   "programme_p_holm": 0.07996920030799692,
+   "programme_reject": false,
+   "test": "anon vs ref_local"
+  },
+  {
+   "family": "AB-P",
+   "family_p_holm": 0.8613513864861352,
+   "family_reject": false,
+   "p": 0.8613513864861352,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "repair vs ref_local"
+  },
+  {
+   "family": "AB-P",
+   "family_p_holm": 8.999910000899992e-05,
+   "family_reject": true,
+   "p": 2.999970000299997e-05,
+   "programme_p_holm": 0.0003599964000359997,
+   "programme_reject": true,
+   "test": "scale trend"
+  },
+  {
+   "family": "AB-G",
+   "family_p_holm": 0.3744862551374486,
+   "family_reject": false,
+   "p": 0.3744862551374486,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "KL trend"
+  },
+  {
+   "family": "AB-G",
+   "family_p_holm": 1.999980000199998e-05,
+   "family_reject": true,
+   "p": 9.99990000099999e-06,
+   "programme_p_holm": 0.0001299987000129999,
+   "programme_reject": true,
+   "test": "steps trend"
+  },
+  {
+   "family": "AB-L",
+   "family_p_holm": 0.03125,
+   "family_reject": true,
+   "p": 0.015625,
+   "programme_p_holm": 0.15625,
+   "programme_reject": false,
+   "test": "league slopes vs 0, ETTh1 source"
+  },
+  {
+   "family": "AB-L",
+   "family_p_holm": 0.400390625,
+   "family_reject": false,
+   "p": 0.400390625,
+   "programme_p_holm": 1.0,
+   "programme_reject": false,
+   "test": "league slopes vs 0, ILI source"
+  }
+ ],
+ "size": 13,
+ "tests_sharing_ABL_P_ref_local": [
+  "AB-G: steps trend",
+  "AB-P: anon vs ref_local",
+  "AB-P: repair vs ref_local",
+  "AB-P: scale trend"
+ ],
+ "tests_with_p": 13
+}
