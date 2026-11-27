@@ -2,13 +2,13 @@
  "analysis": "ST detectable effects",
  "descriptive": true,
  "provenance": {
-  "git_hash": "5abbd20c1b4acdcc11535be1b9ce62e3258549e9",
+  "git_hash": "5fb23c6643134d4275791cbd9f8642f49fa629a7",
   "inputs_sha256": {
    "docs/claims/E3.json": "bf82ccda09ec9192708fe95cd5aa4a0327913196c4b1099c9e4bb3a6bd97b0d6",
    "results/ablations/AB-C.json": "9d0b005fb1fd09469f4c257acf4ac0c670cfe2f1748550e775468a6724c56b26",
    "results/ablations/AB-L.json": "b82641d9142f4496ed29cf32620589d281acb08130ae2035f9584e3e81b96ce2",
    "results/ablations/AB-X.json": "d0d7b62990e2ef5d9d41d4d22dd6a0e772394c05df5f74a9ee34d278e335e7b6",
-   "results/ablations/LLM.json": "75019f3a4e3401b6f85ff01ab5918136ed57f288f82e43c053e598a13cdb58d2",
+   "results/ablations/LLM.json": "0db0af2f7b44a102943e3a440b274597090dd43f302a87dbfc4570fed718b7aa",
    "results/e5/ETTh1_T336.json": "cf5d7a79de57ed6e35843696e7dad015e1d2aab8de98eb9db9ff15c4d4517dda",
    "results/e5/ILI_T24.json": "fde064fc71a561f17ecf3378ddc5d335b17326790c274793ad82f5381ae31b02",
    "results/independent/E4_soumitra.json": "f191b5e67bd1d1c9f00434c91fa461eb3bcd972bccc6d056675e5bb89eb611e8",
@@ -24,7 +24,7 @@
    "results/search/E4/ILI_T24/grpo_none_from_ETTh1_runs.jsonl": "c1fe5d6020a86ae6733cc8f7dac1b53f32fa8435aaeb31dbd0bfa68b35bdce22"
   },
   "script": "scripts/ablations/power.py",
-  "script_sha256": "37f7be5f555ba63dab676aa6001b47e545a147db95b6bbae71533bb7ec7910ff",
+  "script_sha256": "42e680d597bf3091b7b9cec893fdc71c9e062455b3747bfdcedee58c48206f78",
   "versions": {
    "numpy": "2.5.4",
    "optuna": "5.1.0",
@@ -2317,6 +2317,40 @@
    "unit": "pooled seed SD"
   },
   {
+   "comparison": "AB-P on the RTX (registered, AB4, final), ILI AUC: anon vs ref_local",
+   "detectable_80": 0.4247222746110605,
+   "diff": 0.3626994639887373,
+   "family": 3,
+   "mean": [
+    1.9276317106641645,
+    1.5649322466754272
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "",
+   "p": 0.007269927300726993,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "AB-P on the RTX (registered, AB4, final), ILI AUC: repair vs ref_local",
+   "detectable_80": 0.491039784149428,
+   "diff": 0.02642050529427964,
+   "family": 3,
+   "mean": [
+    1.5913527519697068,
+    1.5649322466754272
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "note": "",
+   "p": 0.8613513864861352,
+   "unit": "pooled seed SD"
+  },
+  {
    "comparison": "AB-L: league slopes vs zero, ILI source",
    "detectable_80": 0.2537727312844628,
    "diff": 0.07716203864424358,
@@ -2359,6 +2393,7 @@
    "n": [
     60
    ],
+   "note": "approximate: Fisher z for a rank correlation with heavily tied level ranks",
    "unit": "Spearman rho"
   },
   {
@@ -2368,6 +2403,7 @@
    "n": [
     40
    ],
+   "note": "approximate: Fisher z for a rank correlation with heavily tied level ranks",
    "unit": "Spearman rho"
   },
   {
@@ -2377,6 +2413,7 @@
    "n": [
     30
    ],
+   "note": "approximate: Fisher z for a rank correlation with heavily tied level ranks",
    "unit": "Spearman rho"
   },
   {
@@ -2386,6 +2423,43 @@
    "n": [
     90
    ],
+   "note": "approximate: Fisher z for a rank correlation with heavily tied level ranks",
+   "unit": "Spearman rho"
+  },
+  {
+   "comparison": "AB-P scale trend on the RTX (registered, final)",
+   "detectable_80": 0.33361708293519865,
+   "diff": 0.42952841163858857,
+   "family": 3,
+   "n": [
+    90
+   ],
+   "note": "approximate: Fisher z for a rank correlation with heavily tied level ranks",
+   "p": 2.999970000299997e-05,
+   "unit": "Spearman rho"
+  },
+  {
+   "comparison": "AB-G KL trend on the RTX (registered, final)",
+   "detectable_80": 0.5322850887470398,
+   "diff": -0.1697999870291681,
+   "family": 2,
+   "n": [
+    30
+   ],
+   "note": "approximate: Fisher z for a rank correlation with heavily tied level ranks",
+   "p": 0.3744862551374486,
+   "unit": "Spearman rho"
+  },
+  {
+   "comparison": "AB-G steps trend on the RTX (registered, final)",
+   "detectable_80": 0.3870763117279219,
+   "diff": 0.7622310377083054,
+   "family": 2,
+   "n": [
+    60
+   ],
+   "note": "approximate: Fisher z for a rank correlation with heavily tied level ranks",
+   "p": 9.99990000099999e-06,
    "unit": "Spearman rho"
   },
   {
