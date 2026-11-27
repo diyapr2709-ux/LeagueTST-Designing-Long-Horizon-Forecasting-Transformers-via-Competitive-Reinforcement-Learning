@@ -15,8 +15,8 @@ import rtx_tests  # noqa: E402
 
 
 def test_pinned_copies_match_5abbd20():
-    for name, digest in rtx_tests.PINNED.items():
-        assert hashlib.sha256((ABL / name).read_bytes()).hexdigest() == digest
+    assert hashlib.sha256((ABL / "common.py").read_bytes()).hexdigest() == rtx_tests.PINNED["common.py"]
+    assert hashlib.sha256(rtx_tests._pinned_source("llm_tests.py")).hexdigest() == rtx_tests.PINNED["llm_tests.py"]
     assert rtx_tests.PINNED["llm_tests.py"] == "01b70835dd128001c78eceb040590b7e79ace2a17f260a3b98022cdbcd0ee0a6"  # AB4
 
 

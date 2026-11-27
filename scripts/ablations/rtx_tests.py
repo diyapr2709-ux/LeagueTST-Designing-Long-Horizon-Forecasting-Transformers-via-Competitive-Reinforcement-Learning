@@ -30,13 +30,29 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 PINNED = {"common.py": "46aef3c196864a1f835505e58e2b1bef22940ca03219bb60887514039efa310b",
           "llm_tests.py": "01b70835dd128001c78eceb040590b7e79ace2a17f260a3b98022cdbcd0ee0a6"}
-for _name, _digest in PINNED.items():
-    if hashlib.sha256((HERE / _name).read_bytes()).hexdigest() != _digest:
-        raise SystemExit(f"{_name} differs from 5abbd20 (AB4 pins it); refusing to run")
+PINNED_COMMIT = "5abbd20"  # AB4 (Soumitra): llm_tests.py is read from git, not the working tree (AB6, 27 Nov)
+
+
+def _pinned_source(name: str) -> bytes:
+    data = subprocess.run(["git", "show", f"{PINNED_COMMIT}:scripts/ablations/{name}"], cwd=HERE.parents[1],
+                          capture_output=True, check=True).stdout
+    if hashlib.sha256(data).hexdigest() != PINNED[name]:
+        raise SystemExit(f"{name} at {PINNED_COMMIT} differs from the AB4 digest; refusing to run")
+    return data
+
+
+if hashlib.sha256((HERE / "common.py").read_bytes()).hexdigest() != PINNED["common.py"]:
+    raise SystemExit("common.py differs from 5abbd20 (AB4 pins it); refusing to run")
 sys.path.insert(0, str(HERE))
 
 from common import OUT, ROOT, apply_holm, by_seed, compare, load_table, mean_ci, provenance, read_runs, write_json  # noqa: E402
-from llm_tests import STEP_LEVELS, policy_level, spearman_trend  # noqa: E402
+import importlib.util  # noqa: E402
+
+_spec = importlib.util.spec_from_loader("llm_tests_5abbd20", loader=None)
+llm_tests = importlib.util.module_from_spec(_spec)
+llm_tests.__file__ = str(HERE / "llm_tests.py")  # the pinned module resolves ROOT from its own path
+exec(compile(_pinned_source("llm_tests.py"), f"{PINNED_COMMIT}:scripts/ablations/llm_tests.py", "exec"), llm_tests.__dict__)
+STEP_LEVELS, policy_level, spearman_trend = llm_tests.STEP_LEVELS, llm_tests.policy_level, llm_tests.spearman_trend
 
 RTX = OUT / "rtx"
 J2 = ROOT / "results/search/E4/ILI_T24/grpo_league_from_ETTh1_runs.jsonl"
