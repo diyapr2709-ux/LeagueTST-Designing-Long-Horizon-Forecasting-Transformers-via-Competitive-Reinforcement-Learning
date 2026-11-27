@@ -838,3 +838,25 @@ def test_t_based_detectable_is_larger_than_the_registered_normal_one():
     assert r["detectable_80"] == pytest.approx(common.detectable(np.std([0.0, 1.0, 2.0, 3.0, 4.0] * 2, ddof=1), 10, np.std([1.0, 2.0, 3.0] * 10, ddof=1), 30, 6))
     assert r["t_ratio"] == pytest.approx(r["detectable_80_t"] / r["detectable_80"]) and r["t_ratio"] > 1
     assert power.detectable_t(0.0, 10, 0.0, 10, 1) is None
+
+
+def test_compute_sums_records_and_queue_wall_clock():
+    import compute
+
+    runs = [{"method": "m", "spent": 3000, "seconds": 10.0, "env": {"gpu_name": "A"}}, {"method": "m", "spent": 2990, "seconds": 20.0, "gpu": "B"},
+            {"method": "cpu", "spent": 3000}]
+    rows = compute.search_rows("E3 x", runs, None, "ILI_T24")
+    m = next(r for r in rows if r["arm"] == "E3 x: m")
+    assert m["machine"] == "Modal" and m["target_epochs"] == 5990 and m["seconds"] == 30.0 and m["cards"] == {"A": 1, "B": 1}
+    cpu = next(r for r in rows if r["arm"] == "E3 x: cpu")
+    assert cpu["machine"] == "CPU replay" and cpu["seconds"] is None and cpu["cards"] == {compute.NOT_RECORDED: 1}
+    training = compute.group([{"training_epochs": 100, "seconds": 5.0, "gpu": "A"}], "training")
+    assert training["source_epochs"] == 100 and "target_epochs" not in training
+    assert compute.totals(rows + [{"machine": "Modal", "kind": "training", **training}]) == [
+        {"machine": "Modal", "card": "A", "kind": "search", "seconds": 10.0, "hours": 10.0 / 3600},
+        {"machine": "Modal", "card": "A", "kind": "training", "seconds": 5.0, "hours": 5.0 / 3600},
+        {"machine": "Modal", "card": "B", "kind": "search", "seconds": 20.0, "hours": 20.0 / 3600}]
+    lines = ["2026-11-26T04:01:31-05:00 START a log=x", "2026-11-26T05:21:14-05:00 INTERRUPTED a: shut down",
+             "2026-11-26T05:21:14-05:00 START a log=y", "2026-11-26T05:36:50-05:00 DONE a rc=0"]
+    q = compute.queue_wall_clock(lines)
+    assert [x["outcome"] for x in q] == ["INTERRUPTED", "DONE rc=0"] and q[0]["seconds"] == 4783.0 and q[1]["seconds"] == 936.0
