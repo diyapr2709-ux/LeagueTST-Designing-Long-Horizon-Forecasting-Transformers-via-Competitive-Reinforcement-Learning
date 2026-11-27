@@ -113,8 +113,8 @@ def abl_rows() -> list[dict]:
     out = family_rows(OUT / "AB-C.json", "AB-C, ILI AUC", lambda d: d["tables"]["ILI_T24"]["tests"])
     out += family_rows(OUT / "AB-X.json", "AB-X, ILI AUC", lambda d: d["tables"]["ILI_T24"]["tests"])
     out += family_rows(OUT / "LLM.json", "AB-P on the Mac (exploratory), ILI AUC", lambda d: d["mps"]["AB-P"]["tests"])
-    reg_state = "final" if (OUT / "LLM.json").exists() and json.loads((OUT / "LLM.json").read_text()).get("registered", {}).get("final") else "provisional"
-    out += family_rows(OUT / "LLM.json", f"AB-P on the RTX (registered, AB4, {reg_state}), ILI AUC",
+    reg_state = "final" if (OUT / "LLM-rtx.json").exists() and json.loads((OUT / "LLM-rtx.json").read_text()).get("registered", {}).get("final") else "provisional"
+    out += family_rows(OUT / "LLM-rtx.json", f"AB-P on the RTX (registered, AB4, {reg_state}), ILI AUC",
                        lambda d: {k: v for k, v in d.get("registered", {}).get("families", {}).get("AB-P", {}).get("tests", {}).items() if "diff" in v})
     data = json.loads((OUT / "AB-L.json").read_text())
     for dataset in ("ILI", "ETTh1"):
@@ -136,8 +136,8 @@ def trend_rows() -> list[dict]:
             {"comparison": "AB-G step trend, 10 per level", "n": [40], "family": 2, "unit": "Spearman rho", "detectable_80": detectable_rho(40, 2)},
             {"comparison": "AB-G KL trend (10 + 10 + 10 runs)", "n": [30], "family": 2, "unit": "Spearman rho", "detectable_80": detectable_rho(30, 2)},
             {"comparison": "AB-P scale trend (30 + 30 + 30 runs)", "n": [90], "family": 3, "unit": "Spearman rho", "detectable_80": detectable_rho(90, 3)}]
-    if (OUT / "LLM.json").exists():
-        reg = json.loads((OUT / "LLM.json").read_text()).get("registered", {})
+    if (OUT / "LLM-rtx.json").exists():
+        reg = json.loads((OUT / "LLM-rtx.json").read_text()).get("registered", {})
         fams = reg.get("families", {})
         state = "final" if reg.get("final") else "provisional"
         for fam, size in (("AB-P", 3), ("AB-G", 2)):

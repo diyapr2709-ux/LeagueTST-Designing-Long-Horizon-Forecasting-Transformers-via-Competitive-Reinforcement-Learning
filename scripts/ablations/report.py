@@ -261,8 +261,8 @@ def step_reading(steps: dict | None, u: dict, dose: dict) -> str:
 
 
 def registered_llm() -> list[str]:
-    """AB2 and AB4: the registered AB-P and AB-G families on Soumitra's RTX items."""
-    d = load("LLM")
+    """AB2 and AB4: the registered AB-P and AB-G families on Soumitra's RTX items (results/ablations/LLM-rtx.json)."""
+    d = load("LLM-rtx")
     lines = ["## AB-P and AB-G on Soumitra's RTX (AB2 and AB4): Anirudh's independent computation", ""]
     if not d or "families" not in d.get("registered", {}):
         return lines + [MISSING, ""]
@@ -279,7 +279,7 @@ def registered_llm() -> list[str]:
               f"Registered in AB2 (c2dda8d) and AB4 (15db163) on origin/soumitra-leg2; the scale trend's statistic (Spearman of model-size rank with AUC, two-sided permutation p) "
               "was fixed in AB5 (510633d, this branch), after the AB2 runs existed and before Anirudh had seen any AB2 value. "
               f"Run files read from {src['ref']} at {str(src['commit'])[:12]} "
-              f"({len(src['files'])} files, each with its source, commit and sha256 in results/ablations/LLM.json; AB2's move manifest matches for "
+              f"({len(src['files'])} files, each with its source, commit and sha256 in results/ablations/LLM-rtx.json; AB2's move manifest matches for "
               f"{sum(src['ab2_manifest_matches'].values())} of {len(src['ab2_manifest_matches'])} files). Every reference is local to the same card (AB1, AB4). "
               "ILI held-out AUC, pooled seed-SD units, lower is better. For a trend, positive rho means a higher (worse) AUC at the higher level: more steps, a larger KL weight, a larger model.", ""]
     lines += [RECORD_NOTE, ""]
@@ -323,7 +323,7 @@ def registered_llm() -> list[str]:
                   "and the step-trend permutation p is anti-conservative (its critic's simulation: a false-positive rate of 0.10 to 0.15 at nominal 0.05); "
                   "the step trend and its Holm decision are reported as registered, with this caveat. The KL levels share seeds too; with balanced levels AB4 states that this makes the KL test conservative. "
                   "The detectable rho values are Fisher-z approximations, optimistic with tied levels.", ""]
-    rnd = d.get("mps", {}).get("revin", {}).get("committed_ILI", {}).get("random (E3)")
+    rnd = (load("LLM") or {}).get("mps", {}).get("revin", {}).get("committed_ILI", {}).get("random (E3)")
     if rnd:
         lines += [f"For context (post hoc, no test): E3's random search has ILI AUC {ci(rnd['auc'])} on the same scale.", ""]
     pl = g["families"]["AB-G"].get("exploratory_policy_level")
@@ -575,8 +575,9 @@ def glance() -> list[str]:
         t = c["tables"]["ILI_T24"]["tests"]
         lines.append(f"* Controller ablations: none of the {len(t)} league settings is rejected against the reference; the test could detect about "
                      f"{max(v['detectable_80'] for v in t.values()):.2f} SD (AB-C).")
-    if g and "families" in g.get("registered", {}):
-        reg = g["registered"]
+    rtx = load("LLM-rtx") or {}
+    if "families" in rtx.get("registered", {}):
+        reg = rtx["registered"]
         def said(fam: str, name: str, v: dict) -> str:
             decision = f"Holm p {pfmt(v['p_holm'])}, {'rejected' if v['reject'] else 'not rejected'}"
             if "rho" not in v:
