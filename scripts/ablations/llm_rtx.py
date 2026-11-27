@@ -103,8 +103,15 @@ TIMELINE_COMMITS = {
     "510633d53bed6bfbea793bc4e0bbba4d2e875995": "AB5 (this branch): this computation and the scale trend's statistic",
     MAIN_AB4: "Diya's AB4 (origin/main): llm_registered.py as the computation of record, analyses (i) to (iii) registered "
               "secondary, the reading rule, 28 Nov 18:00 ET for the four AB4 arms",
-    RTX_REF: "AB4 results committed (origin/soumitra-leg2; the pinned commit)",
+    "185a0b1b4d40283beb65587dcea7f6bd45b0be33": "AB4 prompted arms' run files committed: anon and repair, ILI and ETTh1 (origin/soumitra-leg2)",
+    "c7e4bc9cba0de411705842b55349624ba31f6431": "AB4 ABL_G_steps30_local run and training files committed (origin/soumitra-leg2)",
+    "e880b0a9c34385d7d46d5f44e2038e7697a28894": "AB4 ABL_G_steps120_local run and training files and the AB4 queue status file committed (origin/soumitra-leg2)",
+    RTX_REF: "'Results' commit, the pinned tip of origin/soumitra-leg2: duplicate copies of the run files under results/runs/llm_local/, "
+             "scripts/ablations/rtx_tests.py and its tests, copies of common.py and llm_tests.py, and the lock file results/logs/l4_queue.lock; "
+             "no AB4 run file is new in it",
 }
+
+LLM_TESTS = "scripts/ablations/llm_tests.py"
 
 QUEUE_EVENTS = ("QUEUE_START", "DONE", "INTERRUPTED", "STALE_LOCK", "QUEUE_END")
 
@@ -615,7 +622,37 @@ def record_context(src: "RtxSource") -> dict:
             "record_file": {"path": RECORD_FILE, "working_tree": (ROOT / RECORD_FILE).exists(),
                             "at": {name: {"commit": c, "exists": c is not None and src.show_at(c, RECORD_FILE) is not None}
                                    for name, c in places.items()}},
-            "llm_tests_sha256": hashlib.sha256((Path(__file__).resolve().parent / "llm_tests.py").read_bytes()).hexdigest()}
+            "llm_tests_sha256": hashlib.sha256((Path(__file__).resolve().parent / "llm_tests.py").read_bytes()).hexdigest(),
+            "llm_tests_history": llm_tests_history(src), "main_AB4_fetched": first_fetch_holding(src, MAIN_AB4)}
+
+
+def llm_tests_history(src: "RtxSource") -> list[dict]:
+    """Commits of this branch that changed llm_tests.py since AB5 (510633d), oldest first, with commit times (review B8)."""
+    import subprocess
+
+    try:
+        out = src._run("log", "--reverse", "--format=%H %cI", "510633d53bed6bfbea793bc4e0bbba4d2e875995^..HEAD", "--", LLM_TESTS).decode().split("\n")
+    except subprocess.CalledProcessError:
+        return []
+    return [{"commit": c, "time": t} for c, t in (line.split() for line in out if line.strip())]
+
+
+def first_fetch_holding(src: "RtxSource", commit: str, ref: str = "origin/main") -> str | None:
+    """Time of the earliest reflog entry of ``ref`` in this clone at which ``ref`` contained ``commit`` (None if unknown)."""
+    import subprocess
+
+    try:
+        lines = src._run("reflog", "show", "--date=iso-strict", "--format=%H %gd", ref).decode().splitlines()
+    except subprocess.CalledProcessError:
+        return None
+    times = []
+    for line in lines:
+        head, _, selector = line.partition(" ")
+        if "@{" in selector and src.descends(head, commit):
+            times.append(selector.split("@{", 1)[1].rstrip("}"))
+    from datetime import datetime
+
+    return min(times, key=datetime.fromisoformat) if times else None
 
 
 def main() -> int:
