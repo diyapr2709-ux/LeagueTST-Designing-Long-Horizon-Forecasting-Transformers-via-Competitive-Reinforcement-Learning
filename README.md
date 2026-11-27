@@ -78,6 +78,12 @@ python3 -m venv .venv
 `requirements-lock.txt` pins the exact versions behind the stored results;
 `requirements.txt` gives the looser lower bounds. Python 3.10 or newer.
 
+Three further requirement files serve specific jobs and are never installed
+into `.venv`: `requirements-llm.txt` (the LLM architect runs, pinned by
+amendment A25), `requirements-modal.txt` (the Modal client) and
+`requirements-ablations.txt` (the AB-X external-HPO baselines, which need
+numpy below 2 and so run in their own `.venv-abx`, as its header says).
+
 The owner provisions the data once: `scripts/download_data.py` fetches both
 benchmark files and checks each against a pinned SHA-256 digest, and
 `scripts/make_trainval.py --src <folder with the full files>` writes the
