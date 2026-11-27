@@ -1,0 +1,78 @@
+# LeagueTST: area-chair claims audit, 2026-11-27
+
+Tree: main at ca66e0a4 (one commit past 60c0d197: batch-2 pick id lists; README names requirements-ablations.txt). The working tree has an uncommitted docs/ISSUES.md edit (four 27 Nov rows, not mine, left in place). Nothing ran on Modal or a GPU; no test row was read. Disclosure: `scripts/report.py --help` has no argument parser and regenerated docs/REPORT_DRAFT.md; I restored the committed copy with `git checkout -- docs/REPORT_DRAFT.md` and kept the regenerated copy in the scratchpad (REPORT_DRAFT_regenerated_2026-11-27.md). This extends the 26 Nov audit; its rows C1 to C9 are not repeated.
+
+## 1. Claims ledger
+
+Rule 6: S = >= 5 seeds, B = paired block-bootstrap interval, V = verifier re-score recorded in docs/verdicts/. G4 covers only E3 and E4 (gates.py CLAIM_ITEMS).
+
+| # | Source | Claim (abridged) | Result file / key | Matches | S / B / V | G4 | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | STATE.md:39-41 | GRPO league worse than warm TPE after Holm; not better than portfolio or no-league | results/independent/E4_soumitra.json family_1 (tpe_warm p 1.0e-5, Holm 6.0e-5, diff +1.4957; portfolio p 0.639), family_2 (none p 0.8025) | yes | 10 policies / no / yes (E4_independent_soumitra.md PASS) | FAIL: docs/claims/E4.json missing | NOT MET |
+| 2 | STATE.md:41-42, 87-91; checklist:9 | No method beats random on fresh seeds after Holm; TPE's table win does not replicate; cross-table portfolio worse than random | results/picks/*_analysis.json vs_random: only portfolio_from_* @25/50/100 `significant_after_holm` (p 1.0e-5); tpe vs random @50 ILI p 0.2685 | yes | 2 fresh seeds x 30 / no / none (no PICK verdict; PICK G2 FAIL) | n/a | NOT MET |
+| 3 | STATE.md:106-111 | E5 tau diffs ILI +0.009 [-0.029, +0.048], ETTh1 +0.020 [-0.009, +0.049]; plain ETTh1 -0.095 [-0.129, -0.062]; non-inferior, not confirmatory | results/e5/*.json summary.tau_true (0.00919 [-0.0295, 0.0479]; 0.0199 [-0.0095, 0.0492]; -0.0952 [-0.1285, -0.0619]); non_inferior true | yes | 10 / no (t) / none | n/a | NOT MET (self-labelled exploratory) |
+| 4 | STATE.md:132-140 | E5 ILI +0.014 [-0.017, +0.043], ETTh1 +0.020 [-0.003, +0.044] | not in results/e5/ (superseded by row 3) | no | | | NOT MET: stale, needs dated correction |
+| 5 | STATE.md:120-125, 204-211; REPORT_DRAFT.md:43 | E3b: ETTh1 K7 pass -0.0017 [-0.0042, 0.0009], 0.43 SD, Spearman 0.93 / 0.08; ILI K7 fail +0.0042 [0.0013, 0.0070], 0.91 SD | results/e3b/*.json | yes | 64 live runs, one seed / n/a (validity check) / G2 today PASS (42 rows, worst gap 2.2e-8), no verdict file | n/a | check MET; V not recorded |
+| 6 | STATE.md:212-216 | E3 ILI: TPE "AUC 0.91 SD", only method beating random after Holm at 50, table only | results/search/E3/ILI_T24/summary.md (tpe AUC 1.14 pooled SD); docs/claims/E3.json claims_win "ILI T24 tpe vs random @50" | AUC no (0.91 is the retired median-SD unit); win yes | 30 / no / none (no docs/verdicts/E3.md) | PASS: "20 comparisons recomputed; 1 claimed win holds" | NOT MET; withdrawn by row 2 |
+| 7 | STATE.md:128-131, 152-158, 174-181, 199-203; ablations.md Compute, ST | Descriptive: ETTh1 AUCs (Qwen 1.30, pg 1.32, TPE 1.37, random 1.61, portfolio 5.94); pooled SD 0.0132; best 1.0687; Spearman -0.21; ILI best ranks 2,157; E2 taus; $22.17; hours per card; E4 detectable 1.10 to 1.25 | regenerated REPORT_DRAFT, table_stats.json, compute.json, ST-power.json | yes | | n/a | NOT A CLAIM |
+| 8 | STATE.md:177 | ETTh1 best ranks 1,828 on ILI | table_stats.json between.ili_rank_of_etth1_best 1341 | no | | | NOT A CLAIM; stale (ISSUES 25 Nov) |
+| 9 | STATE.md:182 vs ablations.md:19 | RevIN explains 83% (STATE) / 84% (ablations.md) of ETTh1 variance | results/anova, RQ3.json | two values | | | NOT A CLAIM; reconcile |
+| 10 | ablations.md:8-16 (RTX AB-P, AB-G) | anon +0.36 [+0.10, +0.63] Holm 0.0145; repair +0.03, 0.8614; scale rho +0.43; steps rho +0.76; KL rho -0.17 p 0.3745; (i) +1.59 [+1.28, +1.90]; (ii) p 1.000 | results/ablations/LLM-rtx.json families (0.3627, 0.0145; 0.0264, 0.8614; 0.4295; 0.7622; -0.1698, 0.3745; 1.5879 [1.2772, 1.8985]; 1.0) | yes | 30 or 10 / no (Welch, permutation) / yes (verify_rtx/diff_vs_mine.txt all OK; ablations_rtx_reviews.md VERDICT PASS at 200, 1397) | n/a | NOT MET as rule-6 claim; "complete, not of record" (LLM-registered.json absent) |
+| 11 | ablations.md:17 (AB-L) | ETTh1 slopes Holm 0.031; ILI 0.400; no-league slope +0.247 | AB-L.json holm (0.03125; 0.4004); by_source.ETTh1.arms.none.mean_slope 0.2469 | yes | 10 / no / yes (AB-L.md PASS) | n/a | NOT MET as claim; critic's wording applies |
+| 12 | ablations.md:11-12 (AB-X, AB-C) | smac vs random -0.24, Holm 0.16; AB-C detectable about 0.23 | AB-X.json ILI tests (-0.2416, 0.1581); AB-C.json (0.214 to 0.226) | yes | 30 or 100 / no / yes (cpu_reviews) | n/a | NOT MET as claim; secondary |
+| 13 | checklist:15 | RTX families complete in Anirudh's computation, verifier recomputed, record file not computed | LLM-rtx.json record_file.exists false everywhere | yes | | | NOT A CLAIM (accurate) |
+| 14 | REPORT_DRAFT.md:74-81 | E6 ILI table_best 5 seeds, means 0.2082 / 0.1907 / 0.1852 / 0.2094 | ledger: 10 seeds; regenerated 0.2115 / 0.1901 / 0.1861 / 0.2080 | no | | | STALE generated file |
+
+Summary: no sentence in the four documents meets all of rule 6 (no interval is a paired block bootstrap); G4 passes only for E3, whose one claimed win is in-table and withdrawn by the picks. Rows 1, 10, 11 have an independent re-score; rows 2, 3, 5, 6 do not. Every docs/ablations.md number checked equals its result file; docs/STATE.md carries three stale numbers (rows 4, 6, 8).
+
+## 2. Gates and tests
+
+`gates.py --all` takes its items from docs/verdicts/*.md stems, so it ran the 12 verdict files (AB-L, AB2, AB4, AB4_registration, E4_independent_soumitra, the four review files, arena_credit, external_comparison, model_licences, neurips_audit), never a ledger or claim item. For all 12: G1 FAIL "pytest exit 3"; G6 FAIL "last verdict line: none"; G2 to G5 PASS trivially. Exit 1.
+
+Explicit items: E3: G4 PASS (20 comparisons, 1 claimed win holds), G5 PASS (310 runs per table within 3000 epochs), G6 FAIL docs/verdicts/E3.md missing. E4: G4 FAIL docs/claims/E4.json missing; G5 PASS (60 control runs per table; the GRPO deployments are not in budget.json); G6 FAIL. PICK: G2 FAIL "123 of 123 checkpoints not downloaded"; G6 FAIL. E3b: G2 PASS (42 rows, worst gap 2.2e-8); G6 FAIL. G1 fails everywhere.
+
+Causes. G1: tests/test_rtx_tests.py imports scripts/ablations/rtx_tests.py, which raises SystemExit at import because llm_tests.py is 08c72a4c, not the pinned 01b70835; pytest dies at collection (INTERNALERROR, exit 3). With `--ignore=tests/test_rtx_tests.py` the suite exits 0 (4 skipped; the count is hidden by `addopts = "-q"`). G6: no file holds the exact line `Verdict: ACCEPT`; the nearest are "VERDICT: PASS" (AB2.md, AB4.md, ablations_rtx_reviews.md) and "Verdict: REVISE" (ablations_cpu_reviews.md:52). G5 reads results/search/**/budget.json, which .gitignore:32 excludes, so G5 cannot be reproduced from a clone.
+
+## 3. The AB4 situation
+
+Facts: the queue started at 15db163 and 7fd5085 (Soumitra's AB4); DONE lines 26 Nov 02:09 to 18:25 ET, before both deadlines. Diya's AB4 (2ab2996, 17:21 ET) came after five of six jobs; its "What existed" paragraph is wrong in fact. AB5 names only Soumitra's AB4. llm_registered.py checks `merge-base --is-ancestor c2dda8d` (every run commit passes) and, for AB4 arms, that `## Amendment AB4` is in the run commit's prereg_ablations.md, which Soumitra's heading satisfies. So, contrary to the brief, the record script would not void the arms; its weakness is that it cannot tell the two AB4s apart (review B21). Its DIGESTS match main (llm_tests.py 08c72a4c); it refuses on a dirty results/ablations/rtx, scripts/ablations or leaguetst; `--check` computes once all 15 arms are complete (they are), `--final` after 28 Nov 18:00 ET. The verifier's script is committed (results/ablations/verify_rtx/). rtx_tests.py cannot run on main and its test breaks pytest.
+
+For AB-P and AB-G to count as registered results a reviewer needs: (a) a dated amendment AB6 on main saying which AB4 governs each element (arms, references, tests, Holm sizes and the 23:59 deadline from 15db163, under which the runs happened; analyses (i) to (iii) and the reading rule from 2ab2996 as registered secondary) and stating that 2ab2996 was written after five jobs had finished; (b) results/ablations/LLM-registered.json produced once by llm_registered.py on a clean main and committed; (c) a three-way agreement table in docs/ablations.md; (d) a critic verdict file ending in `Verdict: ACCEPT` or REJECT; (e) the rtx_tests.py pin resolved by amendment, not by silent edit.
+
+If they stay "complete, not of record": "The registered AB-P and AB-G tests were computed by one author independently of the registered script (results/ablations/LLM-rtx.json) and re-derived by a verifier (results/ablations/verify_rtx/); the computation of record named in amendment AB4 (2ab2996) was not run before submission. These are secondary analyses; no claim rests on them." Never "final", never "registered result".
+
+## 4. Stale derived files
+
+| File (last commit) | Why stale | Regenerate |
+|---|---|---|
+| docs/REPORT_DRAFT.md (1b6bd52b, 23 Nov 18:25) | predates ledger d9efe9c6 (24 Nov 11:41) and the E4 rerun (merge 70461a8, 24 Nov 18:01); lacks ETTh1, PICK and E4 sections; ILI table_best at 5 seeds | `.venv/bin/python scripts/report.py` |
+| results/search/E4/ILI_T24/summary.md, summary.json (9ca640f7, 23 Nov 18:50); results/search/E4/ETTh1_T336/summary.* (635042ac, 24 Nov 11:47) | only portfolio and tpe_warm; the GRPO run files committed later are not summarised | scripts/replay.py (also writes docs/claims/E4.json) |
+| results/search/**/budget.json (untracked, gitignored) | E4 logs hold the 60 control runs only; absent from the repository | scripts/replay.py; un-ignore and commit |
+| results/e5/*.json (34d060f1, 24 Nov 12:04) | only qwen_prompted; A24 requires every GRPO deployment arm | scripts/e5_referee.py |
+| results/picks/*_analysis.json (55e0eb76 23 Nov; a4d533e3 24 Nov) | no E4 GRPO incumbents; batch-2 ids collected (ca66e0a4) but untrained | scripts/picks.py analyze, after batch 2 |
+| results/independent/E4_soumitra.json (7808ea6, 24 Nov 23:45) | after the rerun, but 9 of 12 family tests pending at p = 1 | scripts/independent/e4_analysis.py, after batch 2 |
+| docs/STATE.md (11c5fa5f, 26 Nov 17:55) | no entry for the AB4 runs, AB5, Diya's AB4, the 27 Nov merges, batch-2 collection; rows 4, 6, 8 | dated entries |
+| docs/PLAN.md (34d060f1, 24 Nov) | K5, E1, E2, E3, E3b, E4, E5 unchecked though complete | hand-edit |
+
+## 5. Actions for Diya, next 48 hours
+
+1. AB4 governance: append AB6 to docs/prereg_ablations.md. Test: `grep -c '^## Amendment AB6' docs/prereg_ablations.md` = 1, naming 15db163 and 2ab2996 per element.
+2. Record computation: commit the dirty ISSUES.md, then `.venv/bin/python scripts/ablations/llm_registered.py --check`, commit results/ablations/LLM-registered.json, rerun `.venv/bin/python scripts/ablations/report.py`. Test: file exists; anon Holm p 0.0145 and steps "rejected" equal LLM-rtx.json.
+3. pytest: resolve rtx_tests.py's pin by dated amendment (01b70835 to 08c72a4c; spearman_trend is identical) or skip tests/test_rtx_tests.py with a note. Test: `.venv/bin/python -m pytest -q` exit 0; `gates.py --item E3` G1 PASS.
+4. Pick batch 2 on diyapr (owner's call; metered $26.64 against the $28 stop line): train results/picks/*_ids_2.txt at seeds 4001 and 4002, `scripts/collect_runs.py --with-checkpoints`, `scripts/picks.py analyze`; Soumitra reruns scripts/independent/e4_analysis.py. Test: PICK rows for all 44 ids at both seeds; E4_soumitra.json `pending_or_not_run` empty; PICK G2 PASS. If the stop line would be crossed, write docs/BLOCKED.md instead.
+5. docs/claims/E4.json for a negative RQ1: through scripts/replay.py's E4 summary, every comparison `claims_win: false`. Test: `gates.py --item E4` G4 PASS with "0 claimed wins". Consider setting E3's TPE claim to false with a note.
+6. Verdict lines: docs/verdicts/E3.md, E4.md, E3b.md, PICK.md and the RTX families, each ending exactly `Verdict: ACCEPT` or `Verdict: REJECT`. Test: `gates.py --item E4` G6 "critic accepted".
+7. Test preregistration: `scripts/collect_runs.py --with-checkpoints` for E6 and E3b; `.venv/bin/python scripts/build_prereg_spec.py --id final_v1 --out results/final/prereg_spec.json` (it expects winner_<dataset>, which A23 replaced by table_best: set the primary comparisons to table_best vs patchtst42 by a dated note); `.venv/bin/python scripts/prereg.py --spec results/final/prereg_spec.json`; commit prereg/final_v1.json. Test: the file is committed before 30 Nov with 10 seeds per arm, two primary comparisons and E3b rank checks for both datasets.
+8. Regenerate: `.venv/bin/python scripts/report.py`; scripts/replay.py for E4; scripts/e5_referee.py on the GRPO arms; un-ignore budget.json. Test: REPORT_DRAFT.md has E4 and PICK sections; results/e5/ILI_T24.json methods include grpo_league_from_ETTh1; `git ls-files results/search/E4/ILI_T24/budget.json` non-empty.
+9. LICENSE, `license` field in pyproject.toml, README.md:20 authorship. Test: `test -f LICENSE && grep -n license pyproject.toml && ! grep -n solo README.md`.
+10. K4: record the outcome after batch 2 (league median 3.28 vs prompted 1.65 on committed ILI AUC, so it fails) and the fallback decision in STATE, ISSUES, PLAN. Test: PLAN's K4 row carries a dated result.
+11. STATE and PLAN hygiene: dated entries for the AB4 runs, merges, batch 2, the 1,341 rank, the 1.14 pooled-SD AUC; tick PLAN boxes; commit ISSUES.md. Test: `git status` clean; `grep -c 2026-11-27 docs/STATE.md` >= 1.
+12. requirements-ablations.txt is already named in README (ca66e0a4). Test: `.venv/bin/pip install --dry-run -r requirements-ablations.txt` exits 0.
+
+## Files opened
+
+CLAUDE.md; docs/{STATE,PLAN,ISSUES,neurips_checklist,REPORT_DRAFT}.md; docs/prereg_ablations.md (459-799); docs/ablations.md (1-40, 134-280, 661-700, 829-860, 915-925); docs/verdicts/{neurips_audit_2026-11-26, ablations_rtx_reviews (headings, 150-200), AB4_registration (1-30), E4_independent_soumitra (1-40), AB-L (14-36)}.md; docs/claims/E3.json; results/ablations/*.json (LLM-rtx, AB-L, AB-X, AB-C, RQ3, ST-power, compute in detail); results/ablations/verify_rtx/diff_vs_mine.txt; results/independent/E4_soumitra.json; results/picks/*_analysis.json; results/e3b/*.json; results/e5/*.json; results/table_stats.json; results/search/E4/*/{summary.md, summary.json, budget.json}; results/ledger.jsonl (PICK counts); scripts/gates.py; scripts/report.py (140-180); scripts/prereg.py (--help); scripts/build_prereg_spec.py (1-40); scripts/ablations/rtx_tests.py (1-60); scripts/ablations/llm_registered.py (80-100, 386-400); tests/test_rtx_tests.py (1-40); README.md, .gitignore (grep).
+
+## Commands run
+
+Read-only git (`log`, `status`, `diff`, `ls-files`, `check-ignore`); `.venv/bin/python scripts/gates.py --all`; `.venv/bin/python scripts/gates.py --item E3|E4|PICK|E3b`; `.venv/bin/python -m pytest -q --ignore=tests/test_rtx_tests.py -p no:cacheprovider` (exit 0); `.venv/bin/python -m pytest -q -p no:cacheprovider` (exit 3); `.venv/bin/python scripts/report.py --help` (regenerated REPORT_DRAFT.md; reverted with `git checkout -- docs/REPORT_DRAFT.md`); `.venv/bin/python scripts/prereg.py --help`; `shasum -a 256 scripts/ablations/llm_tests.py`; inline Python readers of the JSON result files (no writes under the repository). Outputs in the scratchpad: gates_*.txt, pytest_ignore.txt, pytest_full.txt, REPORT_DRAFT_regen.diff.

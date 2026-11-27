@@ -797,3 +797,47 @@ prompted Qwen is the 60-against-0 analogue on another card.
   follow rules written on 24 Nov before any ablation result; AB4 fixed the
   analysis code, the failure handling and the secondary step analyses. The
   Mac runs are exploratory and never pooled."
+
+## Amendment AB6 (2026-11-27, Diya, before any AB-P or AB-G value is computed by this author, who has read none)
+
+Two texts headed "Amendment AB4" register ABL_P_anon_local, ABL_P_repair_local,
+ABL_G_steps30_local and ABL_G_steps120_local: Soumitra's (15db1631, 2026-11-26
+01:32 ET; move addendum 7fd5085f, 01:38 ET) and Diya's (2ab29963, 17:21 ET,
+written on main without knowledge of the first). The runs followed Soumitra's:
+queue scripts/ablations/run_ab4_queue.sh, QUEUE_START at 15db1631 (01:32:52 ET)
+and, after a laptop shutdown, 7fd5085f (05:21:14 ET); six jobs DONE rc=0,
+QUEUE_END 18:25:15 ET, 26 Nov (results/logs/ab4_queue_status.txt).
+run_wp3_rtx_queue.sh was not used. Both texts name the same items, launcher
+(scripts/ablate_llm.py, sha256
+3919d68337302590eda42f53ca10158ca27766bb488026b5a4fc8373c477b786), methods,
+seeds, references, test statistics, Holm sizes and record paths under
+results/ablations/rtx/. They differ in: the deadline (18:00 against 23:59 ET on
+28 Nov; moot, every arm finished on 26 Nov); the AB2 manifest name
+(AB2_records.sha256, 12 lines, contains every line of AB2_move.sha256, 9 lines);
+and the llm_tests.py copy named for the trend (5abbd20, sha256
+01b70835dd128001c78eceb040590b7e79ace2a17f260a3b98022cdbcd0ee0a6, against main,
+sha256 08c72a4c46dded669ebff913a45887ffe215caed24d10005fd27f808b34e9239).
+git diff 5abbd20 HEAD on that file touches only the module docstring and
+registered_source(); spearman_trend, policy_level, STEP_LEVELS and N_PERM are
+unchanged, and common.py
+(46aef3c196864a1f835505e58e2b1bef22940ca03219bb60887514039efa310b) is identical
+in both. No difference changes a test, family, reference, endpoint, seed or
+record.
+
+Resolution. For these four arms the two AB4 texts are one registration: on a
+run-time rule Soumitra's governs (it predates every run); on analysis Diya's
+governs (it alone fixes the analysis code by digest before any value existed).
+scripts/ablations/llm_registered.py (sha256 0c101110afa8a46e0afd2fc831f6aec5822b257ee088c2cae1f819a4b70e583e, unchanged since 2ab29963) is
+the computation of record and runs once, unchanged, without --final, since
+--check shows all 15 arms complete. Its registered check "commit containing
+AB4" is the heading "## Amendment AB4" in docs/prereg_ablations.md at the run
+commit; 15db1631 and 7fd5085f satisfy it, and no run commit descends from
+2ab29963. The verifier's blind recomputation (results/ablations/verify_rtx/,
+committed before this run) and scripts/ablations/llm_rtx.py (AB5,
+results/ablations/LLM-rtx.json) are the independent re-scores Diya's AB4
+requires; scripts/ablations/rtx_tests.py (e6926d86, 18:44 ET, after the runs)
+is a third re-score whose output is not yet committed. All are compared to the
+record value by value once it exists; a disagreement is reported as found; the
+record is recomputed only if a bug is shown, by a dated amendment, both
+outputs kept. No record file is edited. Decided by a two-advocate arena with a
+judge on 27 Nov (docs/verdicts/arena_AB6_2026-11-27.md).
