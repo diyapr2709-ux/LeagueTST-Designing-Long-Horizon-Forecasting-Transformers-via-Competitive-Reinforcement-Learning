@@ -494,7 +494,8 @@ def test_step_reading_follows_ab4_rule():
     up, flat = {"rho": 0.3}, {"p": 0.5}
     assert "read as a dose-response" in report.step_reading(up, flat, {"mean_rho": 0.4, "p_sign_flip": 0.01})
     assert "neither" in report.step_reading(up, flat, {"mean_rho": -0.4, "p_sign_flip": 0.01})  # wrong sign
-    assert "differ from the untrained" in report.step_reading(up, {"p": 0.01}, {"mean_rho": 0.4, "p_sign_flip": 0.2})
+    worse = report.step_reading(up, {"p": 0.01, "diff": 1.5, "low": 1.2, "high": 1.9}, {"mean_rho": 0.4, "p_sign_flip": 0.2})
+    assert "differ from the untrained" in worse and "worse by +1.50 SD [+1.20, +1.90]" in worse
     assert "neither" in report.step_reading(None, flat, {"mean_rho": 0.4, "p_sign_flip": 0.01})  # no registered trend
 
 

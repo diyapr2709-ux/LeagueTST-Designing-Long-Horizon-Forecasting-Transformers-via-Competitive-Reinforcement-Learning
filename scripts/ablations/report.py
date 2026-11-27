@@ -254,10 +254,11 @@ RECORD_NOTE = ("Not the result of record. Diya's amendment AB4 on main (2ab2996,
 def step_reading(steps: dict | None, u: dict, dose: dict) -> str:
     """Diya's AB4 reading rule for the step result, fixed before any AB4 value was seen."""
     if steps and dose["p_sign_flip"] <= 0.05 and (dose["mean_rho"] > 0) == (steps["rho"] > 0) and dose["mean_rho"] != 0:
-        return "By AB4's rule the step result is read as a dose-response: (ii) has the registered trend's sign and p at most 0.05."
+        return "By AB4's rule (2ab2996) the step result is read as a dose-response: (ii) has the registered trend's sign and p at most 0.05."
     if u["p"] <= 0.05:
-        return "By AB4's rule the step result is not read as a dose-response; trained policies differ from the untrained model ((i), p at most 0.05)."
-    return "By AB4's rule the step result is read neither as a dose-response nor as a difference between trained and untrained policies."
+        return ("By AB4's rule (2ab2996) the step result is not read as a dose-response; trained policies differ from the untrained model: "
+                f"{'worse' if u['diff'] > 0 else 'better'} by {u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}], permutation p {pfmt(u['p'])} ((i)).")
+    return "By AB4's rule (2ab2996) the step result is read neither as a dose-response nor as a difference between trained and untrained policies."
 
 
 def registered_llm() -> list[str]:
@@ -276,7 +277,7 @@ def registered_llm() -> list[str]:
                        "only the pending tests, and the decisions of tests not rejected, are still open.")
     rejected_scale = g["families"]["AB-P"]["tests"].get("scale trend")
     lines += [f"{status_text} Deadline for every arm: 28 Nov 23:59 ET (AB1). "
-              f"Registered in AB2 (c2dda8d) and AB4 (15db163) on origin/soumitra-leg2; the scale trend's statistic (Spearman of model-size rank with AUC, two-sided permutation p) "
+              f"Registered in AB2 (c2dda8d) and Soumitra's AB4 (15db163), both on origin/soumitra-leg2, under which every arm ran; the scale trend's statistic (Spearman of model-size rank with AUC, two-sided permutation p) "
               "was fixed in AB5 (510633d, this branch), after the AB2 runs existed and before Anirudh had seen any AB2 value. "
               f"Run files read from {src['ref']} at {str(src['commit'])[:12]} "
               f"({len(src['files'])} files, each with its source, commit and sha256 in results/ablations/LLM-rtx.json; AB2's move manifest matches for "
@@ -308,7 +309,7 @@ def registered_llm() -> list[str]:
     sc = g["families"]["AB-P"]["tests"].get("scale trend")
     if sc:
         lv = [sc["levels"][k]["mean"] for k in ("0.5", "1.5", "3.0")]
-        e = {k: next(iter(x["summary"].values()))["auc"] for k, x in g.get("ETTh1_descriptive", {}).items()}
+        e = {k: next(iter(x["summary"].values()))["auc"] for k, x in g.get("ETTh1_descriptive", {}).items() if k in ("0.5B", "ref", "3B")}
         order = ", ".join(f"{ {'ref': '1.5B'}.get(k, k)} {v['mean']:.2f}" for k, v in sorted(e.items(), key=lambda kv: kv[1]["mean"]))
         overlap = bool(e) and max(v["low"] for v in e.values()) <= min(v["high"] for v in e.values())
         lines += ["Scope of the scale trend: the three levels are three Qwen2.5-Instruct checkpoints (0.5B, 1.5B, 3B) under one fixed protocol "
@@ -319,8 +320,8 @@ def registered_llm() -> list[str]:
                   + "The 3B checkpoint is under the Qwen Research License (non-commercial; docs/neurips_checklist.md, item 12); releasing its generated proposals may need that licence's notice.", ""]
     if g["families"]["AB-G"]["tests"]:
         lines += ["The AB-G levels share training seeds 100 to 109 and deployment seeds 0 to 9 (and the steps levels share level 0), so they are dependent. "
-                  "Diya's AB4 on main: training has no step-dependent schedule, so a 30-step policy is, up to GPU nondeterminism, a prefix of the 60- and 120-step policies of its seed, "
-                  "and the step-trend permutation p is anti-conservative (its critic's simulation: a false-positive rate of 0.10 to 0.15 at nominal 0.05); "
+                  "Diya's AB4 (2ab2996, main): training has no step-dependent schedule, so a 30-step policy is, up to GPU nondeterminism, a prefix of the 60- and 120-step policies of its seed, "
+                  "and the step-trend permutation p is anti-conservative (its critic's simulation, quoted in main's docs/ISSUES.md of 26 Nov: a false-positive rate of 0.10 to 0.15 at nominal 0.05 for a within-policy correlation of 0.5 to 1.0); "
                   "the step trend and its Holm decision are reported as registered, with this caveat. The KL levels share seeds too; with balanced levels AB4 states that this makes the KL test conservative. "
                   "The detectable rho values are Fisher-z approximations, optimistic with tied levels.", ""]
     rnd = (load("LLM") or {}).get("mps", {}).get("revin", {}).get("committed_ILI", {}).get("random (E3)")
@@ -330,7 +331,7 @@ def registered_llm() -> list[str]:
     if pl:
         u, dose = pl["trained_vs_untrained"], pl["dose"]
         steps = g["families"]["AB-G"]["tests"].get("steps trend")
-        lines += [f"Registered secondary step analyses (Diya's AB4 on main; policy as unit, no Holm): (i) trained at all, the ten policies' AUC averaged over their three steps levels against the 30 untrained searches, "
+        lines += [f"Registered secondary step analyses (Diya's AB4, 2ab2996 on main; policy as unit, no Holm): (i) trained at all, the ten policies' AUC averaged over their three steps levels against the 30 untrained searches, "
                   f"{u['diff']:+.2f} SD [{u['low']:+.2f}, {u['high']:+.2f}] (permutation p {pfmt(u['p'])}; the test could detect {u['detectable_80']:.2f} SD; positive is worse); "
                   f"(ii) dose, the per-policy Spearman correlation of AUC with 30, 60, 120 steps, mean {dose['mean_rho']:+.2f} over {dose['policies']} policies, exact sign flip p {dose['p_sign_flip']:.3f}. "
                   + step_reading(steps, u, dose) + " AB4's diagnostic (iii), the share of training-log rows shared with the 60-step log, is not computed here.", ""]
@@ -587,18 +588,18 @@ def glance() -> list[str]:
             if name == "scale trend":
                 way = "a larger model gave a higher, that is worse," if v["rho"] > 0 else "a larger model gave a lower, that is better,"
                 return f"{fam} {name}: {way} ILI held-out AUC ({trend_words(name, v)} SD; rho {v['rho']:+.2f}, {decision}{could}; ILI only, three checkpoints, size not isolated)"
-            nested = "; p anti-conservative, nested levels (AB4)" if name == "steps trend" else ""
+            nested = "; p anti-conservative, nested levels (AB4, 2ab2996)" if name == "steps trend" else ""
             return f"{fam} {name}: ILI held-out AUC {trend_words(name, v)} SD (rho {v['rho']:+.2f}, {decision}{could}{nested})"
 
         done = [said(fam, name, v) for fam in ("AB-P", "AB-G") for name, v in reg["families"][fam]["tests"].items()]
         pl = reg["families"]["AB-G"].get("exploratory_policy_level")
         if pl and "steps trend" in reg["families"]["AB-G"]["tests"]:
-            done.append("read by AB4's rule, " + step_reading(reg["families"]["AB-G"]["tests"]["steps trend"], pl["trained_vs_untrained"], pl["dose"])
-                        .removeprefix("By AB4's rule ").rstrip(".") + f" (trained minus untrained {pl['trained_vs_untrained']['diff']:+.2f} SD)")
+            done.append("read by AB4's rule (2ab2996), " + step_reading(reg["families"]["AB-G"]["tests"]["steps trend"], pl["trained_vs_untrained"], pl["dose"])
+                        .removeprefix("By AB4's rule (2ab2996) ").rstrip("."))
         missing = [name for fam in ("AB-P", "AB-G") for name in reg["families"][fam]["missing"]]
         lines.append("* Registered LLM ablations on Soumitra's RTX, Anirudh's independent computation (" + ("final" if reg["final"] else "provisional")
                      + "; the result of record is results/ablations/LLM-registered.json, Diya's AB4 on main): " + ("; ".join(done) or "none complete")
-                     + (f"; missing so far, counted as not rejected: {', '.join(missing)}" if missing else "") + " (AB2, AB4).")
+                     + (f"; missing so far, counted as not rejected: {', '.join(missing)}" if missing else "") + " (AB2; AB4 15db163 and 2ab2996).")
     if g and g["mps"]["AB-P"]["tests"]:
         t = g["mps"]["AB-P"]["tests"]
         etth1_d = g["mps"].get("ETTh1_differences", {})
@@ -651,7 +652,7 @@ def history() -> list[str]:
 def main() -> int:
     lines = ["# Ablations, robustness and external validity", "",
              "Generated by scripts/ablations/report.py from results/ablations/*.json. Do not edit by hand. Registered in "
-             "docs/prereg_ablations.md (AB1, AB3 and AB5 on this branch; AB2 and AB4 on origin/soumitra-leg2; Diya's AB4 on main); every result here is secondary to the primary endpoints. Regret is in pooled "
+             "docs/prereg_ablations.md (AB1, AB3 and AB5 on this branch; AB2 and Soumitra's AB4, 15db163, on origin/soumitra-leg2; Diya's AB4, 2ab2996, on main); every result here is secondary to the primary endpoints. Regret is in pooled "
              "seed-SD units unless stated; lower is better. ILI regret is scored on seeds the search never saw; ETTh1 has one seed per config, "
              "so ETTh1 replays are in-sample and descriptive.", ""]
     lines += glance() + noise_free() + external() + controller() + registered_llm() + llm() + learned() + one_seed() + referee() + rq3() + robustness() + power() + history()
