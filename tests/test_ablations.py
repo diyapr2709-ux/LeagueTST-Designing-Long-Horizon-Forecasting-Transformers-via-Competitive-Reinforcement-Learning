@@ -531,7 +531,9 @@ class _FakeRtx:
                 continue
             steps, beta = llm_tests.TRANSFER_JOB[arm]
             self.arm_runs[(item, "ILI_T24")] = [{"method": llm_tests.TRANSFER_METHOD, "seed": s, "env": _env()} for s in range(10)]
-            self.table_rows[f"results/runs/{item}/ILI_T24/training.jsonl"] = [
+            # as on the real branch: AB2 left training logs in results/runs/, AB4's queue copies them to results/ablations/rtx/
+            where = llm_tests.RTX_DIR if llm_tests.ITEM_AMENDMENT[item] == "AB4" else "results/runs"
+            self.table_rows[f"{where}/{item}/ILI_T24/training.jsonl"] = [
                 {"job": {"seed": 100 + s, "steps": steps, "beta": beta, "lr": 1e-4, "rivals": "league", "dataset": "ETTh1",
                          "revision": llm_tests.REVISIONS["1.5B"], "run_name": f"grpo_league_ETTh1_seed{100 + s}"},
                  "env": _env(), "log": [{"onpolicy_mean": 0.001, "unique_rate": 1.0}], "seconds": 60.0} for s in range(10)]
@@ -566,6 +568,25 @@ class _FakeRtx:
 
     def frozen_ok(self, run_hash):
         return True
+
+
+def test_item_rows_reads_either_layout_and_stops_on_differing_copies():
+    item = "ABL_G_steps30_local"
+    rtx, runs = f"{llm_tests.RTX_DIR}/{item}/ILI_T24/training.jsonl", f"results/runs/{item}/ILI_T24/training.jsonl"
+
+    class Src:
+        def __init__(self, table):
+            self.table = table
+
+        def rows(self, rel):
+            return self.table.get(rel, [])
+
+    assert llm_tests.item_rows(Src({rtx: [{"a": 1}]}), item, "training.jsonl") == [{"a": 1}]
+    assert llm_tests.item_rows(Src({runs: [{"a": 2}]}), item, "training.jsonl") == [{"a": 2}]
+    assert llm_tests.item_rows(Src({rtx: [{"a": 1}], runs: [{"a": 1}]}), item, "training.jsonl") == [{"a": 1}]
+    assert llm_tests.item_rows(Src({}), item, "training.jsonl") == []
+    with pytest.raises(SystemExit):
+        llm_tests.item_rows(Src({rtx: [{"a": 1}], runs: [{"a": 2}]}), item, "training.jsonl")
 
 
 @pytest.fixture

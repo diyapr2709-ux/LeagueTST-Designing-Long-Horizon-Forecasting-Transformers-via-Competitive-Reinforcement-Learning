@@ -453,6 +453,16 @@ def gpu_names(runs: list[dict]) -> list[str]:
     return sorted({str(r.get("env", {}).get("gpu_name")) for r in runs})
 
 
+def item_rows(src: "RtxSource", item: str, name: str) -> list[dict]:
+    """A transfer item's training or error log: AB2 left them in results/runs/<item>/ILI_T24/, AB4's queue copies them
+    to results/ablations/rtx/<item>/ILI_T24/. Either place counts; both present and different stops the script.
+    (Fixed 26 Nov after the first AB4 run, which read only the AB2 place and so found no AB4 training records.)"""
+    found = [rows for rows in (src.rows(f"{RTX_DIR}/{item}/ILI_T24/{name}"), src.rows(f"results/runs/{item}/ILI_T24/{name}")) if rows]
+    if len(found) == 2 and found[0] != found[1]:
+        raise SystemExit(f"{item}: {name} differs between {RTX_DIR}/ and results/runs/")
+    return found[0] if found else []
+
+
 def check_training(records: list[dict], steps: int, beta: float, stopped: set[int], src: "RtxSource | None" = None, item: str = "") -> list[str]:
     """AB2 and AB4: league rivals, ETTh1 source, the 1.5B revision, lr 1e-4, the item's steps and beta, seeds 100 to 109,
     and (with ``src``) the commits that trained them, as for the searches."""
@@ -597,8 +607,8 @@ def registered_source(table, etth1, now=None, src: "RtxSource | None" = None) ->
         prompted_runs[arm] = runs if ok else []
     for arm, item in TRANSFER.items():
         runs = src.runs(item, "ILI_T24")
-        errors = src.rows(f"results/runs/{item}/ILI_T24/errors.jsonl")
-        records = src.rows(f"results/runs/{item}/ILI_T24/training.jsonl")
+        errors = item_rows(src, item, "errors.jsonl")
+        records = item_rows(src, item, "training.jsonl")
         stopped = stopped_seeds(errors)
         st = status["transfer"][arm] = {"item": item, "deployed": len({int(r["seed"]) for r in runs}), "stopped": sorted(stopped),
                                         "gpu": gpu_names(runs), "training": training_summary(records, errors)}
