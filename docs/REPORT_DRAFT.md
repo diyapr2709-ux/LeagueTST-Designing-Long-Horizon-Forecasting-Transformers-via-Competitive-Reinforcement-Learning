@@ -7,31 +7,50 @@ analysis scripts derive from it. Do not edit by hand.
 
 | item | dataset | T | seed | configs | best val MSE | median val MSE | mean epochs run | mean best epoch | GPU hours |
 |---|---|---|---|---|---|---|---|---|---|
+| E1 | ETTh1 | 336 | 2021 | 2368 | 1.0654 | 1.1560 | 28.5 | 24.6 | 39.97 |
+| E1 | ETTh1 | 336 | 2022 | 100 | 1.0666 | 1.0838 | 28.6 | 24.2 | 1.89 |
+| E1 | ETTh1 | 336 | 2023 | 100 | 1.0601 | 1.0840 | 29.4 | 21.6 | 1.98 |
 | E1 | ILI | 24 | 2021 | 2368 | 0.1926 | 0.2383 | 19.5 | 9.9 | 4.37 |
 | E1 | ILI | 24 | 2022 | 2368 | 0.1919 | 0.2327 | 22.2 | 12.7 | 4.53 |
 | E1 | ILI | 24 | 2023 | 2368 | 0.1951 | 0.2368 | 21.0 | 11.6 | 4.09 |
+| E3b | ETTh1 | 336 | 3001 | 64 | 1.0610 | 1.1032 | 28.4 | 22.2 | 1.21 |
 | E3b | ILI | 24 | 3001 | 64 | 0.2090 | 0.2305 | 19.5 | 9.7 | 0.12 |
+| PICK | ETTh1 | 336 | 4001 | 280 | 1.0655 | 1.0921 | 29.3 | 24.1 | 6.22 |
+| PICK | ETTh1 | 336 | 4002 | 280 | 1.0573 | 1.0973 | 28.1 | 21.9 | 5.88 |
+| PICK | ILI | 24 | 4001 | 197 | 0.2029 | 0.2268 | 23.2 | 14.3 | 0.42 |
+| PICK | ILI | 24 | 4002 | 197 | 0.1955 | 0.2230 | 24.4 | 15.1 | 0.55 |
 
 ## Seed spread of table entries
 
 | item | dataset | T | configs with 3 seeds | median seed SD | median SD / mean |
 |---|---|---|---|---|---|
+| E1 | ETTh1 | 336 | 100 | 0.0069 | 0.006 |
 | E1 | ILI | 24 | 2368 | 0.0078 | 0.033 |
-| E6 | ILI | 24 | 2 | 0.0139 | 0.065 |
-| E6 | ILI | 36 | 2 | 0.0084 | 0.041 |
-| E6 | ILI | 48 | 2 | 0.0088 | 0.044 |
-| E6 | ILI | 60 | 2 | 0.0105 | 0.048 |
+| E6 | ETTh1 | 96 | 3 | 0.0026 | 0.004 |
+| E6 | ETTh1 | 192 | 3 | 0.0022 | 0.002 |
+| E6 | ETTh1 | 336 | 3 | 0.0050 | 0.004 |
+| E6 | ETTh1 | 720 | 3 | 0.0097 | 0.007 |
+| E6 | ILI | 24 | 2 | 0.0137 | 0.064 |
+| E6 | ILI | 36 | 2 | 0.0085 | 0.041 |
+| E6 | ILI | 48 | 2 | 0.0089 | 0.045 |
+| E6 | ILI | 60 | 2 | 0.0095 | 0.043 |
 
 ## Resolution of the tables
 
 | dataset | configs | pooled seed SD | within 1 SD of best | within 2 SD | one-seed winner's rank on other seeds |
 |---|---|---|---|---|---|
+| ETTh1 | 2368 | 0.0132 | 50 | 340 | 99, 30, 20 |
 | ILI | 2368 | 0.0098 | 59 | 282 | 974, 156, 52 |
+
+Spearman between the ETTh1 and ILI rankings over 2368 configs: -0.211; top-100 overlap 0.
 
 ## E2: screening epoch and referee
 
 | setting | k | tau epoch-k vs final | tau referee vs final | referee kept | K1 |
 |---|---|---|---|---|---|
+| ETTh1 T=336 | 1 | -0.064 | 0.800 | yes | pass |
+| ETTh1 T=336 | 2 | -0.063 | 0.824 | yes | pass |
+| ETTh1 T=336 | 3 (chosen) | 0.277 | 0.846 | yes | pass |
 | ILI T=24 | 1 (chosen) | 0.177 | 0.581 | yes | pass |
 | ILI T=24 | 2 | 0.127 | 0.586 | yes | pass |
 | ILI T=24 | 3 | 0.088 | 0.564 | yes | pass |
@@ -40,7 +59,29 @@ analysis scripts derive from it. Do not edit by hand.
 
 | setting | mean signed gap | 95% interval | median abs gap (SD) | threshold | Spearman all / top 20 | K7 |
 |---|---|---|---|---|---|---|
+| ETTh1 T=336 | -0.0017 | [-0.0042, +0.0009] | 0.43 | 1.15 | 0.93 / 0.08 | pass |
 | ILI T=24 | +0.0042 | [+0.0013, +0.0070] | 0.91 | 0.95 | 0.75 / 0.55 | fail |
+
+## E3 ETTh1_T336
+
+2368 configs, 74 architectures, pooled seed SD 0.0132; 50 configs lie within one SD of the best multi-seed mean.
+Regret of the incumbent in pooled seed-SD units, scored on the seeds the search never saw where the incumbent has them and in-sample otherwise (held-out share per budget in summary.json): mean over search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. AUC is the mean regret over budgets 1 to 100.
+
+| method | seeds | @10 | @25 | @50 | @100 | AUC |
+|---|---|---|---|---|---|---|
+| qwen_prompted | 10 | 1.80 [1.13, 2.52] | 1.16 [0.94, 1.37] | 1.16 [0.94, 1.39] | 1.31 [1.17, 1.47] | 1.30 |
+| pg | 30 | 1.24 [1.02, 1.48] | 1.16 [0.95, 1.37] | 1.21 [1.07, 1.35] | 1.26 [1.14, 1.38] | 1.32 |
+| tpe | 30 | 1.58 [1.37, 1.81] | 1.19 [0.97, 1.39] | 1.17 [0.97, 1.38] | 1.18 [1.00, 1.36] | 1.37 |
+| pg_league_charged | 30 | 1.37 [1.13, 1.62] | 1.32 [1.10, 1.55] | 1.23 [1.05, 1.44] | 1.30 [1.16, 1.43] | 1.39 |
+| pg_uniform_rivals | 30 | 1.24 [1.02, 1.48] | 1.30 [1.13, 1.48] | 1.31 [1.17, 1.45] | 1.28 [1.18, 1.39] | 1.39 |
+| pg_league | 30 | 1.24 [1.02, 1.48] | 1.26 [0.99, 1.56] | 1.37 [1.21, 1.54] | 1.26 [1.16, 1.35] | 1.41 |
+| re | 30 | 1.91 [1.60, 2.23] | 1.51 [1.28, 1.75] | 1.34 [1.18, 1.50] | 1.37 [1.17, 1.58] | 1.57 |
+| asha | 30 | 1.87 [1.44, 2.38] | 1.46 [1.26, 1.66] | 1.35 [1.20, 1.50] | 1.41 [1.27, 1.54] | 1.57 |
+| random | 30 | 1.91 [1.60, 2.23] | 1.46 [1.18, 1.75] | 1.53 [1.18, 1.94] | 1.51 [1.26, 1.81] | 1.61 |
+| referee | 30 | 1.42 [1.21, 1.65] | 1.36 [1.14, 1.58] | 1.62 [1.39, 1.91] | 1.44 [1.25, 1.72] | 1.63 |
+| epochk | 30 | 1.42 [1.21, 1.65] | 1.59 [1.25, 2.01] | 1.63 [1.39, 1.92] | 1.41 [1.22, 1.68] | 1.68 |
+
+No claims from this table: incumbents are scored in-sample; see the pick reseeds.
 
 ## E3 ILI_T24
 
@@ -55,15 +96,44 @@ Regret of the incumbent, scored on the seeds the search never saw, in pooled see
 | re | 30 | 2.07 [1.69, 2.48] | 1.47 [1.14, 1.85] | 1.37 [1.12, 1.64] | 1.31 [1.07, 1.57] | 1.47 |
 | epochk | 30 | 1.59 [1.33, 1.90] | 1.66 [1.35, 2.03] | 1.45 [1.17, 1.79] | 1.52 [1.27, 1.80] | 1.50 |
 | random | 30 | 2.07 [1.69, 2.48] | 1.39 [1.11, 1.69] | 1.42 [1.22, 1.63] | 1.24 [1.06, 1.45] | 1.52 |
-| pg_league | 30 | 2.16 [1.82, 2.54] | 1.59 [1.25, 1.98] | 1.25 [1.00, 1.51] | 1.22 [0.95, 1.50] | 1.57 |
-| pg_uniform_rivals | 30 | 2.16 [1.82, 2.54] | 1.75 [1.49, 2.02] | 1.33 [1.09, 1.58] | 1.07 [0.83, 1.31] | 1.57 |
+| pg_league | 30 | 2.16 [1.82, 2.54] | 1.78 [1.45, 2.15] | 1.36 [1.09, 1.67] | 1.15 [0.92, 1.38] | 1.59 |
+| pg_uniform_rivals | 30 | 2.16 [1.82, 2.54] | 1.93 [1.60, 2.27] | 1.29 [1.04, 1.55] | 1.17 [0.92, 1.42] | 1.61 |
 | pg | 30 | 2.16 [1.82, 2.54] | 1.92 [1.57, 2.31] | 1.62 [1.33, 1.94] | 1.19 [0.97, 1.44] | 1.69 |
 | pg_league_charged | 30 | 2.32 [1.95, 2.72] | 1.77 [1.48, 2.08] | 1.58 [1.31, 1.88] | 1.64 [1.35, 1.92] | 1.77 |
+| qwen_prompted | 10 | 2.89 [1.96, 3.79] | 2.07 [1.49, 2.82] | 1.57 [1.07, 2.08] | 1.45 [0.97, 1.99] | 1.81 |
+
+## E4 ETTh1_T336
+
+2368 configs, 74 architectures, pooled seed SD 0.0132; 50 configs lie within one SD of the best multi-seed mean.
+Regret of the incumbent in pooled seed-SD units, scored on the seeds the search never saw where the incumbent has them and in-sample otherwise (held-out share per budget in summary.json): mean over search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. AUC is the mean regret over budgets 1 to 100.
+
+| method | seeds | @10 | @25 | @50 | @100 | AUC |
+|---|---|---|---|---|---|---|
+| tpe_warm_from_ILI | 30 | 6.90 [6.37, 7.33] | 1.57 [1.35, 1.80] | 1.37 [1.24, 1.53] | 1.34 [1.20, 1.49] | 2.11 |
+| grpo_uniform_from_ILI | 5 | 4.35 [1.92, 6.78] | 3.04 [1.37, 5.00] | 1.45 [0.63, 2.74] | 1.08 [0.25, 2.06] | 2.22 |
+| grpo_league_from_ILI | 10 | 3.67 [1.95, 5.43] | 3.35 [1.84, 5.06] | 3.17 [1.68, 4.87] | 2.62 [1.38, 4.23] | 3.51 |
+| grpo_none_from_ILI | 10 | 5.23 [3.51, 6.89] | 4.78 [3.03, 6.49] | 3.75 [2.15, 5.40] | 2.73 [1.54, 4.29] | 4.04 |
+| portfolio_from_ILI | 30 | 7.40 [7.32, 7.48] | 7.35 [7.23, 7.48] | 7.21 [7.12, 7.31] | 3.91 [3.58, 4.30] | 5.94 |
+
+No claims from this table: incumbents are scored in-sample; see the pick reseeds.
+
+## E4 ILI_T24
+
+2368 configs, 74 architectures, pooled seed SD 0.009787; 59 configs lie within one SD of the best multi-seed mean.
+Regret of the incumbent, scored on the seeds the search never saw, in pooled seed-SD units: mean over search seeds with a 95% bootstrap interval. Budgets in full-run equivalents of 30 epochs. AUC is the mean regret over budgets 1 to 100.
+
+| method | seeds | @10 | @25 | @50 | @100 | AUC |
+|---|---|---|---|---|---|---|
+| tpe_warm_from_ETTh1 | 30 | 2.98 [2.55, 3.41] | 1.62 [1.27, 2.01] | 1.47 [1.18, 1.78] | 1.09 [0.90, 1.31] | 1.65 |
+| grpo_league_from_ETTh1 | 10 | 3.63 [2.99, 4.12] | 3.21 [2.67, 3.66] | 3.01 [2.42, 3.60] | 3.02 [2.30, 3.72] | 3.14 |
+| grpo_none_from_ETTh1 | 10 | 3.65 [3.31, 3.97] | 3.19 [2.79, 3.62] | 3.41 [3.09, 3.77] | 2.93 [2.33, 3.52] | 3.23 |
+| portfolio_from_ETTh1 | 30 | 3.88 [3.66, 4.10] | 2.65 [2.36, 2.97] | 3.29 [2.90, 3.69] | 3.67 [3.30, 4.02] | 3.28 |
 
 ## E8: where the variance is
 
 | setting | scale | seeds | architecture | training setting | interaction | seed noise |
 |---|---|---|---|---|---|---|
+| ETTh1 T=336 | raw | 1 | 0.08 | 0.85 | 0.07 | n/a |
 | ILI T=24 | raw | 3 | 0.29 | 0.20 | 0.18 | 0.33 |
 | ILI T=24 | log | 3 | 0.29 | 0.20 | 0.18 | 0.33 |
 
@@ -71,11 +141,23 @@ Regret of the incumbent, scored on the seeds the search never saw, in pooled see
 
 | dataset | T | arm | seeds | val MSE mean | SD |
 |---|---|---|---|---|---|
+| ETTh1 | 96 | patchtst42 | 10 | 0.6761 | 0.0024 |
+| ETTh1 | 96 | table_best | 10 | 0.6828 | 0.0028 |
+| ETTh1 | 96 | table_best_revin_on | 10 | 0.6826 | 0.0026 |
+| ETTh1 | 192 | patchtst42 | 10 | 0.9218 | 0.0022 |
+| ETTh1 | 192 | table_best | 10 | 0.8958 | 0.0059 |
+| ETTh1 | 192 | table_best_revin_on | 10 | 0.9248 | 0.0019 |
+| ETTh1 | 336 | patchtst42 | 10 | 1.1651 | 0.0050 |
+| ETTh1 | 336 | table_best | 10 | 1.0747 | 0.0089 |
+| ETTh1 | 336 | table_best_revin_on | 10 | 1.1629 | 0.0034 |
+| ETTh1 | 720 | patchtst42 | 10 | 1.4425 | 0.0099 |
+| ETTh1 | 720 | table_best | 10 | 1.2044 | 0.0097 |
+| ETTh1 | 720 | table_best_revin_on | 10 | 1.4317 | 0.0059 |
 | ILI | 24 | patchtst42 | 10 | 0.2190 | 0.0164 |
-| ILI | 24 | table_best | 5 | 0.2082 | 0.0114 |
+| ILI | 24 | table_best | 10 | 0.2115 | 0.0111 |
 | ILI | 36 | patchtst42 | 10 | 0.2136 | 0.0133 |
-| ILI | 36 | table_best | 5 | 0.1907 | 0.0036 |
+| ILI | 36 | table_best | 10 | 0.1901 | 0.0038 |
 | ILI | 48 | patchtst42 | 10 | 0.2127 | 0.0098 |
-| ILI | 48 | table_best | 5 | 0.1852 | 0.0077 |
-| ILI | 60 | patchtst42 | 8 | 0.2262 | 0.0119 |
-| ILI | 60 | table_best | 5 | 0.2094 | 0.0092 |
+| ILI | 48 | table_best | 10 | 0.1861 | 0.0080 |
+| ILI | 60 | patchtst42 | 10 | 0.2273 | 0.0121 |
+| ILI | 60 | table_best | 10 | 0.2080 | 0.0069 |
