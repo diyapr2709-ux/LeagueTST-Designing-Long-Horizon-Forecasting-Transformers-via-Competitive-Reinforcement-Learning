@@ -720,3 +720,17 @@ def test_llm_rtx_is_a_verbatim_move_and_llm_tests_matches_main():
     moved = [name for name in after if name != "main"]
     assert len(moved) > 30
     assert all(after[name] == before[name] for name in moved), [name for name in moved if after[name] != before.get(name)]
+
+
+def test_llm_vs_baselines_lists_the_required_baselines_and_orders_seeds():
+    import llm_vs_baselines
+
+    assert list(llm_vs_baselines.BASELINES)[:4] == ["random", "regularized evolution", "TPE", "ASHA"]  # RQ1
+    assert {"warm-started TPE from ETTh1 (E4)", "portfolio from ETTh1 (E4)"} <= set(llm_vs_baselines.BASELINES)  # E4 controls
+    runs = [{"method": "m", "seed": s} for s in (2, 0, 1)]
+    original = llm_vs_baselines.by_seed
+    try:
+        llm_vs_baselines.by_seed = lambda rs, method, table: {int(r["seed"]): float(r["seed"]) for r in rs if r["method"] == method}
+        assert llm_vs_baselines.values(runs, "m", None) == [0.0, 1.0, 2.0]
+    finally:
+        llm_vs_baselines.by_seed = original
