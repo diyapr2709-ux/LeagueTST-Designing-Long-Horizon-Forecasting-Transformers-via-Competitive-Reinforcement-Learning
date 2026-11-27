@@ -841,3 +841,16 @@ record value by value once it exists; a disagreement is reported as found; the
 record is recomputed only if a bug is shown, by a dated amendment, both
 outputs kept. No record file is edited. Decided by a two-advocate arena with a
 judge on 27 Nov (docs/verdicts/arena_AB6_2026-11-27.md).
+
+### AB6 addendum 1 (2026-11-27, Diya, after the critic's review of AB6; after the record was computed)
+
+Correction of fact, asked for by the critic (docs/verdicts/AB6.md). Diya's AB4
+(2ab29963, 26 Nov 17:21 ET) was committed after five of the six AB4 jobs had
+finished (DONE lines 02:09, 04:01, 05:36, 07:19 and 11:29 ET; the sixth,
+ABL_G_steps120_local, finished 18:25 ET; results/logs/ab4_queue_status.txt).
+Its "What existed" paragraph ("No run of ... exists in git") was therefore wrong
+about the runs, though true of git (nothing was pushed before 18:44 ET), and
+its author had seen no value. The registered secondary step analyses (i) to
+(iii) and the reading rule of 2ab29963 were thus registered after the runs and
+before any value was read by their author; they stay labelled as registered
+secondary analyses with this caveat. Nothing else in AB4, AB5 or AB6 changes.
