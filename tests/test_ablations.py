@@ -453,7 +453,9 @@ def _fake_llm(final: bool) -> dict:
                                    "training": {"policies": 10, "onpolicy_mean_max": 0.004, "errors": []}}}}
     reasons = {"anon vs ref_local": "ABL_P_anon_local: pending (AB4 running)", "repair vs ref_local": "ABL_P_repair_local: pending (AB4 running)",
                "steps trend": "ABL_G_steps30_local: pending (AB4 running)"}
-    return {"registered": {"source": {"ref": "origin/x", "commit": "c" * 40, "tip": "c" * 40, "tip_time": "t", "fetch_time": "f",
+    return {"provenance": {"script": "scripts/ablations/llm_rtx.py", "git_hash": "a" * 40, "script_sha256": "b" * 64},
+            "registered": {"deadline": "2026-11-28T23:59:00-05:00", "computed_at": "2026-11-27T09:00:00-05:00",
+                           "source": {"ref": "origin/x", "commit": "c" * 40, "tip": "c" * 40, "tip_time": "t", "fetch_time": "2026-11-26T19:40:01-05:00",
                                       "pinned_is_tip": True, "files": [], "ab2_manifest_matches": {"a": True}},
                            "final": final, "provisional_reasons": [] if final else ["some arms are still running (AB4)"], "status": status, "descriptive": {},
                            "families": {"AB-P": {"tests": p_tests, "missing": [] if final else ["anon vs ref_local", "repair vs ref_local"],
@@ -471,11 +473,16 @@ def test_report_renders_registered_section(monkeypatch, final):
     spec.loader.exec_module(report)  # by path: scripts/report.py is also importable as "report"
     monkeypatch.setattr(report, "load", lambda name: _fake_llm(final) if name == "LLM-rtx" else None)
     text = "\n".join(report.registered_llm())
-    assert ("Status: final" in text) == final and ("provisional" in text) != final
+    assert ("Status: complete" in text) == final and ("Status: provisional" in text) != final and ("provisional" in text) != final
     assert "scale trend" in text and "KL trend" in text and "positive rho means a higher (worse) AUC" in text
     assert ("pending" in text) != final
     assert "Training (RTX transfer items): ABL_G_ref_local 10 policies" in text
     assert "Not the result of record" in text and "LLM-registered.json" in text
+    # review B1 to B11 and results review R15: named amendments, both deadlines, the scope sentences, no "final" label, not verified at a fake pin
+    assert "Soumitra's AB4 (15db163" in text and "Diya's AB4 (2ab2996" in text and "28 Nov 23:59 ET" in text
+    assert report.RULE6 in text and report.SCOPE in text and "Status: final" not in text
+    assert "Not verified" in text and "Welch t 95%, unadjusted" in text
+    assert "Source: scripts/ablations/llm_rtx.py" in text
 
 
 def test_by_level_sorts_numerically():
@@ -876,3 +883,70 @@ def test_programme_holm_uses_the_registered_sizes_and_keeps_family_decisions():
     assert row["anon vs ref_local"]["programme_p_holm"] == pytest.approx(11 * 0.0073) and not row["anon vs ref_local"]["programme_reject"]
     assert row["anon vs ref_local"]["family_reject"]  # the registered decision is kept beside it
     assert out["tests_sharing_ABL_P_ref_local"] == ["AB-G: steps trend", "AB-P: anon vs ref_local", "AB-P: scale trend"]
+
+
+def _report():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("ablations_report", ROOT / "scripts" / "ablations" / "report.py")
+    report = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(report)
+    return report
+
+
+def test_report_times_and_verification_guard():
+    report = _report()
+    assert report.et("2026-11-26T17:21:57-05:00") == "26 Nov 17:21 ET" and report.et(None) == "not recorded"
+    fams = {"AB-P": {"tests": {}, "missing": []}}
+    g = {"source": {"commit": report.VERIFIED_PIN}, "families": fams}
+    assert not report.verified(g)  # same pin, other families
+    assert "Not verified" in report.verification_text(g)
+
+
+def test_report_rerun_note_and_ab5_correction(monkeypatch):
+    report = _report()
+    t = lambda p, ph, r: {"p": p, "p_holm": ph, "reject": r}
+    first = {"provenance": {"git_hash": "a692f0e" + "0" * 33},
+             "registered": {"families": {"AB-P": {"tests": {"anon vs ref_local": t(0.007, 0.014, True)}, "missing": []},
+                                         "AB-G": {"tests": {"KL trend": t(0.37, 0.75, False)}, "missing": ["steps trend"], "missing_reasons": {"steps trend": "failed checks"}}}}}
+    now = {"registered": {"families": {"AB-P": {"tests": {"anon vs ref_local": t(0.007, 0.014, True)}, "missing": []},
+                                       "AB-G": {"tests": {"KL trend": t(0.37, 0.37, False), "steps trend": t(1e-5, 2e-5, True)}, "missing": []}},
+                          "timeline": {"commits": [{"commit": "510633d" + "0" * 33, "time": "2026-11-26T17:12:11-05:00", "label": "AB5"}],
+                                       "queue": [{"time": "2026-11-26T02:09:35-05:00", "event": "DONE", "name": "abl_p_anon_local_ILI", "detail": "rc=0",
+                                                  "file": "results/logs/ab4_queue_status.txt"},
+                                                 {"time": "2026-11-26T18:25:15-05:00", "event": "DONE", "name": "abl_g_steps120_local", "detail": "rc=0",
+                                                  "file": "results/logs/ab4_queue_status.txt"}]}}}
+    monkeypatch.setattr(report, "load", lambda name: {"LLM-first-AB4-run": first, "LLM-rtx": now}.get(name))
+    note = report.rerun_note()
+    assert "Both outputs are kept" in note and "a692f0e" in note and "Holm p 0.7500 then and 0.3700 now" in note
+    assert "steps trend (counted missing then: failed checks; rejected now)" in note and "No decision of a test computed both times changed" in note
+    fix = report.ab5_correction()
+    assert "abl_p_anon_local_ILI (26 Nov 02:09 ET)" in fix and "steps120" not in fix and "AB5 itself is not edited" in fix
+
+
+def test_report_hardware_table_never_pairs_across_cards():
+    report = _report()
+    m = lambda x: {"mean": x, "low": x - 0.1, "high": x + 0.1}
+    g = {"descriptive": {"hardware_G_ref_local_vs_J2": {"seeds": 10, "a": m(3.26), "b": m(3.14), "diff": {"mean": 0.12, "low": -0.7, "high": 0.93}}}}
+    text = "\n".join(report.hardware_table(g))
+    assert "+0.12 |" in text and "-0.70" not in text and "not paired across cards" in text
+
+
+def test_anytime_curve_averages_to_the_auc_and_writes_svg():
+    import anytime
+
+    class T:
+        pass
+
+    runs = [{"method": "m", "seed": s} for s in range(3)]
+    original = anytime.by_seed
+    try:
+        anytime.by_seed = lambda rs, method, table, b: {int(r["seed"]): float(r["seed"] + 100 - b) for r in rs if r["method"] == method}
+        c = anytime.curve(runs, "m", T())
+    finally:
+        anytime.by_seed = original
+    assert c["n"] == 3 and len(c["mean"]) == 100 and c["mean"][0] == pytest.approx(100.0) and c["mean"][-1] == pytest.approx(1.0)
+    panels = [{"title": "a", "series": [{"label": "random", "name": "random search", "n": 3, "mean": c["mean"]}]},
+              {"title": "b", "series": [{"label": "x", "name": "x", "n": 3, "mean": c["mean"]}]}]
+    svg = anytime.svg(panels)
+    assert svg.startswith("<svg") and svg.count("<path") == 3 and "prefers-color-scheme: dark" in svg  # two series and the reference
