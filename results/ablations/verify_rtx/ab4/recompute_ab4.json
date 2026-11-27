@@ -1,0 +1,1367 @@
+{
+ "ab2_manifest": {
+  "results/ablations/rtx/ABL_G_beta01_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": true,
+  "results/ablations/rtx/ABL_G_beta0_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": true,
+  "results/ablations/rtx/ABL_G_ref_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": true,
+  "results/ablations/rtx/ABL_P_05b_local/ETTh1_T336/qwen_prompted_0.5b_local_runs.jsonl": true,
+  "results/ablations/rtx/ABL_P_05b_local/ILI_T24/qwen_prompted_0.5b_local_runs.jsonl": true,
+  "results/ablations/rtx/ABL_P_3b_local/ETTh1_T336/qwen_prompted_3b_local_runs.jsonl": true,
+  "results/ablations/rtx/ABL_P_3b_local/ILI_T24/qwen_prompted_3b_local_runs.jsonl": true,
+  "results/ablations/rtx/ABL_P_ref_local/ETTh1_T336/qwen_prompted_1.5b_local_runs.jsonl": true,
+  "results/ablations/rtx/ABL_P_ref_local/ILI_T24/qwen_prompted_1.5b_local_runs.jsonl": true
+ },
+ "all_registered_ok": {
+  "G:beta0": true,
+  "G:beta01": true,
+  "G:ref": true,
+  "G:steps120": true,
+  "G:steps30": true,
+  "P:0.5B": true,
+  "P:3B": true,
+  "P:anon": true,
+  "P:ref": true,
+  "P:repair": true
+ },
+ "arms": {
+  "G:beta0": {
+   "auc": {
+    "mean": 3.3953001386910047,
+    "median": 3.393851721725839,
+    "n": 10,
+    "sd": 0.6672972799695706,
+    "t_high": 3.872655856252677,
+    "t_low": 2.917944421129332
+   },
+   "backend": [
+    "local"
+   ],
+   "deployed_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "done": "2026-11-25T10:13:02-05:00",
+   "done_before_deadline": true,
+   "duplicates": [],
+   "errors_files": [],
+   "git_hashes": {
+    "7bb46f4951698be939a66019180bd30a64d3da8a": {
+     "descends": true,
+     "dirty": false,
+     "exists": true,
+     "frozen_ok": true,
+     "launcher_ok": true,
+     "ok": true
+    }
+   },
+   "gpu": [
+    "NVIDIA GeForce RTX 4080 Laptop GPU"
+   ],
+   "methods": [
+    "grpo_league_from_ETTh1"
+   ],
+   "on_policy_stops": [],
+   "per_gpu": [
+    "1"
+   ],
+   "rates": {
+    "invalid": 0.0,
+    "repaired": 0.0,
+    "repeats": 0.3865414710485133
+   },
+   "registered_ok": true,
+   "revision_ok": true,
+   "rows": 10,
+   "training": {
+    "backend": [
+     "local"
+    ],
+    "beta": [
+     0.0
+    ],
+    "dataset": [
+     "ETTh1"
+    ],
+    "git_hashes": {
+     "7bb46f4951698be939a66019180bd30a64d3da8a": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "lr": [
+     0.0001
+    ],
+    "max_logged_step": [
+     60
+    ],
+    "minutes_per_policy": {
+     "mean": 18.51969591856003,
+     "median": 18.144963512818016,
+     "n": 10,
+     "sd": 1.0606772380216523,
+     "t_high": 19.278458705784708,
+     "t_low": 17.76093313133535
+    },
+    "ok": true,
+    "onpolicy_mean_max": 0.007744422648102045,
+    "per_gpu": [
+     "1"
+    ],
+    "records": 10,
+    "revision": [
+     "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    ],
+    "rivals": [
+     "league"
+    ],
+    "seeds": [
+     100,
+     101,
+     102,
+     103,
+     104,
+     105,
+     106,
+     107,
+     108,
+     109
+    ],
+    "steps": [
+     60
+    ]
+   }
+  },
+  "G:beta01": {
+   "auc": {
+    "mean": 3.094604026849232,
+    "median": 3.1187247132020874,
+    "n": 10,
+    "sd": 0.6560865650136122,
+    "t_high": 3.563940082046291,
+    "t_low": 2.625267971652173
+   },
+   "backend": [
+    "local"
+   ],
+   "deployed_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "done": "2026-11-25T13:44:26-05:00",
+   "done_before_deadline": true,
+   "duplicates": [],
+   "errors_files": [],
+   "git_hashes": {
+    "79f1bf01b272e7a383180bc47aee582f3b916c02": {
+     "descends": true,
+     "dirty": false,
+     "exists": true,
+     "frozen_ok": true,
+     "launcher_ok": true,
+     "ok": true
+    }
+   },
+   "gpu": [
+    "NVIDIA GeForce RTX 4080 Laptop GPU"
+   ],
+   "methods": [
+    "grpo_league_from_ETTh1"
+   ],
+   "on_policy_stops": [],
+   "per_gpu": [
+    "1"
+   ],
+   "rates": {
+    "invalid": 0.0,
+    "repaired": 0.0,
+    "repeats": 0.22088955522238882
+   },
+   "registered_ok": true,
+   "revision_ok": true,
+   "rows": 10,
+   "training": {
+    "backend": [
+     "local"
+    ],
+    "beta": [
+     0.1
+    ],
+    "dataset": [
+     "ETTh1"
+    ],
+    "git_hashes": {
+     "79f1bf01b272e7a383180bc47aee582f3b916c02": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "lr": [
+     0.0001
+    ],
+    "max_logged_step": [
+     60
+    ],
+    "minutes_per_policy": {
+     "mean": 18.658483214378357,
+     "median": 18.253938547770183,
+     "n": 10,
+     "sd": 1.0723175759806232,
+     "t_high": 19.425572997749818,
+     "t_low": 17.891393431006897
+    },
+    "ok": true,
+    "onpolicy_mean_max": 0.006126010324805975,
+    "per_gpu": [
+     "1"
+    ],
+    "records": 10,
+    "revision": [
+     "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    ],
+    "rivals": [
+     "league"
+    ],
+    "seeds": [
+     100,
+     101,
+     102,
+     103,
+     104,
+     105,
+     106,
+     107,
+     108,
+     109
+    ],
+    "steps": [
+     60
+    ]
+   }
+  },
+  "G:ref": {
+   "auc": {
+    "mean": 3.259953064115133,
+    "median": 3.3461422936511047,
+    "n": 10,
+    "sd": 0.5653297506596342,
+    "t_high": 3.6643656054001763,
+    "t_low": 2.85554052283009
+   },
+   "backend": [
+    "local"
+   ],
+   "deployed_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "done": "2026-11-25T06:37:54-05:00",
+   "done_before_deadline": true,
+   "duplicates": [],
+   "errors_files": [],
+   "git_hashes": {
+    "80a85b9b19790e5bed69d96499084d4aae78c039": {
+     "descends": true,
+     "dirty": false,
+     "exists": true,
+     "frozen_ok": true,
+     "launcher_ok": true,
+     "ok": true
+    }
+   },
+   "gpu": [
+    "NVIDIA GeForce RTX 4080 Laptop GPU"
+   ],
+   "methods": [
+    "grpo_league_from_ETTh1"
+   ],
+   "on_policy_stops": [],
+   "per_gpu": [
+    "1"
+   ],
+   "rates": {
+    "invalid": 0.0,
+    "repaired": 0.0,
+    "repeats": 0.27557216254086875
+   },
+   "registered_ok": true,
+   "revision_ok": true,
+   "rows": 10,
+   "training": {
+    "backend": [
+     "local"
+    ],
+    "beta": [
+     0.04
+    ],
+    "dataset": [
+     "ETTh1"
+    ],
+    "git_hashes": {
+     "80a85b9b19790e5bed69d96499084d4aae78c039": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "lr": [
+     0.0001
+    ],
+    "max_logged_step": [
+     60
+    ],
+    "minutes_per_policy": {
+     "mean": 17.893566226561862,
+     "median": 17.914239947001143,
+     "n": 10,
+     "sd": 0.07967894594897607,
+     "t_high": 17.950565110806927,
+     "t_low": 17.836567342316798
+    },
+    "ok": true,
+    "onpolicy_mean_max": 0.006126010324805975,
+    "per_gpu": [
+     "1"
+    ],
+    "records": 10,
+    "revision": [
+     "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    ],
+    "rivals": [
+     "league"
+    ],
+    "seeds": [
+     100,
+     101,
+     102,
+     103,
+     104,
+     105,
+     106,
+     107,
+     108,
+     109
+    ],
+    "steps": [
+     60
+    ]
+   }
+  },
+  "G:steps120": {
+   "auc": {
+    "mean": 3.1662285410352604,
+    "median": 3.11208713699018,
+    "n": 10,
+    "sd": 0.6961174707290713,
+    "t_high": 3.6642009810881335,
+    "t_low": 2.6682561009823873
+   },
+   "backend": [
+    "local"
+   ],
+   "deployed_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "done": "2026-11-26T18:25:15-05:00",
+   "done_before_deadline": true,
+   "duplicates": [],
+   "errors_files": [],
+   "git_hashes": {
+    "185a0b1b4d40283beb65587dcea7f6bd45b0be33": {
+     "descends": true,
+     "dirty": false,
+     "exists": true,
+     "frozen_ok": true,
+     "launcher_ok": true,
+     "ok": true
+    }
+   },
+   "gpu": [
+    "NVIDIA GeForce RTX 4080 Laptop GPU"
+   ],
+   "methods": [
+    "grpo_league_from_ETTh1"
+   ],
+   "on_policy_stops": [],
+   "per_gpu": [
+    "1"
+   ],
+   "rates": {
+    "invalid": 0.0,
+    "repaired": 0.0,
+    "repeats": 0.32731182795698927
+   },
+   "registered_ok": true,
+   "revision_ok": true,
+   "rows": 10,
+   "training": {
+    "backend": [
+     "local"
+    ],
+    "beta": [
+     0.04
+    ],
+    "dataset": [
+     "ETTh1"
+    ],
+    "git_hashes": {
+     "185a0b1b4d40283beb65587dcea7f6bd45b0be33": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "lr": [
+     0.0001
+    ],
+    "max_logged_step": [
+     120
+    ],
+    "minutes_per_policy": {
+     "mean": 38.31498323917389,
+     "median": 38.20943506161372,
+     "n": 10,
+     "sd": 2.1218827063841625,
+     "t_high": 39.83288668684553,
+     "t_low": 36.797079791502256
+    },
+    "ok": true,
+    "onpolicy_mean_max": 0.006701719481498003,
+    "per_gpu": [
+     "1"
+    ],
+    "records": 10,
+    "revision": [
+     "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    ],
+    "rivals": [
+     "league"
+    ],
+    "seeds": [
+     100,
+     101,
+     102,
+     103,
+     104,
+     105,
+     106,
+     107,
+     108,
+     109
+    ],
+    "steps": [
+     120
+    ]
+   }
+  },
+  "G:steps30": {
+   "auc": {
+    "mean": 3.0322100346210323,
+    "median": 3.161107166457631,
+    "n": 10,
+    "sd": 0.7041327414186748,
+    "t_high": 3.5359162539149374,
+    "t_low": 2.5285038153271273
+   },
+   "backend": [
+    "local"
+   ],
+   "deployed_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "done": "2026-11-26T11:29:12-05:00",
+   "done_before_deadline": true,
+   "duplicates": [],
+   "errors_files": [],
+   "git_hashes": {
+    "7fd5085f9ab9b3d106db37eec917ac3ab566e4fc": {
+     "descends": true,
+     "dirty": false,
+     "exists": true,
+     "frozen_ok": true,
+     "launcher_ok": true,
+     "ok": true
+    }
+   },
+   "gpu": [
+    "NVIDIA GeForce RTX 4080 Laptop GPU"
+   ],
+   "methods": [
+    "grpo_league_from_ETTh1"
+   ],
+   "on_policy_stops": [],
+   "per_gpu": [
+    "1"
+   ],
+   "rates": {
+    "invalid": 0.0,
+    "repaired": 0.0,
+    "repeats": 0.6685070671378092
+   },
+   "registered_ok": true,
+   "revision_ok": true,
+   "rows": 10,
+   "training": {
+    "backend": [
+     "local"
+    ],
+    "beta": [
+     0.04
+    ],
+    "dataset": [
+     "ETTh1"
+    ],
+    "git_hashes": {
+     "7fd5085f9ab9b3d106db37eec917ac3ab566e4fc": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "lr": [
+     0.0001
+    ],
+    "max_logged_step": [
+     29,
+     30
+    ],
+    "minutes_per_policy": {
+     "mean": 17.71110355257988,
+     "median": 18.017492548624674,
+     "n": 10,
+     "sd": 1.943430067057808,
+     "t_high": 19.101349672320712,
+     "t_low": 16.320857432839045
+    },
+    "ok": true,
+    "onpolicy_mean_max": 0.0065655759535729885,
+    "per_gpu": [
+     "1"
+    ],
+    "records": 10,
+    "revision": [
+     "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+    ],
+    "rivals": [
+     "league"
+    ],
+    "seeds": [
+     100,
+     101,
+     102,
+     103,
+     104,
+     105,
+     106,
+     107,
+     108,
+     109
+    ],
+    "steps": [
+     30
+    ]
+   }
+  },
+  "P:0.5B": {
+   "ETTh1_T336": {
+    "auc": {
+     "mean": 1.416038970309244,
+     "median": 1.397276362420153,
+     "n": 30,
+     "sd": 0.3821442845380983,
+     "t_high": 1.5587339912828033,
+     "t_low": 1.2733439493356846
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-25T02:43:41-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "80a85b9b19790e5bed69d96499084d4aae78c039": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_0.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.46068174147823154
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   },
+   "ILI_T24": {
+    "auc": {
+     "mean": 1.391092848171124,
+     "median": 1.326859338065273,
+     "n": 30,
+     "sd": 0.4440226945659401,
+     "t_high": 1.5568936471819135,
+     "t_low": 1.2252920491603345
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-25T01:10:33-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "c2dda8dfa49c6f090816f516285792a00585a79d": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_0.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.519347581552306
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   }
+  },
+  "P:3B": {
+   "ETTh1_T336": {
+    "auc": {
+     "mean": 1.3187411065703205,
+     "median": 1.2218848030174874,
+     "n": 30,
+     "sd": 0.36146850122079316,
+     "t_high": 1.4537156631709174,
+     "t_low": 1.1837665499697236
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-25T03:13:58-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "80a85b9b19790e5bed69d96499084d4aae78c039": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_3b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.0906608410704533
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   },
+   "ILI_T24": {
+    "auc": {
+     "mean": 2.056135148595922,
+     "median": 2.130119827987789,
+     "n": 30,
+     "sd": 0.7181952304500695,
+     "t_high": 2.324313655036376,
+     "t_low": 1.7879566421554682
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-25T02:03:07-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "c2dda8dfa49c6f090816f516285792a00585a79d": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_3b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.28276789717531015
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   }
+  },
+  "P:anon": {
+   "ETTh1_T336": {
+    "auc": {
+     "mean": 1.3701305154480563,
+     "median": 1.350977633364101,
+     "n": 30,
+     "sd": 0.32619236159802817,
+     "t_high": 1.4919327450323772,
+     "t_low": 1.2483282858637355
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-26T05:36:50-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "7fd5085f9ab9b3d106db37eec917ac3ab566e4fc": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_anon_1.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.14117015566290927
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   },
+   "ILI_T24": {
+    "auc": {
+     "mean": 1.9276317106641645,
+     "median": 1.8774935579543113,
+     "n": 30,
+     "sd": 0.5133636335884286,
+     "t_high": 2.1193248418345205,
+     "t_low": 1.7359385794938085
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-26T02:09:35-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "15db16314f1303854d4540894d7aaed6fa1a3270": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_anon_1.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.1342094782954998
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   }
+  },
+  "P:ref": {
+   "ETTh1_T336": {
+    "auc": {
+     "mean": 1.4679746255107855,
+     "median": 1.3898507772368385,
+     "n": 30,
+     "sd": 0.3880112982296626,
+     "t_high": 1.6128604254012189,
+     "t_low": 1.3230888256203521
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-25T02:23:26-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "80a85b9b19790e5bed69d96499084d4aae78c039": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_1.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.16705820934481858
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   },
+   "ILI_T24": {
+    "auc": {
+     "mean": 1.5649322466754272,
+     "median": 1.5468352513301538,
+     "n": 30,
+     "sd": 0.5033641585322186,
+     "t_high": 1.7528915124954347,
+     "t_low": 1.3769729808554196
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-25T00:40:42-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "c2dda8dfa49c6f090816f516285792a00585a79d": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_1.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.0,
+     "repaired": 0.0,
+     "repeats": 0.17547892720306513
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   }
+  },
+  "P:repair": {
+   "ETTh1_T336": {
+    "auc": {
+     "mean": 1.4298648298726093,
+     "median": 1.367267072542873,
+     "n": 30,
+     "sd": 0.350811292162312,
+     "t_high": 1.5608599192100554,
+     "t_low": 1.2988697405351632
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-26T07:19:41-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "7fd5085f9ab9b3d106db37eec917ac3ab566e4fc": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_repair_1.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.024390243902439025,
+     "repaired": 0.568264648163723,
+     "repeats": 0.058592654892066165
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   },
+   "ILI_T24": {
+    "auc": {
+     "mean": 1.5913527519697068,
+     "median": 1.553136713594876,
+     "n": 30,
+     "sd": 0.6614918308085987,
+     "t_high": 1.8383578610089883,
+     "t_low": 1.3443476429304253
+    },
+    "backend": [
+     "local"
+    ],
+    "done": "2026-11-26T04:01:31-05:00",
+    "done_before_deadline": true,
+    "duplicates": [],
+    "git_hashes": {
+     "7fd5085f9ab9b3d106db37eec917ac3ab566e4fc": {
+      "descends": true,
+      "dirty": false,
+      "exists": true,
+      "frozen_ok": true,
+      "launcher_ok": true,
+      "ok": true
+     }
+    },
+    "gpu": [
+     "NVIDIA GeForce RTX 4080 Laptop GPU"
+    ],
+    "methods": [
+     "qwen_prompted_repair_1.5b_local"
+    ],
+    "per_gpu": [
+     "1"
+    ],
+    "rates": {
+     "invalid": 0.02212971078001753,
+     "repaired": 0.5297984224364592,
+     "repeats": 0.06529360210341806
+    },
+    "registered_ok": true,
+    "revision_ok": true,
+    "rows": 30,
+    "seeds_complete": true
+   }
+  }
+ },
+ "auc_code": "scratchpad/recompute/recompute.py (blind agent), sha256 1d32393153037cb9417674f0f1aa22dcf97f5f363a40c0f82af2dc90fec62dd3",
+ "crosscheck_run_metric_max_abs_diff": 0.0,
+ "files_sha256": {
+  "results/ablations/rtx/ABL_G_beta01_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": "b772468566bacbc3b7b6e11816bd0d6ef2972024eda12bed9e8d40ed0ae05044",
+  "results/ablations/rtx/ABL_G_beta0_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": "d01e5e453a98b643f7065378f3195964b0410f8a1f83edb9e562af354f259bc5",
+  "results/ablations/rtx/ABL_G_ref_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": "4d7cdbe3a37a2b5031e5aae06ee7213371dcfd5a62ee09dccf9a9be4f37b4644",
+  "results/ablations/rtx/ABL_G_steps120_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": "5d376354a92d8f05c6e89b721673d5c1a0d6c7036d0adf62a2c08866ebeb2f8c",
+  "results/ablations/rtx/ABL_G_steps30_local/ILI_T24/grpo_league_from_ETTh1_runs.jsonl": "ff28e524f42d067566d3ab32d385895435b1616c88b2ee505737d8ee8b6f60e7",
+  "results/ablations/rtx/ABL_P_05b_local/ETTh1_T336/qwen_prompted_0.5b_local_runs.jsonl": "cfea999efae9130311650a416544c579f1f1e0f6f239abcb3a7007582480154b",
+  "results/ablations/rtx/ABL_P_05b_local/ILI_T24/qwen_prompted_0.5b_local_runs.jsonl": "93826f85c3c31885a12566d56510f2c008e5ce5a30e90866fa863bf9d476030e",
+  "results/ablations/rtx/ABL_P_3b_local/ETTh1_T336/qwen_prompted_3b_local_runs.jsonl": "f262fadfed06354c63761e05e6a516a76491bf51caad321ae2cb5bb78d183b8b",
+  "results/ablations/rtx/ABL_P_3b_local/ILI_T24/qwen_prompted_3b_local_runs.jsonl": "3238a0244ec8e465ab63531e9bf7c3fc5da6a9e872d9927e90841ee96eea3d76",
+  "results/ablations/rtx/ABL_P_anon_local/ETTh1_T336/qwen_prompted_anon_1.5b_local_runs.jsonl": "648ab02dd2fb9dbbcd9014f36fa19d0f0395cd6a19f78f8c81a4f5f54dfaa962",
+  "results/ablations/rtx/ABL_P_anon_local/ILI_T24/qwen_prompted_anon_1.5b_local_runs.jsonl": "92faed56fc8e13c186a79eb2b5d1009d6e5cdc75058747e4110a0703064ea29d",
+  "results/ablations/rtx/ABL_P_ref_local/ETTh1_T336/qwen_prompted_1.5b_local_runs.jsonl": "3c729c7f5e4a48e79d4d7024b39d960c841c60ba42d87a4160b02a58ec21e6f1",
+  "results/ablations/rtx/ABL_P_ref_local/ILI_T24/qwen_prompted_1.5b_local_runs.jsonl": "2d927d437e3b7ff386a5e0c208d1c27371a882f49bda9aeec09692b016e3474a",
+  "results/ablations/rtx/ABL_P_repair_local/ETTh1_T336/qwen_prompted_repair_1.5b_local_runs.jsonl": "d0e4373fb1221ed027b45525f266f11ac221854382be93c41c2245936a7457c4",
+  "results/ablations/rtx/ABL_P_repair_local/ILI_T24/qwen_prompted_repair_1.5b_local_runs.jsonl": "08eb45a63de2b5c6c713b027c667f06cacfeeb6568a7167dc032e9b7a306b9b9"
+ },
+ "holm": {
+  "AB-G": {
+   "KL trend": {
+    "p": 0.3738066261933738,
+    "p_holm": 0.3738066261933738,
+    "reject_0.05": false
+   },
+   "steps trend": {
+    "p": 9.99999000001e-07,
+    "p_holm": 1.999998000002e-06,
+    "reject_0.05": true
+   }
+  },
+  "AB-P": {
+   "anon vs ref_local": {
+    "p": 0.007526992473007527,
+    "p_holm": 0.015053984946015054,
+    "reject_0.05": true
+   },
+   "repair vs ref_local": {
+    "p": 0.8624321375678624,
+    "p_holm": 0.8624321375678624,
+    "reject_0.05": false
+   },
+   "scale trend": {
+    "p": 3.0999969000031e-05,
+    "p_holm": 9.2999907000093e-05,
+    "reject_0.05": true
+   }
+  }
+ },
+ "ledger_sha256": "b5e1b558718844daebc8225b9ac8557fd1aecfc47b34d32944c6b28a110a0f36",
+ "n_perm": 1000000,
+ "pin": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
+ "queue_done_times": {
+  "abl_g_beta01_local": "2026-11-25T13:44:26-05:00",
+  "abl_g_beta0_local": "2026-11-25T10:13:02-05:00",
+  "abl_g_ref_local": "2026-11-25T06:37:54-05:00",
+  "abl_g_steps120_local": "2026-11-26T18:25:15-05:00",
+  "abl_g_steps30_local": "2026-11-26T11:29:12-05:00",
+  "abl_p_05b_local_ETTh1": "2026-11-25T02:43:41-05:00",
+  "abl_p_05b_local_ILI": "2026-11-25T01:10:33-05:00",
+  "abl_p_3b_local_ETTh1": "2026-11-25T03:13:58-05:00",
+  "abl_p_3b_local_ILI": "2026-11-25T02:03:07-05:00",
+  "abl_p_anon_local_ETTh1": "2026-11-26T05:36:50-05:00",
+  "abl_p_anon_local_ILI": "2026-11-26T02:09:35-05:00",
+  "abl_p_ref_local_ETTh1": "2026-11-25T02:23:26-05:00",
+  "abl_p_ref_local_ILI": "2026-11-25T00:40:42-05:00",
+  "abl_p_repair_local_ETTh1": "2026-11-26T07:19:41-05:00",
+  "abl_p_repair_local_ILI": "2026-11-26T04:01:31-05:00"
+ },
+ "secondary": {
+  "dose_per_policy_spearman": {
+   "mean": 0.05,
+   "p": 1.0,
+   "patterns": 1024,
+   "rhos": [
+    0.5,
+    1.0,
+    -1.0,
+    0.5,
+    -0.5,
+    0.5,
+    1.0,
+    -1.0,
+    -1.0,
+    0.5
+   ]
+  },
+  "paired_gap_same_seed_descriptive": {
+   "mean": 1.5825984563999282,
+   "median": 1.5830245251915,
+   "n": 10,
+   "sd": 0.5913086039171322,
+   "t_high": 2.005595149771921,
+   "t_low": 1.1596017630279354
+  },
+  "policy_mean_vs_untrained": {
+   "df": 20.903198632960898,
+   "diff": 1.5878649665817146,
+   "high": 1.89853470339317,
+   "low": 1.2771952297702591,
+   "mean": [
+    3.152797213257142,
+    1.5649322466754272
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "perm": {
+    "diff": 1.5878649665817146,
+    "hits": 0,
+    "n_perm": 1000000,
+    "p": 9.99999000001e-07,
+    "seed": 20261146
+   },
+   "policy_means": [
+    3.3341533180625986,
+    3.823654185405781,
+    3.1822769577070713,
+    2.484950303291404,
+    2.989635650694563,
+    3.11784703807603,
+    2.690468112349554,
+    3.250149466757995,
+    3.2755824847523596,
+    3.3792546154740606
+   ]
+  }
+ },
+ "tests": {
+  "KL trend": {
+   "hits_abs_ge_obs": 373806,
+   "levels": {
+    "0": {
+     "mean": 3.3953001386910047,
+     "median": 3.393851721725839,
+     "n": 10,
+     "sd": 0.6672972799695706,
+     "t_high": 3.872655856252677,
+     "t_low": 2.917944421129332
+    },
+    "0.04": {
+     "mean": 3.259953064115133,
+     "median": 3.3461422936511047,
+     "n": 10,
+     "sd": 0.5653297506596342,
+     "t_high": 3.6643656054001763,
+     "t_low": 2.85554052283009
+    },
+    "0.1": {
+     "mean": 3.094604026849232,
+     "median": 3.1187247132020874,
+     "n": 10,
+     "sd": 0.6560865650136122,
+     "t_high": 3.563940082046291,
+     "t_low": 2.625267971652173
+    }
+   },
+   "mc_se": 0.00048381305724835497,
+   "n": 30,
+   "n_perm": 1000000,
+   "p_plus1": 0.3738066261933738,
+   "p_raw": 0.373806,
+   "perm_seed": 20261127,
+   "rho": -0.1697999870291681,
+   "rho_scipy": -0.16979998702916813
+  },
+  "anon vs ref_local": {
+   "df": 57.97757249201059,
+   "diff": 0.3626994639887373,
+   "high": 0.6254577572449489,
+   "low": 0.09994117073252573,
+   "mean": [
+    1.9276317106641645,
+    1.5649322466754272
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "perm": {
+    "diff": 0.3626994639887373,
+    "hits": 7526,
+    "n_perm": 1000000,
+    "p": 0.007526992473007527,
+    "seed": 20261136
+   }
+  },
+  "repair vs ref_local": {
+   "df": 54.151583877673744,
+   "diff": 0.02642050529427964,
+   "high": 0.3306645615792519,
+   "low": -0.2778235509906926,
+   "mean": [
+    1.5913527519697068,
+    1.5649322466754272
+   ],
+   "n": [
+    30,
+    30
+   ],
+   "perm": {
+    "diff": 0.02642050529427964,
+    "hits": 862432,
+    "n_perm": 1000000,
+    "p": 0.8624321375678624,
+    "seed": 20261137
+   }
+  },
+  "scale trend": {
+   "hits_abs_ge_obs": 30,
+   "levels": {
+    "0.5B": {
+     "mean": 1.391092848171124,
+     "median": 1.326859338065273,
+     "n": 30,
+     "sd": 0.4440226945659401,
+     "t_high": 1.5568936471819135,
+     "t_low": 1.2252920491603345
+    },
+    "1.5B": {
+     "mean": 1.5649322466754272,
+     "median": 1.5468352513301538,
+     "n": 30,
+     "sd": 0.5033641585322186,
+     "t_high": 1.7528915124954347,
+     "t_low": 1.3769729808554196
+    },
+    "3B": {
+     "mean": 2.056135148595922,
+     "median": 2.130119827987789,
+     "n": 30,
+     "sd": 0.7181952304500695,
+     "t_high": 2.324313655036376,
+     "t_low": 1.7879566421554682
+    }
+   },
+   "mc_se": 5.477143416051839e-06,
+   "n": 90,
+   "n_perm": 1000000,
+   "p_plus1": 3.0999969000031e-05,
+   "p_raw": 3e-05,
+   "perm_seed": 20261126,
+   "rho": 0.42952841163858857,
+   "rho_scipy": 0.4295284116385885
+  },
+  "steps trend": {
+   "hits_abs_ge_obs": 0,
+   "levels": {
+    "0": {
+     "mean": 1.5649322466754272,
+     "median": 1.5468352513301538,
+     "n": 30,
+     "sd": 0.5033641585322186,
+     "t_high": 1.7528915124954347,
+     "t_low": 1.3769729808554196
+    },
+    "120": {
+     "mean": 3.1662285410352604,
+     "median": 3.11208713699018,
+     "n": 10,
+     "sd": 0.6961174707290713,
+     "t_high": 3.6642009810881335,
+     "t_low": 2.6682561009823873
+    },
+    "30": {
+     "mean": 3.0322100346210323,
+     "median": 3.161107166457631,
+     "n": 10,
+     "sd": 0.7041327414186748,
+     "t_high": 3.5359162539149374,
+     "t_low": 2.5285038153271273
+    },
+    "60": {
+     "mean": 3.259953064115133,
+     "median": 3.3461422936511047,
+     "n": 10,
+     "sd": 0.5653297506596342,
+     "t_high": 3.6643656054001763,
+     "t_low": 2.85554052283009
+    }
+   },
+   "mc_se": 1e-06,
+   "n": 60,
+   "n_perm": 1000000,
+   "p_plus1": 9.99999000001e-07,
+   "p_raw": 0.0,
+   "perm_seed": 20261128,
+   "rho": 0.7622310377083054,
+   "rho_scipy": 0.7622310377083056
+  }
+ },
+ "tip_local": "e6926d8664b8493442f4e372a4cf0349a34d06e0"
+}
