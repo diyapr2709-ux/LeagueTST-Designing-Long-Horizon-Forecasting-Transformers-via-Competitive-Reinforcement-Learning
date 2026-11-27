@@ -1,7 +1,7 @@
 {
  "note": "Anirudh's independent computation of the registered AB-P and AB-G families (AB5); the result of record is results/ablations/LLM-registered.json from scripts/ablations/llm_registered.py (Diya's AB4 on main)",
  "provenance": {
-  "git_hash": "2147eb3efd8e74cd213d8c834e17e54385f3d4c3",
+  "git_hash": "1c90bed2afab8f95332d81fc39d6ca3113aa0ded",
   "inputs_sha256": {
    "results/ablations/mps/ABL_G_steps_mps/ILI_T24/grpo_league_from_ETTh1_steps120_mps_runs.jsonl": "82897f144f9c0af03bcf70ca4ad90b52cb6a6c3bf64a18b0e3fc5171ee94cf31",
    "results/ablations/mps/ABL_G_steps_mps/ILI_T24/grpo_league_from_ETTh1_steps30_mps_runs.jsonl": "5f862115367ce6eba2e87898adb0e4eded926ba96b9a1201e7233713997f06f6",
@@ -22,7 +22,7 @@
   },
   "leaguetst_path": "/Users/anirudh/Machine Learning/LeagueTST/leaguetst",
   "script": "scripts/ablations/llm_rtx.py",
-  "script_sha256": "a0a5b32e68edb6fe7624116bc05ce11d9f25d552e2fcbddd2d2143cf78fed604",
+  "script_sha256": "63e12edf634cac95cc9cb64048b46c3aaade27bd11d2a78afb00f74fe7db14a4",
   "versions": {
    "numpy": "2.5.4",
    "optuna": "5.1.0",
@@ -645,7 +645,7 @@
     }
    }
   },
-  "computed_at": "2026-11-26T20:30:52.116190-05:00",
+  "computed_at": "2026-11-26T20:53:33.413004-05:00",
   "deadline": "2026-11-28T23:59:00-05:00",
   "deadline_main_AB4": "2026-11-28T18:00:00-05:00",
   "deadline_passed": false,
@@ -2184,7 +2184,26 @@
    }
   },
   "final": true,
+  "llm_tests_history": [
+   {
+    "commit": "510633d53bed6bfbea793bc4e0bbba4d2e875995",
+    "time": "2026-11-26T17:12:11-05:00"
+   },
+   {
+    "commit": "a692f0eac04f78e4fb9b24739f2083d892197a8f",
+    "time": "2026-11-26T19:32:39-05:00"
+   },
+   {
+    "commit": "f9c0d62bb8613641fd19c055e452a549c9183858",
+    "time": "2026-11-26T19:35:33-05:00"
+   },
+   {
+    "commit": "943d893ef3df8550ed2182096053d54437da5730",
+    "time": "2026-11-26T19:44:15-05:00"
+   }
+  ],
   "llm_tests_sha256": "08c72a4c46dded669ebff913a45887ffe215caed24d10005fd27f808b34e9239",
+  "main_AB4_fetched": "2026-11-26T19:04:32-05:00",
   "provisional_reasons": [],
   "queue_done_times": {
    "abl_g_beta01_local": "2026-11-25T13:44:26-05:00",
@@ -2708,8 +2727,23 @@
      "time": "2026-11-26T17:21:57-05:00"
     },
     {
+     "commit": "185a0b1b4d40283beb65587dcea7f6bd45b0be33",
+     "label": "AB4 prompted arms' run files committed: anon and repair, ILI and ETTh1 (origin/soumitra-leg2)",
+     "time": "2026-11-26T07:20:49-05:00"
+    },
+    {
+     "commit": "c7e4bc9cba0de411705842b55349624ba31f6431",
+     "label": "AB4 ABL_G_steps30_local run and training files committed (origin/soumitra-leg2)",
+     "time": "2026-11-26T11:29:53-05:00"
+    },
+    {
+     "commit": "e880b0a9c34385d7d46d5f44e2038e7697a28894",
+     "label": "AB4 ABL_G_steps120_local run and training files and the AB4 queue status file committed (origin/soumitra-leg2)",
+     "time": "2026-11-26T18:25:44-05:00"
+    },
+    {
      "commit": "e6926d8664b8493442f4e372a4cf0349a34d06e0",
-     "label": "AB4 results committed (origin/soumitra-leg2; the pinned commit)",
+     "label": "'Results' commit, the pinned tip of origin/soumitra-leg2: duplicate copies of the run files under results/runs/llm_local/, scripts/ablations/rtx_tests.py and its tests, copies of common.py and llm_tests.py, and the lock file results/logs/l4_queue.lock; no AB4 run file is new in it",
      "time": "2026-11-26T18:44:22-05:00"
     }
    ],

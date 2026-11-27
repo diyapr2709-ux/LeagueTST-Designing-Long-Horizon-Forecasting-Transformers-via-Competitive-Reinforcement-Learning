@@ -2,13 +2,13 @@
  "analysis": "ST detectable effects",
  "descriptive": true,
  "provenance": {
-  "git_hash": "2147eb3efd8e74cd213d8c834e17e54385f3d4c3",
+  "git_hash": "1c90bed2afab8f95332d81fc39d6ca3113aa0ded",
   "inputs_sha256": {
    "docs/claims/E3.json": "bf82ccda09ec9192708fe95cd5aa4a0327913196c4b1099c9e4bb3a6bd97b0d6",
    "results/ablations/AB-C.json": "9d0b005fb1fd09469f4c257acf4ac0c670cfe2f1748550e775468a6724c56b26",
    "results/ablations/AB-L.json": "b82641d9142f4496ed29cf32620589d281acb08130ae2035f9584e3e81b96ce2",
    "results/ablations/AB-X.json": "d0d7b62990e2ef5d9d41d4d22dd6a0e772394c05df5f74a9ee34d278e335e7b6",
-   "results/ablations/LLM.json": "38ada20623e14b9d0bf3f582e7f5519c324acbd8cb722a2f38f0ebff6543a0e7",
+   "results/ablations/LLM.json": "e0c57a2e5febaa04b0c974616ba6f27f9f3980d76bc74f9fe9215ba63fdd6fbd",
    "results/e5/ETTh1_T336.json": "cf5d7a79de57ed6e35843696e7dad015e1d2aab8de98eb9db9ff15c4d4517dda",
    "results/e5/ILI_T24.json": "fde064fc71a561f17ecf3378ddc5d335b17326790c274793ad82f5381ae31b02",
    "results/independent/E4_soumitra.json": "f191b5e67bd1d1c9f00434c91fa461eb3bcd972bccc6d056675e5bb89eb611e8",
@@ -24,7 +24,7 @@
    "results/search/E4/ILI_T24/grpo_none_from_ETTh1_runs.jsonl": "c1fe5d6020a86ae6733cc8f7dac1b53f32fa8435aaeb31dbd0bfa68b35bdce22"
   },
   "script": "scripts/ablations/power.py",
-  "script_sha256": "28f36657522d5a9db3089c6f9a2b317faadb75d52476fd98c6a4453faaa7f3d1",
+  "script_sha256": "2b878a0153f91b64dbf268a1f26c35a0ef26f2a73f280fcfffc911fb39c84cc3",
   "versions": {
    "numpy": "2.5.4",
    "optuna": "5.1.0",
@@ -2375,6 +2375,167 @@
    "unit": "pooled seed SD"
   },
   {
+   "comparison": "E3 prompted Qwen (10 seeds, A10) vs random (30), ILI AUC",
+   "detectable_80": 0.5554865841385284,
+   "detectable_80_t": 0.5929564054725189,
+   "diff": 0.2933943628894313,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.515118825401602
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "descriptive, unadjusted; no test",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.5448030374396655
+   ],
+   "t_ratio": 1.0674540527240641,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E3 prompted Qwen (10 seeds, A10) vs re (30), ILI AUC",
+   "detectable_80": 0.5294805047868629,
+   "detectable_80_t": 0.5724588286225238,
+   "diff": 0.33425448650605083,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.4742587017849824
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "descriptive, unadjusted; no test",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.4347000168777955
+   ],
+   "t_ratio": 1.081170738954707,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E3 prompted Qwen (10 seeds, A10) vs tpe (30), ILI AUC",
+   "detectable_80": 0.5059268250184495,
+   "detectable_80_t": 0.5554834846750307,
+   "diff": 0.6717850683856945,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.1367281199053387
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "descriptive, unadjusted; no test",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.30943429303159187
+   ],
+   "t_ratio": 1.0979522278834968,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E3 prompted Qwen (10 seeds, A10) vs asha (30), ILI AUC",
+   "detectable_80": 0.5243538766141452,
+   "detectable_80_t": 0.5686183608239013,
+   "diff": 0.4265979547246368,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.3819152335663965
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "descriptive, unadjusted; no test",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.4102611530331925
+   ],
+   "t_ratio": 1.0844171964467593,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E3 prompted Qwen (10 seeds, A10) vs referee (30), ILI AUC",
+   "detectable_80": 0.5320531485521792,
+   "detectable_80_t": 0.5744133150427526,
+   "diff": 0.588507322296933,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.2200058659941002
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "descriptive, unadjusted; no test",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.4465448891251475
+   ],
+   "t_ratio": 1.0796164191600852,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E3 prompted Qwen (10 seeds, A10) vs pg (30), ILI AUC",
+   "detectable_80": 0.5549421566971828,
+   "detectable_80_t": 0.5925119222563083,
+   "diff": 0.11618908785124638,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.6923241004397869
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "descriptive, unadjusted; no test",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.5426782156937529
+   ],
+   "t_ratio": 1.0677003271525223,
+   "unit": "pooled seed SD"
+  },
+  {
+   "comparison": "E3 prompted Qwen (10 seeds, A10) vs pg_league (30), ILI AUC",
+   "detectable_80": 0.5408155635216254,
+   "detectable_80_t": 0.5811980272186904,
+   "diff": 0.21879176073709994,
+   "family": 1,
+   "mean": [
+    1.8085131882910332,
+    1.5897214275539333
+   ],
+   "n": [
+    10,
+    30
+   ],
+   "note": "descriptive, unadjusted; no test",
+   "p": null,
+   "sd": [
+    0.5423985556999721,
+    0.4851129270123287
+   ],
+   "t_ratio": 1.0746695665230246,
+   "unit": "pooled seed SD"
+  },
+  {
    "comparison": "AB-C, ILI AUC: rivals_1 vs ref",
    "detectable_80": 0.2260970997033376,
    "diff": 0.06866233567000002,
@@ -2621,7 +2782,7 @@
    "unit": "Spearman rho"
   },
   {
-   "comparison": "AB-P scale trend on the RTX (registered; not of record)",
+   "comparison": "AB-P scale trend on the RTX (registered in AB2, statistic fixed in AB5; not of record)",
    "detectable_80": 0.33361708293519865,
    "diff": 0.42952841163858857,
    "family": 3,
@@ -2633,7 +2794,7 @@
    "unit": "Spearman rho"
   },
   {
-   "comparison": "AB-G KL trend on the RTX (registered; not of record)",
+   "comparison": "AB-G KL trend on the RTX (registered in AB2; not of record)",
    "detectable_80": 0.5322850887470398,
    "diff": -0.1697999870291681,
    "family": 2,
@@ -2645,7 +2806,7 @@
    "unit": "Spearman rho"
   },
   {
-   "comparison": "AB-G steps trend on the RTX (registered; not of record)",
+   "comparison": "AB-G steps trend on the RTX (registered in Soumitra's AB4, 15db163; not of record)",
    "detectable_80": 0.3870763117279219,
    "diff": 0.7622310377083054,
    "family": 2,
