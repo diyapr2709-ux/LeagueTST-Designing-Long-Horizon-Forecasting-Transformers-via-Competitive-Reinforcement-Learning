@@ -860,3 +860,19 @@ def test_compute_sums_records_and_queue_wall_clock():
              "2026-11-26T05:21:14-05:00 START a log=y", "2026-11-26T05:36:50-05:00 DONE a rc=0"]
     q = compute.queue_wall_clock(lines)
     assert [x["outcome"] for x in q] == ["INTERRUPTED", "DONE rc=0"] and q[0]["seconds"] == 4783.0 and q[1]["seconds"] == 936.0
+
+
+def test_programme_holm_uses_the_registered_sizes_and_keeps_family_decisions():
+    import programme_holm
+
+    t = lambda p, ph, r: {"p": p, "p_holm": ph, "reject": r}
+    families = {"AB-C": {"a": t(0.3, 0.9, False)}, "AB-X": {}, "AB-P": {"anon vs ref_local": t(0.0073, 0.0145, True), "scale trend": t(3e-5, 9e-5, True)},
+                "AB-G": {"steps trend": t(1e-5, 2e-5, True)}, "AB-L": {"x": t(0.0156, 0.031, True)}}
+    out = programme_holm.programme(families)
+    assert out["size"] == 13 and out["tests_with_p"] == 5
+    row = {r["test"]: r for r in out["rows"]}
+    assert row["steps trend"]["programme_p_holm"] == pytest.approx(13e-5) and row["steps trend"]["programme_reject"]
+    assert row["scale trend"]["programme_p_holm"] == pytest.approx(12 * 3e-5)
+    assert row["anon vs ref_local"]["programme_p_holm"] == pytest.approx(11 * 0.0073) and not row["anon vs ref_local"]["programme_reject"]
+    assert row["anon vs ref_local"]["family_reject"]  # the registered decision is kept beside it
+    assert out["tests_sharing_ABL_P_ref_local"] == ["AB-G: steps trend", "AB-P: anon vs ref_local", "AB-P: scale trend"]
