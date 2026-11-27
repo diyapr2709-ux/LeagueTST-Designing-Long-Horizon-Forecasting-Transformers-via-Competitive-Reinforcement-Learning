@@ -5,6 +5,9 @@ seeds and per-seed SDs of both arms, the observed difference, and the smallest
 true difference that a two-sided test at 0.05/family would find with 80% power
 (normal approximation with the observed SDs; family = the registered Holm
 size). Trends report the smallest detectable rank correlation (Fisher z).
+AB3 registered that normal approximation, so it stays the detectable_80 column. Added 26 Nov, after the
+results were seen (area-chair review B18), descriptive: detectable_80_t, the same quantity with Student t
+quantiles at the Welch degrees of freedom, and t_ratio, its ratio to detectable_80, for rows with per-arm SDs.
 Sources: docs/claims/E3.json, results/picks, the E4 runs files, AB-C, AB-X,
 the LLM arms, AB-L, and, as a planning figure only, the E6 validation errors
 (the E6 primary endpoint is the test split, which nothing here reads).
@@ -29,11 +32,26 @@ from common import ALPHA, OUT, POWER, ROOT, by_seed, detectable, load_table, pro
 from leaguetst.ledger import read_rows  # noqa: E402
 
 
+def detectable_t(sd_a: float, n_a: int, sd_b: float, n_b: int, family: int) -> float | None:
+    """As common.detectable, with Student t quantiles at the Welch degrees of freedom (descriptive, not registered)."""
+    from scipy.stats import t as student_t
+
+    va, vb = sd_a**2 / n_a, sd_b**2 / n_b
+    if n_a < 2 or n_b < 2 or va + vb <= 0:
+        return None
+    df = (va + vb) ** 2 / (va**2 / (n_a - 1) + vb**2 / (n_b - 1))
+    return float((student_t.ppf(1 - ALPHA / family / 2, df) + student_t.ppf(POWER, df)) * math.sqrt(va + vb))
+
+
 def row(name: str, a, b, family: int, unit: str, p=None, note: str = "") -> dict:
     a, b = np.asarray(list(a), float), np.asarray(list(b), float)
-    return {"comparison": name, "n": [len(a), len(b)], "sd": [float(a.std(ddof=1)), float(b.std(ddof=1))],
-            "mean": [float(a.mean()), float(b.mean())], "diff": float(a.mean() - b.mean()), "family": family, "unit": unit,
-            "detectable_80": detectable(a.std(ddof=1), len(a), b.std(ddof=1), len(b), family), "p": p, "note": note}
+    out = {"comparison": name, "n": [len(a), len(b)], "sd": [float(a.std(ddof=1)), float(b.std(ddof=1))],
+           "mean": [float(a.mean()), float(b.mean())], "diff": float(a.mean() - b.mean()), "family": family, "unit": unit,
+           "detectable_80": detectable(a.std(ddof=1), len(a), b.std(ddof=1), len(b), family), "p": p, "note": note}
+    t_based = detectable_t(a.std(ddof=1), len(a), b.std(ddof=1), len(b), family)
+    out["detectable_80_t"] = t_based
+    out["t_ratio"] = t_based / out["detectable_80"] if t_based and out["detectable_80"] else None
+    return out
 
 
 def detectable_rho(n: int, family: int) -> float:
@@ -113,8 +131,7 @@ def abl_rows() -> list[dict]:
     out = family_rows(OUT / "AB-C.json", "AB-C, ILI AUC", lambda d: d["tables"]["ILI_T24"]["tests"])
     out += family_rows(OUT / "AB-X.json", "AB-X, ILI AUC", lambda d: d["tables"]["ILI_T24"]["tests"])
     out += family_rows(OUT / "LLM.json", "AB-P on the Mac (exploratory), ILI AUC", lambda d: d["mps"]["AB-P"]["tests"])
-    reg_state = "final" if (OUT / "LLM-rtx.json").exists() and json.loads((OUT / "LLM-rtx.json").read_text()).get("registered", {}).get("final") else "provisional"
-    out += family_rows(OUT / "LLM-rtx.json", f"AB-P on the RTX (registered, AB4, {reg_state}), ILI AUC",
+    out += family_rows(OUT / "LLM-rtx.json", "AB-P on the RTX (registered in AB2 and Soumitra's AB4, 15db163; not of record), ILI AUC",
                        lambda d: {k: v for k, v in d.get("registered", {}).get("families", {}).get("AB-P", {}).get("tests", {}).items() if "diff" in v})
     data = json.loads((OUT / "AB-L.json").read_text())
     for dataset in ("ILI", "ETTh1"):
@@ -139,11 +156,10 @@ def trend_rows() -> list[dict]:
     if (OUT / "LLM-rtx.json").exists():
         reg = json.loads((OUT / "LLM-rtx.json").read_text()).get("registered", {})
         fams = reg.get("families", {})
-        state = "final" if reg.get("final") else "provisional"
         for fam, size in (("AB-P", 3), ("AB-G", 2)):
             for name, t in fams.get(fam, {}).get("tests", {}).items():
                 if "rho" in t:
-                    rows.append({"comparison": f"{fam} {name} on the RTX (registered, {state})", "n": [t["n"]], "family": size, "unit": "Spearman rho",
+                    rows.append({"comparison": f"{fam} {name} on the RTX (registered; not of record)", "n": [t["n"]], "family": size, "unit": "Spearman rho",
                                  "detectable_80": detectable_rho(t["n"], size), "diff": t["rho"], "p": t["p"]})
     return [{**r, "note": r.get("note") or note} for r in rows]
 

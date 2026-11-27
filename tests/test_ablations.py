@@ -825,3 +825,16 @@ def test_registered_source_records_done_times_and_commits(quiet_registered):
     assert ref["done_time"] == "2026-11-25T01:00:00-05:00" and ref["amendment"] == "AB2" and ref["commits"] == ["a" * 40]
     st = out["status"]["transfer"]["steps30"]
     assert st["done_time"] == "2026-11-25T02:00:00-05:00" and st["amendment"] == "AB4" and st["training_commits"] == ["a" * 40]
+
+
+def test_t_based_detectable_is_larger_than_the_registered_normal_one():
+    from scipy.stats import t as student_t
+
+    normal = common.detectable(1.0, 10, 1.0, 10, 6)
+    t_based = power.detectable_t(1.0, 10, 1.0, 10, 6)
+    assert t_based == pytest.approx((student_t.ppf(1 - 0.05 / 12, 18) + student_t.ppf(0.8, 18)) * math.sqrt(0.2), rel=1e-9)
+    assert t_based > normal
+    r = power.row("x", [0.0, 1.0, 2.0, 3.0, 4.0] * 2, [1.0, 2.0, 3.0] * 10, 6, "u")
+    assert r["detectable_80"] == pytest.approx(common.detectable(np.std([0.0, 1.0, 2.0, 3.0, 4.0] * 2, ddof=1), 10, np.std([1.0, 2.0, 3.0] * 10, ddof=1), 30, 6))
+    assert r["t_ratio"] == pytest.approx(r["detectable_80_t"] / r["detectable_80"]) and r["t_ratio"] > 1
+    assert power.detectable_t(0.0, 10, 0.0, 10, 1) is None
