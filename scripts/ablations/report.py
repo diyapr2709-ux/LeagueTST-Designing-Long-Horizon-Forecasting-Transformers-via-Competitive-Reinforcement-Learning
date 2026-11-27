@@ -956,7 +956,8 @@ def baseline_reading(d: dict) -> dict:
 
 def baseline_sentences(d: dict) -> str:
     x = baseline_reading(d)
-    unadjusted_only = {b: a for b, a in x["below"].items() if b not in x["held"]}
+    # per arm, not per baseline: an arm below a baseline only on its unadjusted interval is listed even when another arm survives Holm against it
+    unadjusted_only = {b: rest for b, a in x["below"].items() if (rest := [arm for arm in a if arm not in x["held"].get(b, [])])}
     text = f"No arm's unadjusted interval lies below {', '.join(x['never'])}. " if x["never"] else ""
     if unadjusted_only:
         text += ("On unadjusted intervals only: " + "; ".join(f"{', '.join(a)} below {b}" for b, a in unadjusted_only.items())

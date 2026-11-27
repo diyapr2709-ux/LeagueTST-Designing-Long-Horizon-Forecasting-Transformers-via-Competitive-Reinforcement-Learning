@@ -1020,3 +1020,15 @@ def test_first_fetch_holding_takes_the_earliest_reflog_entry_that_contains_the_c
             return head in ("aaa", "bbb")
 
     assert llm_rtx.first_fetch_holding(Src(), "x") == "2026-11-26T16:44:08-05:00"
+
+
+def test_baseline_sentences_lists_unadjusted_arms_per_arm():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("ablations_report", ROOT / "scripts" / "ablations" / "report.py")
+    report = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(report)
+    report.baseline_reading = lambda d: {"below": {"portfolio": ["prompted A", "GRPO B"]}, "held": {"portfolio": ["prompted A"]}, "never": ["random"],
+                                         "n": 4, "worse": 1, "worse_grpo": 1, "worse_prompted": 0}
+    text = report.baseline_sentences({})
+    assert "On unadjusted intervals only: GRPO B below portfolio" in text and "portfolio (by prompted A)" in text
