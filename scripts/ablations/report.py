@@ -229,7 +229,12 @@ def p3(p: float) -> str:
 def trend_words(name: str, test: dict) -> str:
     """A trend's levels in words, with units, lowest level first."""
     unit = LEVEL_UNITS.get(name, str)
-    return ", ".join(f"{unit(k)} {v['mean']:.2f}" for k, v in test["levels"].items())
+    return ", ".join(f"{unit(k)} {v['mean']:.2f}" for k, v in by_level(test))
+
+
+def by_level(test: dict) -> list[tuple[str, dict]]:
+    """A trend's levels in numeric order (JSON keys are strings, so 120 would sort before 30)."""
+    return sorted(test["levels"].items(), key=lambda kv: float(kv[0]))
 
 
 def pfmt(p: float) -> str:
@@ -292,7 +297,7 @@ def registered_llm() -> list[str]:
         for name, test in f["tests"].items():
             if "rho" in test:
                 unit = LEVEL_UNITS.get(name, str)
-                levels = "; ".join(f"{unit(k)}: {ci(v)}" for k, v in test["levels"].items())
+                levels = "; ".join(f"{unit(k)}: {ci(v)}" for k, v in by_level(test))
                 det = next((r["detectable_80"] for r in (load("ST-power") or {}).get("rows", []) if r["comparison"].startswith(f"{fam} {name} on the RTX")), None)
                 stat = f"rho {test['rho']:+.2f} over {test['n']} values ({levels})" + (f"; detectable rho at 80% about {det:.2f} (Fisher z, approximate)" if det else "")
             else:
@@ -585,6 +590,10 @@ def glance() -> list[str]:
             return f"{fam} {name}: ILI held-out AUC {trend_words(name, v)} SD (rho {v['rho']:+.2f}, {decision}{could}{nested})"
 
         done = [said(fam, name, v) for fam in ("AB-P", "AB-G") for name, v in reg["families"][fam]["tests"].items()]
+        pl = reg["families"]["AB-G"].get("exploratory_policy_level")
+        if pl and "steps trend" in reg["families"]["AB-G"]["tests"]:
+            done.append("read by AB4's rule, " + step_reading(reg["families"]["AB-G"]["tests"]["steps trend"], pl["trained_vs_untrained"], pl["dose"])
+                        .removeprefix("By AB4's rule ").rstrip(".") + f" (trained minus untrained {pl['trained_vs_untrained']['diff']:+.2f} SD)")
         missing = [name for fam in ("AB-P", "AB-G") for name in reg["families"][fam]["missing"]]
         lines.append("* Registered LLM ablations on Soumitra's RTX, Anirudh's independent computation (" + ("final" if reg["final"] else "provisional")
                      + "; the result of record is results/ablations/LLM-registered.json, Diya's AB4 on main): " + ("; ".join(done) or "none complete")

@@ -474,6 +474,16 @@ def test_report_renders_registered_section(monkeypatch, final):
     assert "Not the result of record" in text and "LLM-registered.json" in text
 
 
+def test_by_level_sorts_numerically():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("ablations_report", ROOT / "scripts" / "ablations" / "report.py")
+    report = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(report)
+    test = {"levels": {"0": {"mean": 1.0}, "120": {"mean": 4.0}, "30": {"mean": 2.0}, "60": {"mean": 3.0}}}
+    assert [k for k, _ in report.by_level(test)] == ["0", "30", "60", "120"]
+
+
 def test_step_reading_follows_ab4_rule():
     import importlib.util
 
